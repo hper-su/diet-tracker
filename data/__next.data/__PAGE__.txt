@@ -3,7 +3,7 @@
 3:I[96293,["/diet-tracker/_next/static/chunks/0ztlooxlu65el.js","/diet-tracker/_next/static/chunks/1-8s9_t85wwr4.js","/diet-tracker/_next/static/chunks/2np7sf7lgxtgi.js","/diet-tracker/_next/static/chunks/2nvc-relehb-a.js"],"default"]
 6:I[97367,["/diet-tracker/_next/static/chunks/0ztlooxlu65el.js","/diet-tracker/_next/static/chunks/1-8s9_t85wwr4.js"],"OutletBoundary"]
 7:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/diet-tracker/_next/static/chunks/2np7sf7lgxtgi.js","async":true}],["$","script","script-1",{"src":"/diet-tracker/_next/static/chunks/2nvc-relehb-a.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"guM0fnY4ra-sHI7O2a2rD"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/diet-tracker/_next/static/chunks/2np7sf7lgxtgi.js","async":true}],["$","script","script-1",{"src":"/diet-tracker/_next/static/chunks/2nvc-relehb-a.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"vK3x-wb8pM_9kXC5yegWu"}
 4:{}
 5:"$0:rsc:props:children:0:props:serverProvidedParams:params"
 8:null

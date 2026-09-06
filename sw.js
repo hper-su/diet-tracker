@@ -2,7 +2,9 @@
 // が next build 後に生成)に列挙された全URLを取得してキャッシュし、以後は
 // ネットワークが無くてもキャッシュから応答する。
 
-const MANIFEST_URL = "/sw-precache-manifest.json";
+// 相対パスにすることで、GitHub Pagesのようにサブパス(/diet-tracker/等)配信の場合でも
+// sw.js自身が置かれている場所(=basePath直下)を基準に正しく解決される。
+const MANIFEST_URL = "./sw-precache-manifest.json";
 
 async function precache() {
   const res = await fetch(MANIFEST_URL, { cache: "no-store" });
@@ -61,7 +63,7 @@ self.addEventListener("fetch", (event) => {
         // オフラインでキャッシュにも無い場合(未訪問の外部リソース等)は、
         // ナビゲーション要求ならアプリの入口だけは返す。
         if (event.request.mode === "navigate") {
-          const fallback = await caches.match("/clients/");
+          const fallback = await caches.match("./clients/");
           if (fallback) return fallback;
         }
         throw error;

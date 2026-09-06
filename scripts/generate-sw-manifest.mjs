@@ -20,26 +20,28 @@ function walk(dir) {
   return files;
 }
 
+// GitHub Pagesのようにサブパス(/diet-tracker/等)配信の場合でも正しく解決されるよう、
+// URLはルート絶対パス("/...")ではなく、sw.js自身の場所を基準にした相対パスで持つ。
 const urls = new Set();
 
 for (const file of walk(OUT_DIR)) {
   const rel = path.relative(OUT_DIR, file).split(path.sep).join("/");
-  urls.add("/" + rel);
+  urls.add(rel);
 
   if (rel === "index.html") {
-    urls.add("/");
+    urls.add("./");
   } else if (rel.endsWith("/index.html")) {
-    urls.add("/" + rel.slice(0, -"index.html".length));
+    urls.add(rel.slice(0, -"index.html".length));
   } else if (rel.endsWith(".html")) {
-    urls.add("/" + rel.slice(0, -".html".length));
+    urls.add(rel.slice(0, -".html".length));
   }
 }
 
 // sw.js自身と、これから書き出すマニフェスト自身はキャッシュ対象に含めない
 // (sw.jsはブラウザのService Worker機構が別途管理し、マニフェストは常に
 // installのたびにネットワークから最新を取得したいため)。
-urls.delete("/sw.js");
-urls.delete("/sw-precache-manifest.json");
+urls.delete("sw.js");
+urls.delete("sw-precache-manifest.json");
 
 const manifest = {
   buildId: Date.now().toString(36),

@@ -2,14 +2,17 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./sw-register";
+import { BASE_PATH } from "@/lib/base-path";
 
+// next/metadataの manifest/icons は <Link> と違い basePath が自動で付与されない
+// ため、ここだけ手動で BASE_PATH を付ける。
 export const metadata: Metadata = {
   title: "食事・体組成管理",
   description: "お客様ごとの食事記録・ダイエット/増量プラン管理アプリ",
-  manifest: "/manifest.json",
+  manifest: `${BASE_PATH}/manifest.json`,
   icons: {
-    icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    icon: [{ url: `${BASE_PATH}/icon-192.png`, sizes: "192x192", type: "image/png" }],
+    apple: [{ url: `${BASE_PATH}/apple-touch-icon.png`, sizes: "180x180", type: "image/png" }],
   },
 };
 

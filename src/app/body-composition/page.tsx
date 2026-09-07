@@ -6,7 +6,7 @@ export default function BodyCompositionPage() {
       <div>
         <h1 className="text-lg font-semibold">体組成ガイド</h1>
         <p className="mt-1 text-sm text-gray-600">
-          お客様への説明で使える、体重・体組成の各指標の解説です。目安の基準値は複数の公表資料で広く紹介されている代表的な値であり、年齢・性別・測定機器によって幅があります。診断の根拠にはせず、会話のきっかけとしてご活用ください。
+          体重・体組成の各指標についての解説です。目安の基準値は複数の公表資料で広く紹介されている代表的な値であり、年齢・性別・測定機器によって幅があります。診断の根拠にはせず、参考情報としてご活用ください。
         </p>
       </div>
 
@@ -51,13 +51,6 @@ export default function BodyCompositionPage() {
                 )}
               </div>
             )}
-
-            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
-              <p className="text-xs font-medium text-blue-900">
-                お客様への説明ポイント
-              </p>
-              <p className="mt-1 text-xs text-blue-900">{metric.trainerNote}</p>
-            </div>
           </section>
         ))}
       </div>

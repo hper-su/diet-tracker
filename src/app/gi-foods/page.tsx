@@ -9,7 +9,6 @@ import {
   GI_LEVEL_LABELS,
   GI_COMBINATION_EXAMPLES,
   SNACK_GUIDE,
-  PRACTICAL_TIPS,
   getGILevel,
   type GILevel,
   type GIFood,
@@ -115,23 +114,6 @@ function GIFoodsPageInner() {
           ※
           ブドウ糖を基準とした国際的な分類基準です。掲載しているGI値は複数の公表資料で広く紹介されている代表的な目安であり、品種・熟度・調理法・測定条件によって数値には幅があります。厳密な数値が必要な場合は最新の学術資料を参照してください。
         </p>
-      </section>
-
-      <section className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
-        <h2 className="font-medium text-gray-900">
-          お客様への説明で押さえておきたいポイント
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {PRACTICAL_TIPS.map((tip) => (
-            <div
-              key={tip.title}
-              className="rounded-lg border border-gray-200 bg-gray-50 p-3"
-            >
-              <p className="font-medium text-gray-900">{tip.title}</p>
-              <p className="mt-1 text-xs text-gray-600">{tip.body}</p>
-            </div>
-          ))}
-        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">

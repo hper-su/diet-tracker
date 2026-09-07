@@ -21,14 +21,6 @@ export type BodyMetric = {
 
 export const BODY_METRICS: BodyMetric[] = [
   {
-    key: "weight",
-    name: "体重",
-    unit: "kg",
-    summary: "最も基本的な指標だが、これだけでは筋肉と脂肪の内訳は分からない。",
-    description:
-      "体そのものの重さ。増減がもっとも分かりやすい指標だが、体重の増減だけでは「脂肪が減ったのか筋肉が減ったのか」は判断できない。食事内容・水分摂取・排泄のタイミングでも1日の中で1〜2kg程度変動することがある。",
-  },
-  {
     key: "bmi",
     name: "BMI",
     unit: "",
@@ -69,6 +61,12 @@ export const BODY_METRICS: BodyMetric[] = [
     summary: "全身の筋肉の重さ。基礎代謝や姿勢、生活の質に関わる。",
     description:
       "骨格筋を中心とした筋肉の重さ。筋肉量が多いほど基礎代謝が高くなりやすく、太りにくく痩せやすい体づくりの土台になる。加齢とともに何もしなければ自然に減少していく(サルコペニア)ため、意識的な維持・向上が重要。",
+    referenceNote:
+      "出典: 体組成計メーカー等で紹介されている骨格筋率(体重に占める筋肉量の割合)の目安。年齢や測定機器により差がある。",
+    referenceRows: [
+      { label: "男性の目安", value: "33〜39%" },
+      { label: "女性の目安", value: "26〜31%" },
+    ],
   },
   {
     key: "visceralFat",

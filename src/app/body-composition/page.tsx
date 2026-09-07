@@ -20,7 +20,10 @@ export default function BodyCompositionPage() {
               <h2 className="text-base font-semibold text-gray-900">
                 {metric.name}
               </h2>
-              {metric.unit && (
+              {/* 名前に既に(BF)等の略称が含まれる場合、単位を別カッコで重ねて
+                  表示すると「体脂肪率(BF) (%)」のように二重括弧になってしまうため、
+                  その場合は単位の表示を省く。 */}
+              {metric.unit && !metric.name.includes("(") && (
                 <span className="text-xs text-gray-400">({metric.unit})</span>
               )}
             </div>

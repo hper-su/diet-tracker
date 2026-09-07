@@ -105,11 +105,15 @@ export type PracticeRow = {
   action: string;
 };
 
+// 番号(1〜5)は上のNUTRITION_PRIORITIESのorderと一致させている。カロリー収支は
+// 5つの優先順位の前提となる土台のため、数字ではなく「大前提」として区別する
+// (同じ「優先度」列に別の採番基準が混ざって見えないようにするため)。
 export const PRACTICE_ROWS: PracticeRow[] = [
-  { priority: "1", action: "総摂取カロリーが消費カロリー以下になっているか" },
-  { priority: "2", action: "タンパク質量の確保(筋肉維持・満腹感)" },
-  { priority: "3", action: "野菜・食物繊維でかさを出す(目安20〜25g/日、水分もあわせて)" },
-  { priority: "4", action: "精製糖質を減らし、脂質は質で選ぶ(不飽和脂肪酸を優先)" },
+  { priority: "大前提", action: "総摂取カロリーが消費カロリー以下になっているか" },
+  { priority: "1", action: "タンパク質量の確保(筋肉維持・満腹感)" },
+  { priority: "2", action: "野菜・食物繊維でかさを出す(目安20〜25g/日、水分もあわせて)" },
+  { priority: "3", action: "精製糖質を減らす(白米・パン・麺は「計る」意識に)" },
+  { priority: "4", action: "脂質は質で選ぶ(不飽和脂肪酸を優先)" },
   {
     priority: "5",
     action: "カロリー制限中の微量栄養素不足(鉄・カルシウム・ビタミンD)に注意",

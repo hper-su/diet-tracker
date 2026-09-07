@@ -110,7 +110,8 @@ export const GI_FOODS: GIFood[] = [
   // 菓子・デザート
   { category: "菓子・デザート", name: "はちみつ", giValue: 88 },
   { category: "菓子・デザート", name: "ドーナツ", giValue: 86 },
-  { category: "菓子・デザート", name: "チョコレート", giValue: 91 },
+  // 脂質を多く含むため、糖分の割に糖の吸収が緩やかになり、GI値は見た目ほど高くない。
+  { category: "菓子・デザート", name: "チョコレート", giValue: 40 },
   { category: "菓子・デザート", name: "クッキー", giValue: 77 },
   { category: "菓子・デザート", name: "ポテトチップス", giValue: 60 },
   { category: "菓子・デザート", name: "ポップコーン", giValue: 72 },

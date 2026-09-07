@@ -100,6 +100,56 @@ export const NUTRITION_PRIORITIES: NutritionPriority[] = [
   },
 ];
 
+export type ComparisonRow = {
+  label: string;
+  values: [string, string];
+};
+
+export const WATER_PROTEIN_SECTION = {
+  title: "💧🍗 水としっかりタンパク質、実は「痩せる力」に直結してます",
+  water: {
+    heading: "① 水をしっかり飲むこと",
+    paragraphs: [
+      "体の中の水分は、血液を巡らせたり、老廃物を出したり、体温を調整したりする「体の作業員」のような役割をしています。水が足りないと、この作業員たちがうまく働けなくなります。",
+    ],
+    timingIntro: "特に大事なタイミング",
+    timingItems: [
+      "野菜やきのこなど食物繊維の多いものを増やしたとき → 水も一緒に摂らないと、お腹が張ったり便秘が悪化することがあります",
+      "運動する日 → 汗で失った分、多めに摂りましょう",
+    ],
+    guideIntro: "目安",
+    guideItems: [
+      "1日の目安: 体重(kg)×30ml(例: 体重60kgの方→約1.8L)",
+      "一気に飲むのではなく、コップ1杯を朝・昼・夕・運動前後にこまめに飲むのがおすすめです",
+    ],
+  },
+  protein: {
+    heading: "② タンパク質をしっかり摂ること",
+    intro:
+      "実は、同じ量を食べても「何を食べるか」で、消化するときに使うカロリーが違います。これを食事誘発性熱産生(しょくじゆうはつせいねつさんせい)と呼びます。難しい名前ですが、要は「食べ物を消化するために体が使うカロリー」のことです。",
+    breakdownItems: [
+      "お肉や魚、卵などのタンパク質 → 消化に使うカロリーが多い(食べた分の約2〜3割)",
+      "ご飯やパンなどの糖質 → 消化に使うカロリーは少なめ(約1割)",
+      "揚げ物や油っこいもの(脂質)→ 消化に使うカロリーはごくわずか(数%程度)",
+    ],
+    exampleIntro:
+      "実際の数字で例えると(一例)。同じ約490kcalの食事でも、内容によってこれだけ差が出ます。",
+    comparisonColumns: ["唐揚げ定食(高脂質)", "鶏むね肉グリル定食(高タンパク)"] as [
+      string,
+      string,
+    ],
+    comparisonRows: [
+      { label: "カロリー", values: ["約490kcal", "約490kcal"] },
+      { label: "タンパク質量", values: ["約26g", "約54g"] },
+      { label: "消化に使われるカロリー", values: ["約51kcal", "約72kcal"] },
+    ] as ComparisonRow[],
+    differenceNote:
+      "差はたった1食で約21kcalですが、毎食続けると、21kcal × 3食 × 30日 ≈ 1,890kcal/月(体脂肪約0.3kg分)になります。",
+    guideNote:
+      "手のひら1枚分くらいのお肉・魚・卵(1食20〜30g程度のタンパク質)を、毎食意識しましょう。",
+  },
+};
+
 export type PracticeRow = {
   priority: string;
   action: string;

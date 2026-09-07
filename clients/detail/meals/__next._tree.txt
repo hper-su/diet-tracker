@@ -1,2 +1,2 @@
-:HL["/diet-tracker/_next/static/chunks/3iogbjfr5ie1i.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"clients","param":null,"prefetchHints":0,"slots":{"children":{"name":"detail","param":null,"prefetchHints":0,"slots":{"children":{"name":"meals","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}}}},"staleTime":300,"buildId":"NViOs7nb29qMb5iAc_omT"}
+:HL["/diet-tracker/_next/static/chunks/2_aodc9e1f-e1.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"clients","param":null,"prefetchHints":0,"slots":{"children":{"name":"detail","param":null,"prefetchHints":0,"slots":{"children":{"name":"meals","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}}}},"staleTime":300,"buildId":"LEloqI7PA4iN0etJ_QnqQ"}

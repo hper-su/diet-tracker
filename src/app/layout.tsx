@@ -23,6 +23,7 @@ export const viewport: Viewport = {
 const NAV_LINKS = [
   { href: "/clients", label: "お客様" },
   { href: "/foods", label: "食品マスタ" },
+  { href: "/gi-foods", label: "GI食品" },
   { href: "/data", label: "データ管理" },
 ];
 

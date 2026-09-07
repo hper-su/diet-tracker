@@ -1,7 +1,6 @@
 import {
   INTRO_PARAGRAPH,
   NUTRITION_PRIORITIES,
-  WATER_PROTEIN_SECTION,
   PRACTICE_ROWS,
   CONTINUATION_TIPS,
   CLOSING_NOTE,
@@ -57,6 +56,60 @@ export default function NutritionGuidancePage() {
               </div>
             )}
 
+            {priority.detailParagraphs && (
+              <div className="mt-2 space-y-2 text-sm text-gray-700">
+                {priority.detailParagraphs.map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
+                ))}
+              </div>
+            )}
+
+            {priority.detailBulletList && (
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-gray-700">
+                {priority.detailBulletList.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            )}
+
+            {priority.comparisonRows && priority.comparisonColumns && (
+              <div className="mt-3 space-y-2">
+                {priority.comparisonIntro && (
+                  <p className="text-sm text-gray-700">
+                    {priority.comparisonIntro}
+                  </p>
+                )}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500">
+                        <th className="px-3 py-2"></th>
+                        {priority.comparisonColumns.map((col) => (
+                          <th key={col} className="px-3 py-2">
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {priority.comparisonRows.map((row) => (
+                        <tr key={row.label} className="border-t border-gray-100">
+                          <td className="px-3 py-2 font-medium text-gray-900">
+                            {row.label}
+                          </td>
+                          {row.values.map((value, i) => (
+                            <td key={i} className="px-3 py-2 text-gray-700">
+                              {value}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {priority.subSections && (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {priority.subSections.map((sub) => (
@@ -96,84 +149,6 @@ export default function NutritionGuidancePage() {
           </section>
         ))}
       </div>
-
-      <section className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="font-semibold text-gray-900">
-          {WATER_PROTEIN_SECTION.title}
-        </h2>
-
-        <div className="mt-4 space-y-2 text-sm text-gray-700">
-          <h3 className="font-semibold text-gray-900">
-            {WATER_PROTEIN_SECTION.water.heading}
-          </h3>
-          {WATER_PROTEIN_SECTION.water.paragraphs.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-          <p className="font-medium">{WATER_PROTEIN_SECTION.water.timingIntro}</p>
-          <ul className="list-disc space-y-1 pl-5">
-            {WATER_PROTEIN_SECTION.water.timingItems.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-          <p className="font-medium">{WATER_PROTEIN_SECTION.water.guideIntro}</p>
-          <ul className="list-disc space-y-1 pl-5">
-            {WATER_PROTEIN_SECTION.water.guideItems.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mt-6 space-y-2 text-sm text-gray-700">
-          <h3 className="font-semibold text-gray-900">
-            {WATER_PROTEIN_SECTION.protein.heading}
-          </h3>
-          <p>{WATER_PROTEIN_SECTION.protein.intro}</p>
-          <ul className="list-disc space-y-1 pl-5">
-            {WATER_PROTEIN_SECTION.protein.breakdownItems.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-          <p>{WATER_PROTEIN_SECTION.protein.exampleIntro}</p>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500">
-                  <th className="px-3 py-2"></th>
-                  {WATER_PROTEIN_SECTION.protein.comparisonColumns.map((col) => (
-                    <th key={col} className="px-3 py-2">
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {WATER_PROTEIN_SECTION.protein.comparisonRows.map((row) => (
-                  <tr key={row.label} className="border-t border-gray-100">
-                    <td className="px-3 py-2 font-medium text-gray-900">
-                      {row.label}
-                    </td>
-                    {row.values.map((value, i) => (
-                      <td key={i} className="px-3 py-2 text-gray-700">
-                        {value}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <p>{WATER_PROTEIN_SECTION.protein.differenceNote}</p>
-
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-            <p className="text-sm font-medium text-gray-900">1食の目安</p>
-            <p className="mt-1 text-xs text-gray-600">
-              {WATER_PROTEIN_SECTION.protein.guideNote}
-            </p>
-          </div>
-        </div>
-      </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="font-semibold text-gray-900">実践的な組み立て方</h2>

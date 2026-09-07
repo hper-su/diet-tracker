@@ -1,7 +1,13 @@
 // next build (output: "export") が生成した out/ を走査し、Service Worker が
 // installイベントで全件キャッシュするためのURL一覧を out/sw-precache-manifest.json
 // に書き出す。package.json の "build" スクリプトから next build の直後に実行される。
-import { readdirSync, statSync, writeFileSync, existsSync } from "node:fs";
+import {
+  readdirSync,
+  statSync,
+  writeFileSync,
+  readFileSync,
+  existsSync,
+} from "node:fs";
 import path from "node:path";
 
 const OUT_DIR = path.join(process.cwd(), "out");
@@ -52,6 +58,15 @@ writeFileSync(
   path.join(OUT_DIR, "sw-precache-manifest.json"),
   JSON.stringify(manifest),
 );
+
+// sw.js自体の中身が毎回まったく同じだと、ブラウザは「新しいService Workerがある」と
+// 判定できず(SWの更新検知はスクリプト本体のバイト差分で行われるため)、一度
+// インストールされたSWがどれだけ再デプロイしても永久に更新されない不具合になる。
+// buildIdを埋め込んだ行を追記して、ビルドごとに必ずsw.js自体のバイト列が
+// 変わるようにする。
+const swPath = path.join(OUT_DIR, "sw.js");
+const swSource = readFileSync(swPath, "utf-8");
+writeFileSync(swPath, `${swSource}\n// build: ${manifest.buildId}\n`);
 
 console.log(
   `sw-precache-manifest.json を生成しました (${manifest.urls.length}件, build ${manifest.buildId})`,

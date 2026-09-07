@@ -3,26 +3,42 @@
 import { Suspense, useMemo, useState } from "react";
 import {
   GI_FOODS,
+  GI_CATEGORY_ORDER,
   GI_HIGH_THRESHOLD,
   GI_MEDIUM_THRESHOLD,
   GI_LEVEL_LABELS,
+  GI_COMBINATION_EXAMPLES,
+  SNACK_GUIDE,
+  PRACTICAL_TIPS,
   getGILevel,
   type GILevel,
+  type GIFood,
 } from "@/lib/gi-foods";
 
-const LEVEL_BADGE_CLASS: Record<GILevel, string> = {
-  high: "bg-red-50 text-red-700 border-red-200",
-  medium: "bg-amber-50 text-amber-700 border-amber-200",
-  low: "bg-green-50 text-green-700 border-green-200",
+const LEVEL_CHIP_CLASS: Record<GILevel, string> = {
+  high: "border-red-200 bg-red-50 text-red-900",
+  medium: "border-amber-200 bg-amber-50 text-amber-900",
+  low: "border-green-200 bg-green-50 text-green-900",
 };
 
-function GILevelBadge({ level }: { level: GILevel }) {
+const LEVEL_DOT_CLASS: Record<GILevel, string> = {
+  high: "bg-red-500",
+  medium: "bg-amber-500",
+  low: "bg-green-500",
+};
+
+function FoodChip({ food }: { food: GIFood }) {
+  const level = getGILevel(food.giValue);
   return (
-    <span
-      className={`inline-block rounded border px-2 py-0.5 text-xs font-medium ${LEVEL_BADGE_CLASS[level]}`}
+    <div
+      className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm ${LEVEL_CHIP_CLASS[level]}`}
     >
-      {GI_LEVEL_LABELS[level]}
-    </span>
+      <span className="flex min-w-0 items-center gap-2">
+        <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${LEVEL_DOT_CLASS[level]}`} />
+        <span className="truncate font-medium">{food.name}</span>
+      </span>
+      <span className="shrink-0 font-semibold">{food.giValue}</span>
+    </div>
   );
 }
 
@@ -37,7 +53,7 @@ export default function GIFoodsPage() {
 function GIFoodsPageInner() {
   const [query, setQuery] = useState("");
 
-  const filtered = useMemo(() => {
+  const groupedByCategory = useMemo(() => {
     const q = query.trim().toLowerCase();
     const rows = q
       ? GI_FOODS.filter(
@@ -46,10 +62,24 @@ function GIFoodsPageInner() {
             food.category.toLowerCase().includes(q),
         )
       : GI_FOODS;
-    return [...rows].sort(
-      (a, b) => a.category.localeCompare(b.category) || a.giValue - b.giValue,
-    );
+
+    const byCategory = new Map<string, GIFood[]>();
+    for (const food of rows) {
+      const list = byCategory.get(food.category) ?? [];
+      list.push(food);
+      byCategory.set(food.category, list);
+    }
+    for (const list of byCategory.values()) {
+      list.sort((a, b) => a.giValue - b.giValue);
+    }
+
+    return GI_CATEGORY_ORDER.map((category) => ({
+      category,
+      foods: byCategory.get(category) ?? [],
+    })).filter((group) => group.foods.length > 0);
   }, [query]);
+
+  const totalCount = groupedByCategory.reduce((sum, g) => sum + g.foods.length, 0);
 
   return (
     <div className="space-y-6">
@@ -87,57 +117,109 @@ function GIFoodsPageInner() {
         </p>
       </section>
 
-      <section className="rounded-lg border border-gray-200 bg-white">
-        <div className="border-b border-gray-200 p-4">
-          <h2 className="mb-3 font-medium">
-            食品のGI値一覧(全{GI_FOODS.length}件)
-          </h2>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="食品名・分類で検索(例: 米、りんご、パン)"
-            className="w-full max-w-sm rounded border border-gray-300 px-3 py-2 text-sm"
-          />
-          <p className="mt-2 text-xs text-gray-400">
-            {query
-              ? `「${query}」に一致する食品 ${filtered.length}件を表示しています。`
-              : `全${filtered.length}件を分類・GI値の低い順で表示しています。`}
-          </p>
+      <section className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
+        <h2 className="font-medium text-gray-900">
+          お客様への説明で押さえておきたいポイント
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {PRACTICAL_TIPS.map((tip) => (
+            <div
+              key={tip.title}
+              className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+            >
+              <p className="font-medium text-gray-900">{tip.title}</p>
+              <p className="mt-1 text-xs text-gray-600">{tip.body}</p>
+            </div>
+          ))}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500">
-                <th className="px-4 py-2">分類</th>
-                <th className="px-4 py-2">食品名</th>
-                <th className="px-4 py-2">GI値</th>
-                <th className="px-4 py-2">区分</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((food) => (
-                <tr
-                  key={`${food.category}-${food.name}`}
-                  className="border-t border-gray-100"
-                >
-                  <td className="px-4 py-2 text-gray-500">{food.category}</td>
-                  <td className="px-4 py-2 font-medium">{food.name}</td>
-                  <td className="px-4 py-2">{food.giValue}</td>
-                  <td className="px-4 py-2">
-                    <GILevelBadge level={getGILevel(food.giValue)} />
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
-                    該当する食品が見つかりませんでした。
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
+          <h2 className="font-medium text-gray-900">
+            組み合わせでGI値は変わる(白米の例)
+          </h2>
+          <p className="mt-1 text-xs text-gray-500">
+            同じ白米でも、一緒に食べるものや食べ方でGI値の目安は変わります。
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {GI_COMBINATION_EXAMPLES.map((example) => (
+              <li
+                key={example.combination}
+                className="flex items-center justify-between gap-2 rounded border border-gray-100 bg-gray-50 px-3 py-1.5"
+              >
+                <span>{example.combination}</span>
+                <span className="font-semibold text-gray-900">
+                  {example.giValue}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
+          <h2 className="font-medium text-gray-900">間食(おやつ)の目安量</h2>
+          <p className="mt-1 text-xs text-gray-500">
+            出典: 日本糖尿病学会「糖尿病食事療法のための食品交換表」の例
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {SNACK_GUIDE.map((snack) => (
+              <li
+                key={snack.name}
+                className="flex items-center justify-between gap-2 rounded border border-gray-100 bg-gray-50 px-3 py-1.5"
+              >
+                <span>{snack.name}</span>
+                <span className="font-semibold text-gray-900">{snack.amount}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-medium">食品のGI値一覧(全{totalCount}件)</h2>
+          <div className="flex items-center gap-3 text-xs text-gray-500">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+              高GI
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-full bg-amber-500" />
+              中GI
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+              低GI
+            </span>
+          </div>
+        </div>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="食品名・分類で検索(例: 米、りんご、パン)"
+          className="w-full max-w-sm rounded border border-gray-300 px-3 py-2 text-sm"
+        />
+
+        <div className="mt-4 space-y-5">
+          {groupedByCategory.map((group) => (
+            <div key={group.category}>
+              <h3 className="mb-2 text-sm font-medium text-gray-500">
+                {group.category}
+              </h3>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {group.foods.map((food) => (
+                  <FoodChip key={food.name} food={food} />
+                ))}
+              </div>
+            </div>
+          ))}
+          {groupedByCategory.length === 0 && (
+            <p className="py-6 text-center text-sm text-gray-500">
+              該当する食品が見つかりませんでした。
+            </p>
+          )}
         </div>
       </section>
     </div>

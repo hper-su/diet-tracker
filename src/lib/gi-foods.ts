@@ -28,57 +28,75 @@ export const GI_LEVEL_LABELS: Record<GILevel, string> = {
   low: "低GI",
 };
 
+// 表示順(カテゴリの並び)。
+export const GI_CATEGORY_ORDER = [
+  "穀物・パン・麺",
+  "いも類",
+  "野菜",
+  "果物",
+  "乳製品",
+  "大豆製品",
+  "種実類",
+  "菓子・デザート",
+  "飲料",
+  "調味料",
+] as const;
+
 export const GI_FOODS: GIFood[] = [
   // 穀物・パン・麺
-  { category: "穀物・パン・麺", name: "白米", giValue: 84 },
-  { category: "穀物・パン・麺", name: "玄米", giValue: 56 },
-  { category: "穀物・パン・麺", name: "もち", giValue: 85 },
-  { category: "穀物・パン・麺", name: "食パン", giValue: 91 },
+  { category: "穀物・パン・麺", name: "ブドウ糖", giValue: 100 },
   { category: "穀物・パン・麺", name: "フランスパン", giValue: 93 },
-  { category: "穀物・パン・麺", name: "全粒粉パン", giValue: 50 },
+  { category: "穀物・パン・麺", name: "食パン", giValue: 91 },
+  { category: "穀物・パン・麺", name: "もち", giValue: 85 },
+  { category: "穀物・パン・麺", name: "白米", giValue: 84 },
   { category: "穀物・パン・麺", name: "うどん", giValue: 80 },
-  { category: "穀物・パン・麺", name: "そば", giValue: 59 },
+  { category: "穀物・パン・麺", name: "コーンフレーク", giValue: 75 },
   { category: "穀物・パン・麺", name: "スパゲッティ(ゆで)", giValue: 65 },
   { category: "穀物・パン・麺", name: "中華麺", giValue: 61 },
-  { category: "穀物・パン・麺", name: "コーンフレーク", giValue: 75 },
+  { category: "穀物・パン・麺", name: "そば", giValue: 59 },
+  { category: "穀物・パン・麺", name: "ライ麦パン", giValue: 58 },
+  { category: "穀物・パン・麺", name: "玄米", giValue: 56 },
   { category: "穀物・パン・麺", name: "オートミール", giValue: 55 },
+  { category: "穀物・パン・麺", name: "全粒粉パン", giValue: 50 },
 
   // いも類
-  { category: "いも類", name: "じゃがいも(ゆで)", giValue: 68 },
-  { category: "いも類", name: "さつまいも", giValue: 55 },
+  { category: "いも類", name: "マッシュポテト", giValue: 85 },
   { category: "いも類", name: "長いも", giValue: 75 },
+  { category: "いも類", name: "じゃがいも(ゆで)", giValue: 68 },
   { category: "いも類", name: "里芋", giValue: 64 },
+  { category: "いも類", name: "さつまいも", giValue: 55 },
 
   // 野菜
-  { category: "野菜", name: "かぼちゃ", giValue: 65 },
   { category: "野菜", name: "とうもろこし", giValue: 70 },
+  { category: "野菜", name: "かぼちゃ", giValue: 65 },
   { category: "野菜", name: "にんじん", giValue: 39 },
   { category: "野菜", name: "トマト", giValue: 30 },
-  { category: "野菜", name: "ほうれん草", giValue: 15 },
-  { category: "野菜", name: "ブロッコリー", giValue: 25 },
   { category: "野菜", name: "キャベツ", giValue: 26 },
-  { category: "野菜", name: "きゅうり", giValue: 23 },
   { category: "野菜", name: "なす", giValue: 25 },
-  { category: "野菜", name: "もやし", giValue: 22 },
+  { category: "野菜", name: "ブロッコリー", giValue: 25 },
   { category: "野菜", name: "レタス", giValue: 23 },
+  { category: "野菜", name: "きゅうり", giValue: 23 },
+  { category: "野菜", name: "もやし", giValue: 22 },
+  { category: "野菜", name: "ほうれん草", giValue: 15 },
 
   // 果物
-  { category: "果物", name: "バナナ", giValue: 55 },
-  { category: "果物", name: "りんご", giValue: 36 },
-  { category: "果物", name: "みかん", giValue: 33 },
-  { category: "果物", name: "ぶどう", giValue: 46 },
-  { category: "果物", name: "いちご", giValue: 29 },
   { category: "果物", name: "すいか", giValue: 76 },
   { category: "果物", name: "パイナップル", giValue: 66 },
+  { category: "果物", name: "バナナ", giValue: 55 },
   { category: "果物", name: "キウイ", giValue: 53 },
+  { category: "果物", name: "ぶどう", giValue: 46 },
   { category: "果物", name: "桃", giValue: 41 },
+  { category: "果物", name: "りんご", giValue: 36 },
+  { category: "果物", name: "洋なし", giValue: 38 },
+  { category: "果物", name: "みかん", giValue: 33 },
+  { category: "果物", name: "いちご", giValue: 29 },
 
   // 乳製品
+  { category: "乳製品", name: "アイスクリーム", giValue: 65 },
+  { category: "乳製品", name: "スキムミルク", giValue: 32 },
+  { category: "乳製品", name: "チーズ", giValue: 27 },
   { category: "乳製品", name: "牛乳", giValue: 27 },
   { category: "乳製品", name: "ヨーグルト(無糖)", giValue: 25 },
-  { category: "乳製品", name: "チーズ", giValue: 27 },
-  { category: "乳製品", name: "スキムミルク", giValue: 32 },
-  { category: "乳製品", name: "アイスクリーム", giValue: 65 },
 
   // 大豆製品
   { category: "大豆製品", name: "豆腐", giValue: 42 },
@@ -86,19 +104,91 @@ export const GI_FOODS: GIFood[] = [
   { category: "大豆製品", name: "大豆(ゆで)", giValue: 30 },
   { category: "大豆製品", name: "豆乳", giValue: 23 },
 
+  // 種実類
+  { category: "種実類", name: "ピーナッツ", giValue: 15 },
+
   // 菓子・デザート
-  { category: "菓子・デザート", name: "ポテトチップス", giValue: 60 },
-  { category: "菓子・デザート", name: "クッキー", giValue: 77 },
+  { category: "菓子・デザート", name: "はちみつ", giValue: 88 },
   { category: "菓子・デザート", name: "ドーナツ", giValue: 86 },
   { category: "菓子・デザート", name: "チョコレート", giValue: 91 },
-  { category: "菓子・デザート", name: "はちみつ", giValue: 88 },
+  { category: "菓子・デザート", name: "クッキー", giValue: 77 },
+  { category: "菓子・デザート", name: "ポテトチップス", giValue: 60 },
+  { category: "菓子・デザート", name: "ポップコーン", giValue: 72 },
 
   // 飲料
-  { category: "飲料", name: "オレンジジュース(果汁100%)", giValue: 42 },
-  { category: "飲料", name: "コーラ", giValue: 43 },
   { category: "飲料", name: "スポーツドリンク", giValue: 78 },
+  { category: "飲料", name: "コーラ", giValue: 43 },
+  { category: "飲料", name: "オレンジジュース(果汁100%)", giValue: 42 },
 
   // 調味料
   { category: "調味料", name: "上白糖", giValue: 109 },
   { category: "調味料", name: "メープルシロップ", giValue: 73 },
+];
+
+// パーソナルトレーナーがお客様に説明する際の実践ポイント。
+// 出典: 明治「オリゴスタイル」GI値解説、Beyond Free「低GI食品」解説記事等を参考に、
+// トレーナー向けの説明用として要点を独自にまとめたもの。
+export type PracticalTip = {
+  title: string;
+  body: string;
+};
+
+export const PRACTICAL_TIPS: PracticalTip[] = [
+  {
+    title: "食べる順番(ベジファースト)",
+    body: "野菜(食物繊維)→主菜(肉・魚)→主食(米・パン)の順に食べると、糖の吸収が穏やかになり、食後の血糖値の急上昇を抑えやすくなります。",
+  },
+  {
+    title: "「W炭水化物」「単品献立」に注意",
+    body: "ラーメン+ライス、うどん+おにぎりのような炭水化物同士の組み合わせや、丼・ラーメン・菓子パンだけで済ませる単品献立はGI値が高くなりやすいので避けましょう。",
+  },
+  {
+    title: "組み合わせでGI値は変わる",
+    body: "同じ白米でも、単品で食べるより味噌汁や乳製品と一緒に食べる方が、食後の血糖値上昇は緩やかになりやすいとされています。食品単体の数値だけでなく、食事全体の組み合わせで考えましょう。",
+  },
+  {
+    title: "セカンドミール効果",
+    body: "1食目(ファーストミール)を低GIにすると、2食目(セカンドミール)の食後血糖値の上昇も抑えられやすいとされています。特に朝食を低GI中心にすることは1日を通して効果的です。",
+  },
+  {
+    title: "低GI食品=低カロリーではない",
+    body: "低GIはあくまで血糖値の上がり方の指標で、カロリーの高低とは別物です。低GIだからと食べ過ぎればカロリーオーバーになるため、量の意識も併せてお伝えください。",
+  },
+  {
+    title: "無理なく置き換えるところから",
+    body: "白米を玄米や雑穀米に、食パンをライ麦パンや全粒粉パンに変えるなど、まずは主食の置き換えから始めるのが取り組みやすい第一歩です。",
+  },
+  {
+    title: "コンビニでの選び方の例",
+    body: "おにぎりより玄米・雑穀のお弁当、菓子パンよりライ麦パン・全粒粉パン、ジュースより無糖のヨーグルトや牛乳を選ぶよう案内すると実践しやすくなります。",
+  },
+  {
+    title: "血糖値の管理が必要な方は医師と連携を",
+    body: "糖尿病治療中など血糖コントロールが必要なお客様には、GI値はあくまで参考情報として扱い、食事内容の変更は主治医に相談いただくよう案内してください。",
+  },
+];
+
+// 「同じ白米でも、組み合わせる食品によってGI値が変わる」ことを示す実例。
+export type GICombinationExample = {
+  combination: string;
+  giValue: number;
+};
+
+export const GI_COMBINATION_EXAMPLES: GICombinationExample[] = [
+  { combination: "白米のみ", giValue: 84 },
+  { combination: "白米 + 低脂肪乳", giValue: 69 },
+  { combination: "白米 + インスタント味噌汁", giValue: 61 },
+  { combination: "白米 + ヨーグルトを先に食べる", giValue: 59 },
+];
+
+// 出典: 日本糖尿病学会「糖尿病食事療法のための食品交換表」の間食目安量の例。
+export type SnackGuide = {
+  name: string;
+  amount: string;
+};
+
+export const SNACK_GUIDE: SnackGuide[] = [
+  { name: "みかん", amount: "中2個" },
+  { name: "りんご", amount: "中1/2個" },
+  { name: "ぶどう", amount: "10〜15粒" },
 ];

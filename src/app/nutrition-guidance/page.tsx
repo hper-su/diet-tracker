@@ -64,7 +64,18 @@ export default function NutritionGuidancePage() {
                     className="rounded-lg border border-gray-100 bg-gray-50 p-3"
                   >
                     <p className="text-sm font-medium text-gray-900">
-                      {sub.title}
+                      {sub.reading ? (
+                        <ruby>
+                          {sub.title}
+                          <rp>(</rp>
+                          <rt className="text-[10px] font-normal text-gray-500">
+                            {sub.reading}
+                          </rt>
+                          <rp>)</rp>
+                        </ruby>
+                      ) : (
+                        sub.title
+                      )}
                     </p>
                     <p className="mt-1 text-xs text-gray-600">{sub.body}</p>
                   </div>

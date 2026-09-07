@@ -43,8 +43,13 @@ export type InsertUsualMealInput = {
   carbG: number;
 };
 
-export async function insertUsualMeal(input: InsertUsualMealInput): Promise<void> {
-  await db.usualMeals.add({ ...input } as UsualMeal);
+// 複数件をまとめて登録する(1回のフォーム送信で複数品目を追加する場合)。
+// 1件でも失敗した場合に一部だけ登録された状態が残らないよう、1つの
+// トランザクションで行う。
+export async function insertUsualMeals(inputs: InsertUsualMealInput[]): Promise<void> {
+  await db.transaction("rw", db.usualMeals, async () => {
+    await db.usualMeals.bulkAdd(inputs.map((input) => ({ ...input })) as UsualMeal[]);
+  });
 }
 
 export async function deleteUsualMeal(clientId: number, id: number): Promise<void> {

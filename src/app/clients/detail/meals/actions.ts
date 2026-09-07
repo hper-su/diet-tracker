@@ -1,5 +1,5 @@
 import { getFood } from "@/lib/db/foods";
-import { insertMealLog, deleteMealLog } from "@/lib/db/meal-logs";
+import { insertMealLog, insertMealLogs, deleteMealLog } from "@/lib/db/meal-logs";
 import { listUsualMeals } from "@/lib/db/usual-meals";
 import { validateMealLogInput } from "@/lib/validation/meal-log";
 import { calculateMealLogAmounts } from "@/lib/health/meal-totals";
@@ -61,8 +61,9 @@ export async function addUsualMealsAsLogAction(formData: FormData) {
     return;
   }
 
-  for (const meal of await listUsualMeals(clientId)) {
-    await insertMealLog({
+  const usualMeals = await listUsualMeals(clientId);
+  await insertMealLogs(
+    usualMeals.map((meal) => ({
       clientId,
       recordedAt,
       mealType: meal.mealType,
@@ -74,8 +75,8 @@ export async function addUsualMealsAsLogAction(formData: FormData) {
       fatG: meal.fatG,
       carbG: meal.carbG,
       memo: null,
-    });
-  }
+    })),
+  );
 }
 
 export async function deleteMealLogAction(formData: FormData) {

@@ -114,6 +114,7 @@ function ClientPlanPageInner() {
     mealSuggestions,
     mealSuggestionsError,
     mealCombos,
+    mealCombosError,
     missingFields,
     planInputs,
     usualExercises,
@@ -419,6 +420,12 @@ function ClientPlanPageInner() {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {mealCombosError && (
+                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-900">
+                  献立例(コンビニ編・外食編)を表示できません: {mealCombosError}
                 </div>
               )}
 

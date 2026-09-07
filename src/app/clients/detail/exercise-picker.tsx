@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { Exercise } from "@/lib/db/exercises";
 import { CUSTOM_EXERCISE_VALUE } from "@/lib/validation/usual-exercise";
 import { useSearchCombobox } from "./use-search-combobox";
@@ -26,6 +26,7 @@ export const ExercisePicker = forwardRef<
   const [isCustom, setIsCustom] = useState(false);
   const combo = useSearchCombobox();
   const { query, setQuery, isOpen, setIsOpen, highlighted } = combo;
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useImperativeHandle(ref, () => ({
     reset() {
@@ -34,6 +35,16 @@ export const ExercisePicker = forwardRef<
       combo.reset();
     },
   }));
+
+  // requiredがvalue(=selectedId/isCustom)ではなく見た目上のテキスト欄に
+  // 付いていると、候補を選ばず文字だけ入力した状態でもネイティブの
+  // バリデーションを通ってしまう。selectedId/isCustomの状態で独自に
+  // カスタムバリデーションメッセージを出す。
+  useEffect(() => {
+    inputRef.current?.setCustomValidity(
+      !isCustom && selectedId === null ? "候補一覧から運動を選択してください。" : "",
+    );
+  }, [isCustom, selectedId]);
 
   const trimmed = query.trim().toLowerCase();
   const results = useMemo(() => {
@@ -72,8 +83,8 @@ export const ExercisePicker = forwardRef<
           value={isCustom ? CUSTOM_EXERCISE_VALUE : (selectedId ?? "")}
         />
         <input
+          ref={inputRef}
           type="text"
-          required={!isCustom}
           value={query}
           autoComplete="off"
           placeholder="運動名で検索(例: 散歩、自転車)"

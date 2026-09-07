@@ -1,5 +1,9 @@
 import { getFood } from "@/lib/db/foods";
-import { insertUsualMeal, deleteUsualMeal } from "@/lib/db/usual-meals";
+import {
+  insertUsualMeals,
+  deleteUsualMeal,
+  type InsertUsualMealInput,
+} from "@/lib/db/usual-meals";
 import { validateUsualMealInput } from "@/lib/validation/usual-meal";
 import { calculateMealLogAmounts } from "@/lib/health/meal-totals";
 
@@ -33,7 +37,7 @@ export async function addUsualMealAction(
     return { error: "食品を1件以上選択してください。" };
   }
 
-  const toInsert: Parameters<typeof insertUsualMeal>[0][] = [];
+  const toInsert: InsertUsualMealInput[] = [];
 
   for (const entry of entries) {
     const result = validateUsualMealInput({
@@ -68,9 +72,7 @@ export async function addUsualMealAction(
     });
   }
 
-  for (const input of toInsert) {
-    await insertUsualMeal(input);
-  }
+  await insertUsualMeals(toInsert);
 
   return undefined;
 }

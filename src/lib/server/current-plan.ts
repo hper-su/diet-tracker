@@ -51,6 +51,10 @@ export type CurrentPlanResult = {
   mealSuggestionsError: string | null;
   // 同じ目標に対する、コンビニ編・外食編の献立例(実在の商品の組み合わせ)。
   mealCombos: MealCombosByEdition | null;
+  // mealCombosの生成に失敗した場合の理由。通常は分類(カテゴリ)単位の取得なので
+  // 起きないが、念のためmealSuggestionsと同様に捕捉してプランタブ全体の
+  // エラー落ちを防ぐ。
+  mealCombosError: string | null;
   missingFields: MissingField[];
   latestWeightKg: number | null;
   // plan算出に使った入力値。計算式を画面に表示する際に使う。
@@ -75,7 +79,7 @@ export async function getCurrentDietPlan(clientId: number): Promise<CurrentPlanR
   const age = client?.birthdate ? calculateAge(client.birthdate) : null;
 
   const missingFields: MissingField[] = [];
-  if (!client?.heightCm) {
+  if (client?.heightCm == null || client.heightCm <= 0) {
     missingFields.push({
       label: "身長",
       hint: "「概要」タブのプロフィールで身長(cm)を入力してください。",
@@ -92,13 +96,13 @@ export async function getCurrentDietPlan(clientId: number): Promise<CurrentPlanR
       label: "生年月日",
       hint: "「概要」タブのプロフィールで生年月日を入力してください。",
     });
-  } else if (age === null) {
+  } else if (age === null || age <= 0) {
     missingFields.push({
       label: "生年月日",
       hint: "登録されている生年月日の形式が正しくありません。「概要」タブで登録し直してください。",
     });
   }
-  if (latestWeight?.weightKg == null) {
+  if (latestWeight?.weightKg == null || latestWeight.weightKg <= 0) {
     missingFields.push({
       label: "体重の測定記録",
       hint: "「概要」タブで体重(kg)を記録してください。",
@@ -207,7 +211,15 @@ export async function getCurrentDietPlan(clientId: number): Promise<CurrentPlanR
     }
   }
 
-  const mealCombos = perMealTarget ? await getMealCombos(perMealTarget) : null;
+  let mealCombos: MealCombosByEdition | null = null;
+  let mealCombosError: string | null = null;
+  if (perMealTarget) {
+    try {
+      mealCombos = await getMealCombos(perMealTarget);
+    } catch (error) {
+      mealCombosError = error instanceof Error ? error.message : String(error);
+    }
+  }
 
   return {
     plan,
@@ -216,6 +228,7 @@ export async function getCurrentDietPlan(clientId: number): Promise<CurrentPlanR
     mealSuggestions,
     mealSuggestionsError,
     mealCombos,
+    mealCombosError,
     missingFields,
     latestWeightKg: latestWeight?.weightKg ?? null,
     planInputs,

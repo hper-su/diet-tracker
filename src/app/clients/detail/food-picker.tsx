@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { Food } from "@/lib/db/foods";
 import { useSearchCombobox } from "./use-search-combobox";
 
@@ -23,6 +23,7 @@ export const FoodPicker = forwardRef<
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const combo = useSearchCombobox();
   const { query, setQuery, isOpen, setIsOpen, highlighted } = combo;
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useImperativeHandle(ref, () => ({
     reset() {
@@ -30,6 +31,15 @@ export const FoodPicker = forwardRef<
       combo.reset();
     },
   }));
+
+  // requiredはvalue(=selectedId)ではなく見た目上のテキスト欄に付いていると、
+  // 候補を選ばず文字だけ入力した状態でもネイティブのバリデーションを通って
+  // しまう。selectedIdの有無で独自にカスタムバリデーションメッセージを出す。
+  useEffect(() => {
+    inputRef.current?.setCustomValidity(
+      required && selectedId === null ? "候補一覧から食品を選択してください。" : "",
+    );
+  }, [required, selectedId]);
 
   const trimmed = query.trim().toLowerCase();
   const results = useMemo(() => {
@@ -53,8 +63,8 @@ export const FoodPicker = forwardRef<
     <div className="relative">
       <input type="hidden" name={name} value={selectedId ?? ""} />
       <input
+        ref={inputRef}
         type="text"
-        required={required}
         value={query}
         autoComplete="off"
         placeholder="食品名で検索(例: 鶏、りんご)"

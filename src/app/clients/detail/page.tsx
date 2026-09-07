@@ -8,6 +8,7 @@ import { getClient } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
 import { listMeasurements } from "@/lib/db/measurements";
 import { findLatestNonNull } from "@/lib/health/measurements";
+import { calculateBMI } from "@/lib/health/bmi";
 import { projectWeightAchievement } from "@/lib/health/weight-projection";
 import { ClientTabs } from "./client-tabs";
 import { ProfileForm } from "./profile-form";
@@ -81,6 +82,10 @@ function ClientDetailPageInner() {
         bodyFatPct: null,
         projectedWeightKg: client.targetWeightKg,
       });
+      // 追加した予測到達点は必ずしも配列末尾の日付より新しいとは限らない
+      // (体重を伴わない直近の記録が別途あるケースなど)。Rechartsはカテゴリ軸を
+      // 配列順に描画するため、日付順を保つよう並べ直す。
+      chartData.sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
     }
   }
 
@@ -95,7 +100,7 @@ function ClientDetailPageInner() {
         {client.memo && <p className="text-sm text-gray-500">{client.memo}</p>}
       </div>
 
-      <ProfileForm client={client} />
+      <ProfileForm key={client.id} client={client} />
 
       <section className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="mb-2 font-medium">体重・体脂肪率の推移</h2>
@@ -129,6 +134,7 @@ function ClientDetailPageInner() {
               <tr className="text-left text-gray-500">
                 <th className="px-4 py-2">日付</th>
                 <th className="px-4 py-2">体重(kg)</th>
+                <th className="px-4 py-2">BMI</th>
                 <th className="px-4 py-2">体脂肪率(%)</th>
                 <th className="px-4 py-2">筋肉量(kg)</th>
                 <th className="px-4 py-2">内臓脂肪</th>
@@ -142,6 +148,11 @@ function ClientDetailPageInner() {
                 <tr key={m.id} className="border-t border-gray-100">
                   <td className="px-4 py-2 whitespace-nowrap">{m.recordedAt}</td>
                   <td className="px-4 py-2">{m.weightKg ?? "-"}</td>
+                  <td className="px-4 py-2">
+                    {client.heightCm != null && m.weightKg != null
+                      ? (calculateBMI({ weightKg: m.weightKg, heightCm: client.heightCm }) ?? "-")
+                      : "-"}
+                  </td>
                   <td className="px-4 py-2">{m.bodyFatPct ?? "-"}</td>
                   <td className="px-4 py-2">{m.muscleMassKg ?? "-"}</td>
                   <td className="px-4 py-2">{m.visceralFatLevel ?? "-"}</td>
@@ -163,7 +174,7 @@ function ClientDetailPageInner() {
               ))}
               {measurements.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                     まだ記録がありません。
                   </td>
                 </tr>

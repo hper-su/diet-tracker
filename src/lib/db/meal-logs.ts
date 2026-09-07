@@ -98,6 +98,14 @@ export async function insertMealLog(input: InsertMealLogInput): Promise<void> {
   await db.mealLogs.add({ ...input });
 }
 
+// 複数件をまとめて登録する(「普段の3食から記録を作成」など)。1件でも失敗した
+// 場合に一部だけ登録された状態が残らないよう、1つのトランザクションで行う。
+export async function insertMealLogs(inputs: InsertMealLogInput[]): Promise<void> {
+  await db.transaction("rw", db.mealLogs, async () => {
+    await db.mealLogs.bulkAdd(inputs.map((input) => ({ ...input })));
+  });
+}
+
 export async function deleteMealLog(clientId: number, id: number): Promise<void> {
   const row = await db.mealLogs.get(id);
   if (row && row.clientId === clientId) {

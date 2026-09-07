@@ -46,6 +46,9 @@ const clients = all(
   createdAt: row.created_at,
 }));
 
+const orphanedMeasurementsCount = all(
+  `select count(*) as c from measurements where client_id is null`,
+)[0].c;
 const measurements = all(
   `select id, client_id, recorded_at, weight_kg, body_fat_pct, muscle_mass_kg,
           visceral_fat_level, bmr_kcal, memo
@@ -75,6 +78,9 @@ const foods = all(
   carbG: row.carb_g,
 }));
 
+const orphanedMealLogsCount = all(
+  `select count(*) as c from meal_logs where client_id is null`,
+)[0].c;
 const mealLogs = all(
   `select id, client_id, recorded_at, meal_type, food_id, food_name, quantity,
           kcal, protein_g, fat_g, carb_g, memo
@@ -151,3 +157,10 @@ console.log(
     `普段の食事 ${usualMeals.length}件 / 運動マスタ ${exercises.length}件 / ` +
     `普段の運動 ${usualExercises.length}件`,
 );
+
+if (orphanedMeasurementsCount > 0 || orphanedMealLogsCount > 0) {
+  console.warn(
+    `\n警告: 過去に削除されたお客様に紐づいていた記録のため、書き出し対象から除外しました ` +
+      `(測定記録 ${orphanedMeasurementsCount}件 / 食事記録 ${orphanedMealLogsCount}件)。`,
+  );
+}

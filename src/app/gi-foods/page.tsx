@@ -146,6 +146,9 @@ export default function GIFoodsPage() {
               </li>
             ))}
           </ul>
+          <p className="mt-3 text-xs text-gray-500">
+            食物繊維には、糖質の消化・吸収を穏やかにする働きがあります。野菜・海藻・きのこ・豆類など食物繊維を多く含む食品を一緒に食べたり、先に食べたりすることで、同じ主食でも血糖値の上昇を緩やかにしやすくなります。
+          </p>
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">

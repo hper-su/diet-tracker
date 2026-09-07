@@ -25,6 +25,7 @@ const NAV_LINKS = [
   { href: "/foods", label: "食品マスタ" },
   { href: "/gi-foods", label: "GI食品" },
   { href: "/body-composition", label: "体組成ガイド" },
+  { href: "/nutrition-guidance", label: "食事指導" },
   { href: "/data", label: "データ管理" },
 ];
 

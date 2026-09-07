@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   GI_FOODS,
   GI_CATEGORY_ORDER,
@@ -26,6 +26,8 @@ const LEVEL_DOT_CLASS: Record<GILevel, string> = {
   low: "bg-green-500",
 };
 
+const LEVEL_ORDER: GILevel[] = ["high", "medium", "low"];
+
 function FoodChip({ food }: { food: GIFood }) {
   const level = getGILevel(food.giValue);
   return (
@@ -42,14 +44,6 @@ function FoodChip({ food }: { food: GIFood }) {
 }
 
 export default function GIFoodsPage() {
-  return (
-    <Suspense>
-      <GIFoodsPageInner />
-    </Suspense>
-  );
-}
-
-function GIFoodsPageInner() {
   const [query, setQuery] = useState("");
 
   const groupedByCategory = useMemo(() => {
@@ -72,10 +66,19 @@ function GIFoodsPageInner() {
       list.sort((a, b) => a.giValue - b.giValue);
     }
 
-    return GI_CATEGORY_ORDER.map((category) => ({
-      category,
-      foods: byCategory.get(category) ?? [],
-    })).filter((group) => group.foods.length > 0);
+    // GI_CATEGORY_ORDERに無いカテゴリ(データ追加時の入力漏れ・typo等)があっても
+    // 一覧から静かに消えてしまわないよう、末尾に補って表示する。
+    const knownCategories = new Set<string>(GI_CATEGORY_ORDER);
+    const extraCategories = Array.from(byCategory.keys()).filter(
+      (category) => !knownCategories.has(category),
+    );
+
+    return [...GI_CATEGORY_ORDER, ...extraCategories]
+      .map((category) => ({
+        category,
+        foods: byCategory.get(category) ?? [],
+      }))
+      .filter((group) => group.foods.length > 0);
   }, [query]);
 
   const totalCount = groupedByCategory.reduce((sum, g) => sum + g.foods.length, 0);
@@ -162,18 +165,14 @@ function GIFoodsPageInner() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-medium">食品のGI値一覧(全{totalCount}件)</h2>
           <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-              高GI
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-full bg-amber-500" />
-              中GI
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
-              低GI
-            </span>
+            {LEVEL_ORDER.map((level) => (
+              <span key={level} className="flex items-center gap-1">
+                <span
+                  className={`inline-block h-2 w-2 rounded-full ${LEVEL_DOT_CLASS[level]}`}
+                />
+                {GI_LEVEL_LABELS[level]}
+              </span>
+            ))}
           </div>
         </div>
         <input

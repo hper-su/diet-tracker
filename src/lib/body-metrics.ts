@@ -17,6 +17,7 @@ export type BodyMetric = {
   description: string;
   referenceNote?: string;
   referenceRows?: ReferenceRow[];
+  formulaExample?: string;
 };
 
 export const BODY_METRICS: BodyMetric[] = [
@@ -67,6 +68,8 @@ export const BODY_METRICS: BodyMetric[] = [
       { label: "骨格筋率・男性の目安", value: "33〜39%" },
       { label: "骨格筋率・女性の目安", value: "26〜31%" },
     ],
+    formulaExample:
+      "計算式: 骨格筋量(kg) ÷ 体重(kg) × 100 = 骨格筋率(%)。例: 体重60kg、骨格筋量21kgの場合 21 ÷ 60 × 100 = 35%",
   },
   {
     key: "visceralFat",

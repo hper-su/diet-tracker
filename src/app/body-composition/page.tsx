@@ -54,6 +54,12 @@ export default function BodyCompositionPage() {
                 )}
               </div>
             )}
+
+            {metric.formulaExample && (
+              <p className="mt-3 text-xs text-gray-500">
+                {metric.formulaExample}
+              </p>
+            )}
           </section>
         ))}
       </div>

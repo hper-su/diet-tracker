@@ -1,5 +1,5 @@
 1:"$Sreact.fragment"
-2:I[39756,["/diet-tracker/_next/static/chunks/0ztlooxlu65el.js","/diet-tracker/_next/static/chunks/1-8s9_t85wwr4.js"],"default"]
-3:I[37457,["/diet-tracker/_next/static/chunks/0ztlooxlu65el.js","/diet-tracker/_next/static/chunks/1-8s9_t85wwr4.js"],"default"]
+2:I[39756,["/diet-tracker/_next/static/chunks/39m_cx5qonlbd.js","/diet-tracker/_next/static/chunks/1-8s9_t85wwr4.js"],"default"]
+3:I[37457,["/diet-tracker/_next/static/chunks/39m_cx5qonlbd.js","/diet-tracker/_next/static/chunks/1-8s9_t85wwr4.js"],"default"]
 4:[]
-0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"uM3Br9Ty-kVPDekIeGtco"}
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"ay3IsFw90MwoWkBY1pKYR"}

@@ -41,6 +41,21 @@ export const COURSE_PLANS: CoursePlan[] = [
   },
 ];
 
+export type AddOnFee = {
+  sessions: number;
+  totalFee: number;
+  perSession: number;
+};
+
+export const ADDON_FEES: AddOnFee[] = [
+  { sessions: 3, totalFee: 25300, perSession: 8433 },
+  { sessions: 5, totalFee: 36300, perSession: 7260 },
+  { sessions: 10, totalFee: 68200, perSession: 6820 },
+];
+
+export const ADDON_NOTE =
+  "回数が増えるほど1回あたりの単価が下がっています。";
+
 export const PRICING_FOOTNOTE =
   "入会金・プロテインは含めていません(プロテインは変動なしのため除外、入会金11,000円は初回のみのため)。";
 

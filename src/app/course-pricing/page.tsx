@@ -1,5 +1,7 @@
 import {
   COURSE_PLANS,
+  ADDON_FEES,
+  ADDON_NOTE,
   PRICING_FOOTNOTE,
   PRICING_FORMULA_EXAMPLE,
 } from "@/lib/course-pricing";
@@ -53,6 +55,37 @@ export default function CoursePricingPage() {
           </section>
         ))}
       </div>
+
+      <section className="rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="font-semibold text-gray-900">追加分</h2>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="px-3 py-2">回数</th>
+                <th className="px-3 py-2">料金</th>
+                <th className="px-3 py-2">1回あたり</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ADDON_FEES.map((fee) => (
+                <tr key={fee.sessions} className="border-t border-gray-100">
+                  <td className="px-3 py-2 font-medium text-gray-900">
+                    {fee.sessions}回
+                  </td>
+                  <td className="px-3 py-2 text-gray-700">
+                    {fee.totalFee.toLocaleString()}円
+                  </td>
+                  <td className="px-3 py-2 text-gray-700">
+                    {fee.perSession.toLocaleString()}円
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-sm text-gray-700">{ADDON_NOTE}</p>
+      </section>
 
       <p className="text-xs text-gray-500">{PRICING_FOOTNOTE}</p>
       <p className="text-xs text-gray-500">{PRICING_FORMULA_EXAMPLE}</p>

@@ -31,6 +31,7 @@ const NAV_LINKS = [
   { href: "/gi-foods", label: "GI食品" },
   { href: "/body-composition", label: "体組成ガイド" },
   { href: "/nutrition-guidance", label: "食事指導" },
+  { href: "/course-pricing", label: "料金" },
   { href: "/data", label: "データ管理" },
 ];
 

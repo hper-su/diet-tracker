@@ -4,7 +4,7 @@
 // 埋め込み、入力値をハッシュ化して比較する。
 
 const PASSWORD_HASH_HEX =
-  "0f8e631d28e2a339b435ea55da61c718da28902056ed719e576ff1c1b4cb2baf";
+  "d2b48a51934f58cdb478208b47b9b1339e1ce7e4e578b9dd05e60572ec0b12f5";
 
 export const AUTH_STORAGE_KEY = "diet-tracker-auth";
 

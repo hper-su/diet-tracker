@@ -15,6 +15,10 @@ export const metadata: Metadata = {
     icon: [{ url: `${BASE_PATH}/icon-192.png`, sizes: "192x192", type: "image/png" }],
     apple: [{ url: `${BASE_PATH}/apple-touch-icon.png`, sizes: "180x180", type: "image/png" }],
   },
+  // GitHub Pagesのプロジェクトサイト(/diet-tracker/配下)は robots.txt が
+  // オリジンのルート(hper-su.github.io/robots.txt)にしか効かず、このリポジトリ
+  // からは配置できないため、各ページのmetaタグで直接クロール拒否する。
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {

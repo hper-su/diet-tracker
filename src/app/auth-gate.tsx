@@ -12,22 +12,35 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
-    setStatus(
-      localStorage.getItem(AUTH_STORAGE_KEY) === "1" ? "unlocked" : "locked",
-    );
+    let unlocked = false;
+    try {
+      unlocked = localStorage.getItem(AUTH_STORAGE_KEY) === "1";
+    } catch {
+      // localStorageにアクセスできない環境(プライベートブラウジング等)では
+      // 判定できないため、安全側としてロック画面を表示する。
+    }
+    setStatus(unlocked ? "unlocked" : "locked");
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setVerifying(true);
-    const ok = await verifyPassword(input);
-    setVerifying(false);
-    if (ok) {
-      localStorage.setItem(AUTH_STORAGE_KEY, "1");
-      setStatus("unlocked");
-    } else {
+    try {
+      const ok = await verifyPassword(input);
+      if (ok) {
+        localStorage.setItem(AUTH_STORAGE_KEY, "1");
+        setStatus("unlocked");
+      } else {
+        setError(true);
+        setInput("");
+      }
+    } catch {
+      // crypto.subtleが使えない(非セキュアコンテキスト等)/ localStorageが
+      // 書き込めない場合でも、verifying状態が固まってボタンが永久に
+      // 押せなくなるのを防ぐ。
       setError(true);
-      setInput("");
+    } finally {
+      setVerifying(false);
     }
   }
 

@@ -43,3 +43,6 @@ export const COURSE_PLANS: CoursePlan[] = [
 
 export const PRICING_FOOTNOTE =
   "入会金・プロテインは含めていません(プロテインは変動なしのため除外、入会金11,000円は初回のみのため)。";
+
+export const PRICING_FORMULA_EXAMPLE =
+  "計算式: コース料金 ÷ 回数 = 1回あたりの料金(小数点以下切り捨て)。例: 週2回コース・2ヶ月の場合 85,800円 ÷ 16回 = 5,362円";

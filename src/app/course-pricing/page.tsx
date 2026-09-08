@@ -1,4 +1,8 @@
-import { COURSE_PLANS, PRICING_FOOTNOTE } from "@/lib/course-pricing";
+import {
+  COURSE_PLANS,
+  PRICING_FOOTNOTE,
+  PRICING_FORMULA_EXAMPLE,
+} from "@/lib/course-pricing";
 
 export default function CoursePricingPage() {
   return (
@@ -51,6 +55,7 @@ export default function CoursePricingPage() {
       </div>
 
       <p className="text-xs text-gray-500">{PRICING_FOOTNOTE}</p>
+      <p className="text-xs text-gray-500">{PRICING_FORMULA_EXAMPLE}</p>
     </div>
   );
 }

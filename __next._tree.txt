@@ -1,2 +1,2 @@
 :HL["/diet-tracker/_next/static/chunks/071b2sbtubq5k.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"veZp6VcOLqfqcsWdagHOb"}
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"g1npfhkJFQ2pRwRuMMLX0"}

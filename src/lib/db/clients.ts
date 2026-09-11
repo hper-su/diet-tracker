@@ -4,7 +4,11 @@ import {
   DEFAULT_ACTIVITY_LEVEL,
   type ActivityLevel,
 } from "@/lib/health/activity-level";
-import { DEFAULT_PFC_PRESET, type PFCPreset } from "@/lib/health/pfc-preset";
+import {
+  DEFAULT_PFC_PRESET,
+  isPFCPreset,
+  type PFCPreset,
+} from "@/lib/health/pfc-preset";
 
 export type Client = {
   id: number;
@@ -33,6 +37,11 @@ export async function getClient(id: number): Promise<Client | null> {
 
 function stripCreatedAt(row: Client & { createdAt: string }): Client {
   const { createdAt: _createdAt, ...client } = row;
+  // 過去に存在した"diet"プリセット(現在は"health"に統合済み)など、現行の
+  // PFCPresetに存在しない値が保存されたままの古いレコードのフォールバック。
+  if (!isPFCPreset(client.pfcPreset)) {
+    client.pfcPreset = DEFAULT_PFC_PRESET;
+  }
   return client;
 }
 

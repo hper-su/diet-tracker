@@ -3,13 +3,22 @@
 import { useActionState, useRef, useEffect } from "react";
 import { addMeasurementAction } from "./measurement-actions";
 import { todayISODate } from "@/lib/date";
+import { calculateNormalWeightRange } from "@/lib/health/bmi";
 
-export function MeasurementForm({ clientId }: { clientId: number }) {
+export function MeasurementForm({
+  clientId,
+  heightCm,
+}: {
+  clientId: number;
+  heightCm: number | null;
+}) {
   const [state, formAction, pending] = useActionState(
     addMeasurementAction,
     undefined,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const normalWeightRange =
+    heightCm != null ? calculateNormalWeightRange(heightCm) : null;
 
   useEffect(() => {
     if (!pending && !state?.error) {
@@ -48,6 +57,13 @@ export function MeasurementForm({ clientId }: { clientId: number }) {
             placeholder="例: 65.0"
             className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
+          {normalWeightRange && (
+            <span className="mt-1 block text-xs text-gray-500">
+              BMI18〜25の体重: {normalWeightRange.minKg}〜
+              {normalWeightRange.maxKg}kg(中間:{normalWeightRange.midKg}
+              kg)
+            </span>
+          )}
         </label>
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-gray-500">

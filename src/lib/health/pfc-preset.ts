@@ -1,6 +1,6 @@
 // 目的別の理想的なPFC(たんぱく質・脂質・炭水化物)バランス。
 // 各比率は摂取目標カロリーに占める割合(合計100%)。
-export type PFCPreset = "health" | "diet" | "low_carb" | "bulk_up";
+export type PFCPreset = "health" | "low_carb" | "bulk_up";
 
 export type PFCPresetInfo = {
   label: string;
@@ -12,15 +12,7 @@ export type PFCPresetInfo = {
 
 export const PFC_PRESETS: Record<PFCPreset, PFCPresetInfo> = {
   health: {
-    label: "健康維持",
-    proteinRatio: 0.15,
-    fatRatio: 0.25,
-    carbRatio: 0.6,
-    description:
-      "厚生労働省が推奨する一般的な比率。バランスよく摂取することで、健康を維持できます。",
-  },
-  diet: {
-    label: "ダイエット",
+    label: "健康維持/ダイエット",
     proteinRatio: 0.25,
     fatRatio: 0.25,
     carbRatio: 0.5,

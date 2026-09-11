@@ -7,7 +7,7 @@ const BASE_INPUT = {
   heightRaw: "160",
   genderRaw: "female",
   activityLevelRaw: "active",
-  pfcPresetRaw: "diet",
+  pfcPresetRaw: "low_carb",
   memo: "膝に不安あり",
 };
 
@@ -21,7 +21,7 @@ describe("validateClientInput", () => {
         heightCm: 160,
         gender: "female",
         activityLevel: "active",
-        pfcPreset: "diet",
+        pfcPreset: "low_carb",
         memo: "膝に不安あり",
       },
     });

@@ -7,6 +7,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { getClient } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
 import { listMeasurements } from "@/lib/db/measurements";
+import { listProtocolChecks } from "@/lib/db/protocol-checks";
 import { findLatestNonNull } from "@/lib/health/measurements";
 import { calculateBMI } from "@/lib/health/bmi";
 import { projectWeightAchievement } from "@/lib/health/weight-projection";
@@ -15,6 +16,8 @@ import { ProfileForm } from "./profile-form";
 import { MeasurementForm } from "./measurement-form";
 import { MeasurementChart, type MeasurementPoint } from "./measurement-chart";
 import { deleteMeasurementAction } from "./measurement-actions";
+import { ProtocolCheckForm } from "./protocol-check-form";
+import { ProtocolCheckHistory } from "./protocol-check-history";
 
 export default function ClientDetailPage() {
   return (
@@ -30,8 +33,13 @@ function ClientDetailPageInner() {
 
   const data = useLiveQuery(async () => {
     const client = await getClient(clientId);
-    const measurements = client ? await listMeasurements(clientId) : [];
-    return { client, measurements };
+    const [measurements, protocolChecks] = client
+      ? await Promise.all([
+          listMeasurements(clientId),
+          listProtocolChecks(clientId),
+        ])
+      : [[], []];
+    return { client, measurements, protocolChecks };
   }, [clientId]);
 
   if (!Number.isInteger(clientId) || clientId <= 0) {
@@ -42,7 +50,7 @@ function ClientDetailPageInner() {
     return null;
   }
 
-  const { client, measurements } = data;
+  const { client, measurements, protocolChecks } = data;
 
   if (!client) {
     return <NotFound />;
@@ -124,7 +132,7 @@ function ClientDetailPageInner() {
         )}
       </section>
 
-      <MeasurementForm clientId={client.id} />
+      <MeasurementForm clientId={client.id} heightCm={client.heightCm} />
 
       <section className="rounded-lg border border-gray-200 bg-white">
         <h2 className="border-b border-gray-200 p-4 font-medium">記録履歴</h2>
@@ -183,6 +191,10 @@ function ClientDetailPageInner() {
           </table>
         </div>
       </section>
+
+      <ProtocolCheckForm clientId={client.id} />
+
+      <ProtocolCheckHistory clientId={client.id} checks={protocolChecks} />
     </div>
   );
 }

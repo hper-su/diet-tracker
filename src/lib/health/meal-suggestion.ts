@@ -263,14 +263,9 @@ export function buildMealTemplates(ingredients: MealSuggestionIngredients): Meal
   };
 
   // お客様のPFCPreset(目的)に応じて、朝食・昼食・夕食の献立テンプレート一式を切り替える。
-  // 「健康維持」「ダイエット」は共通の高たんぱく・低脂質な献立を使う。
+  // 「健康維持/ダイエット」は高たんぱく・低脂質な献立を使う。
   const MEAL_TEMPLATES_BY_GOAL: Record<PFCPreset, DailyMealTemplateSet> = {
     health: {
-      breakfast: BREAKFAST_TEMPLATE,
-      lunch: LUNCH_TEMPLATE,
-      dinner: DINNER_TEMPLATE,
-    },
-    diet: {
       breakfast: BREAKFAST_TEMPLATE,
       lunch: LUNCH_TEMPLATE,
       dinner: DINNER_TEMPLATE,

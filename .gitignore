@@ -30,9 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# ローカル動作確認時に溜まった実行ログ
-/.dev-run-now*.log
-/.dev-server*.log
+# ローカル動作確認時に溜まった実行ログ(アクセスしたURL・クエリパラメータ
+# などが残るため、命名パターンに関わらずコミットされないよう広めに除外する)
+/.dev-*.log
 /.prod-*.log
 /.serve-run.log
 

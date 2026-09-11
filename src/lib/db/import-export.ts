@@ -1,5 +1,11 @@
 import Dexie from "dexie";
-import { db, type ClientRecord, type MeasurementRecord, type MealLogRecord } from "./client";
+import {
+  db,
+  type ClientRecord,
+  type MeasurementRecord,
+  type MealLogRecord,
+  type ProtocolCheckRecord,
+} from "./client";
 import type { Food } from "./foods";
 import type { UsualMeal } from "./usual-meals";
 import type { Exercise } from "./exercises";
@@ -17,20 +23,30 @@ export type ExportedData = {
   usualMeals: UsualMeal[];
   exercises: Exercise[];
   usualExercises: UsualExercise[];
+  protocolChecks: ProtocolCheckRecord[];
 };
 
 // 他端末への移行・バックアップ用に、全テーブルの内容を1つのJSONにまとめる。
 export async function exportAllData(): Promise<ExportedData> {
-  const [clients, measurements, foods, mealLogs, usualMeals, exercises, usualExercises] =
-    await Promise.all([
-      db.clients.toArray(),
-      db.measurements.toArray(),
-      db.foods.toArray(),
-      db.mealLogs.toArray(),
-      db.usualMeals.toArray(),
-      db.exercises.toArray(),
-      db.usualExercises.toArray(),
-    ]);
+  const [
+    clients,
+    measurements,
+    foods,
+    mealLogs,
+    usualMeals,
+    exercises,
+    usualExercises,
+    protocolChecks,
+  ] = await Promise.all([
+    db.clients.toArray(),
+    db.measurements.toArray(),
+    db.foods.toArray(),
+    db.mealLogs.toArray(),
+    db.usualMeals.toArray(),
+    db.exercises.toArray(),
+    db.usualExercises.toArray(),
+    db.protocolChecks.toArray(),
+  ]);
 
   return {
     version: EXPORT_FORMAT_VERSION,
@@ -42,10 +58,17 @@ export async function exportAllData(): Promise<ExportedData> {
     usualMeals,
     exercises,
     usualExercises,
+    protocolChecks,
   };
 }
 
-function isExportedData(value: unknown): value is ExportedData {
+// exportしているのはテスト容易性のため(importAllDataはIndexedDBの
+// トランザクションを伴うため、その手前までの純粋なロジックを個別に検証できるようにする)。
+export function isExportedData(
+  value: unknown,
+): value is Omit<ExportedData, "protocolChecks"> & {
+  protocolChecks?: ProtocolCheckRecord[];
+} {
   if (typeof value !== "object" || value === null) return false;
   const data = value as Record<string, unknown>;
   return (
@@ -56,7 +79,10 @@ function isExportedData(value: unknown): value is ExportedData {
     Array.isArray(data.mealLogs) &&
     Array.isArray(data.usualMeals) &&
     Array.isArray(data.exercises) &&
-    Array.isArray(data.usualExercises)
+    Array.isArray(data.usualExercises) &&
+    // protocolChecksはこの機能追加より前のエクスポートJSONには存在しないため、
+    // 無ければ空配列として扱えるよう任意項目にする(フォーマットversionは1のまま)。
+    (data.protocolChecks === undefined || Array.isArray(data.protocolChecks))
   );
 }
 
@@ -82,10 +108,23 @@ function isFiniteNonNegative(value: unknown): value is number {
 // ここで弾く。参照先が無いfoodId/exerciseIdは(既存の「食品削除時にnullにする」
 // 挙動と同じ扱いで)nullに補正し、参照先の無いclientIdなど補正できないものは
 // エラーにする。
-function validateAndSanitize(data: ExportedData): ExportedData {
+export function validateAndSanitize(
+  data: Omit<ExportedData, "protocolChecks"> & {
+    protocolChecks?: ProtocolCheckRecord[];
+  },
+): ExportedData {
   const clientIds = new Set(data.clients.map((c) => c.id));
   const foodIds = new Set(data.foods.map((f) => f.id));
   const exerciseIds = new Set(data.exercises.map((e) => e.id));
+  const protocolChecks = data.protocolChecks ?? [];
+
+  for (const check of protocolChecks) {
+    if (!clientIds.has(check.clientId)) {
+      throw new ImportFormatError(
+        "動作チェックに、存在しないお客様を参照している行があります。",
+      );
+    }
+  }
 
   for (const client of data.clients) {
     if (!Number.isInteger(client.id) || client.id <= 0 || !client.name) {
@@ -169,7 +208,7 @@ function validateAndSanitize(data: ExportedData): ExportedData {
       : habit;
   });
 
-  return { ...data, mealLogs, usualMeals, usualExercises };
+  return { ...data, mealLogs, usualMeals, usualExercises, protocolChecks };
 }
 
 // インポートは既存データを全て置き換える(お客様データをこの端末に丸ごと
@@ -191,6 +230,7 @@ export async function importAllData(raw: unknown): Promise<void> {
         db.usualMeals,
         db.exercises,
         db.usualExercises,
+        db.protocolChecks,
       ],
       async () => {
         await Promise.all([
@@ -201,6 +241,7 @@ export async function importAllData(raw: unknown): Promise<void> {
           db.usualMeals.clear(),
           db.exercises.clear(),
           db.usualExercises.clear(),
+          db.protocolChecks.clear(),
         ]);
 
         await Promise.all([
@@ -211,6 +252,7 @@ export async function importAllData(raw: unknown): Promise<void> {
           db.usualMeals.bulkAdd(data.usualMeals),
           db.exercises.bulkAdd(data.exercises),
           db.usualExercises.bulkAdd(data.usualExercises),
+          db.protocolChecks.bulkAdd(data.protocolChecks),
         ]);
       },
     );

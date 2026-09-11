@@ -28,9 +28,12 @@ export const viewport: Viewport = {
 const NAV_LINKS = [
   { href: "/clients", label: "お客様" },
   { href: "/foods", label: "食品マスタ" },
-  { href: "/gi-foods", label: "GI食品" },
   { href: "/body-composition", label: "体組成ガイド" },
+  { href: "/anatomy", label: "筋肉・骨" },
+  { href: "/conditions", label: "疾患" },
   { href: "/nutrition-guidance", label: "食事指導" },
+  { href: "/diet-plateau", label: "停滞期ガイド" },
+  { href: "/menstrual-cycle", label: "生理" },
   { href: "/course-pricing", label: "料金" },
   { href: "/data", label: "データ管理" },
 ];

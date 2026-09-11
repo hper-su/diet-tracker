@@ -1,6 +1,10 @@
+import Link from "next/link";
 import {
-  INTRO_PARAGRAPH,
+  INTRO_BEFORE,
+  INTRO_BOLD,
+  INTRO_AFTER,
   NUTRITION_PRIORITIES,
+  PRACTICE_INTRO,
   PRACTICE_ROWS,
   CONTINUATION_TIPS,
   CLOSING_NOTE,
@@ -17,7 +21,36 @@ export default function NutritionGuidancePage() {
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
-        <p>{INTRO_PARAGRAPH}</p>
+        <p>
+          {INTRO_BEFORE}
+          <strong className="font-bold text-gray-900">「{INTRO_BOLD}」</strong>
+          {INTRO_AFTER}
+        </p>
+      </section>
+
+      <section className="rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="font-semibold text-gray-900">実践的な組み立て方</h2>
+        <p className="mt-2 text-sm text-gray-700">{PRACTICE_INTRO}</p>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="px-3 py-2">優先度</th>
+                <th className="px-3 py-2">やること</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PRACTICE_ROWS.map((row) => (
+                <tr key={row.action} className="border-t border-gray-100">
+                  <td className="px-3 py-2 whitespace-nowrap font-medium text-gray-900">
+                    {row.priority}
+                  </td>
+                  <td className="px-3 py-2 text-gray-700">{row.action}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <div className="space-y-4">
@@ -146,33 +179,20 @@ export default function NutritionGuidancePage() {
             {priority.example && (
               <p className="mt-3 text-xs text-gray-500">{priority.example}</p>
             )}
+
+            {priority.link && (
+              <p className="mt-3 text-sm">
+                <Link
+                  href={priority.link.href}
+                  className="text-blue-600 underline hover:text-blue-800"
+                >
+                  {priority.link.label}
+                </Link>
+              </p>
+            )}
           </section>
         ))}
       </div>
-
-      <section className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="font-semibold text-gray-900">実践的な組み立て方</h2>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500">
-                <th className="px-3 py-2">優先度</th>
-                <th className="px-3 py-2">やること</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PRACTICE_ROWS.map((row) => (
-                <tr key={row.action} className="border-t border-gray-100">
-                  <td className="px-3 py-2 whitespace-nowrap font-medium text-gray-900">
-                    {row.priority}
-                  </td>
-                  <td className="px-3 py-2 text-gray-700">{row.action}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="font-semibold text-gray-900">続けるためのポイント</h2>

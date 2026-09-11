@@ -1,21 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Model, { type IExerciseData } from "react-body-highlighter";
 import {
   ANATOMY_CATEGORY_ORDER,
   ANATOMY_PARTS,
   ANATOMY_TYPE_LABELS,
   ANATOMY_VIEW_LABELS,
-  BONE_IMAGE_SRC,
-  BONE_IMAGE_VIEW_BOX,
-  MUSCLE_MODEL_VIEW_BOX,
   searchAnatomyParts,
   type AnatomyPart,
   type AnatomyType,
-  type AnatomyView,
-  type BoneAnatomyPart,
-  type MuscleAnatomyPart,
 } from "@/lib/anatomy";
 import {
   EXERCISE_CATEGORY_ORDER,
@@ -24,6 +17,38 @@ import {
   findRelatedExercisesForBone,
   findRelatedExercisesForMuscle,
 } from "@/lib/muscle-exercises";
+
+// public/anatomy/配下の全身図イラスト。色検出によるハイライト連動は
+// 精度が不十分だったため廃止し、参考画像として静的に表示するのみとする。
+// width/height は読み込み中のレイアウトシフトを防ぐために使用する。
+const MUSCLE_DIAGRAM_IMAGE = { width: 704, height: 480 } as const;
+
+const BONE_DIAGRAM_IMAGES = [
+  {
+    id: "spine",
+    title: "脊柱の側面",
+    src: "/anatomy/bone-spine.gif",
+    alt: "脊柱の側面図(頸椎・胸椎・腰椎・仙骨・尾骨)",
+    width: 600,
+    height: 558,
+  },
+  {
+    id: "ribcage",
+    title: "肋骨・肩甲骨の正面",
+    src: "/anatomy/bone-ribcage.gif",
+    alt: "肋骨・鎖骨・肩甲骨・胸骨の正面図",
+    width: 600,
+    height: 480,
+  },
+  {
+    id: "pelvis",
+    title: "骨盤(男女比較)",
+    src: "/anatomy/bone-pelvis.jpg",
+    alt: "骨盤の男女比較図(腸骨・恥骨・坐骨)",
+    width: 684,
+    height: 456,
+  },
+] as const;
 
 const ROLE_LABELS = {
   primary: "主働筋",
@@ -35,209 +60,8 @@ const TYPE_DOT_CLASS: Record<AnatomyType, string> = {
   bone: "bg-slate-600",
 };
 
-const MUSCLE_HIGHLIGHT_COLOR = "#e11d48";
-const MUSCLE_BODY_COLOR = "#d1d5db";
-
-// マーカーの色。輪郭の塗りつぶし(MUSCLE_HIGHLIGHT_COLOR、赤)は複数の筋肉で
-// 間借りされることがあるため、「どの筋肉がピンポイントで選ばれているか」は
-// 別の色(青)のマーカーで示す。
-const MUSCLE_MARKER_COLOR = "#1d4ed8";
-
-function MuscleFigure({
-  view,
-  parts,
-  highlightIds,
-  showHighlight,
-  selectedId,
-  onSelect,
-}: {
-  view: AnatomyView;
-  parts: MuscleAnatomyPart[];
-  highlightIds: Set<string>;
-  showHighlight: boolean;
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-}) {
-  const highlightedKeys = Array.from(
-    new Set(
-      parts
-        .filter((p) =>
-          showHighlight ? highlightIds.has(p.id) : p.id === selectedId,
-        )
-        .map((p) => p.muscleKey),
-    ),
-  );
-  const data: IExerciseData[] =
-    highlightedKeys.length > 0
-      ? [{ name: "search", muscles: highlightedKeys }]
-      : [];
-
-  return (
-    <div className="flex flex-col items-center">
-      <p className="mb-1 text-xs font-medium text-gray-500">
-        {ANATOMY_VIEW_LABELS[view]}
-      </p>
-      <div className="relative aspect-[100/200] w-72 sm:w-80">
-        <div className="absolute inset-0">
-          <Model
-            type={view === "front" ? "anterior" : "posterior"}
-            data={data}
-            bodyColor={MUSCLE_BODY_COLOR}
-            highlightedColors={[MUSCLE_HIGHLIGHT_COLOR]}
-          />
-        </div>
-        <svg
-          viewBox={MUSCLE_MODEL_VIEW_BOX}
-          className="absolute inset-0 h-full w-full"
-        >
-          {parts.map((part) => {
-            const selected = part.id === selectedId;
-            const matched = showHighlight && highlightIds.has(part.id);
-            const highlighted = matched || selected;
-            const dimmed =
-              showHighlight && !highlightIds.has(part.id) && !selected;
-            return (
-              <g
-                key={part.id}
-                onClick={() => onSelect(part.id)}
-                className="cursor-pointer"
-                opacity={dimmed ? 0.35 : 1}
-              >
-                {highlighted && (
-                  <circle
-                    cx={part.x}
-                    cy={part.y}
-                    r={5.5}
-                    fill={MUSCLE_MARKER_COLOR}
-                    fillOpacity={0.3}
-                  />
-                )}
-                {selected && (
-                  <circle
-                    cx={part.x}
-                    cy={part.y}
-                    r={3.6}
-                    fill="none"
-                    stroke={MUSCLE_MARKER_COLOR}
-                    strokeWidth={0.7}
-                  />
-                )}
-                <circle
-                  cx={part.x}
-                  cy={part.y}
-                  r={highlighted ? 2 : 1.4}
-                  fill={highlighted ? MUSCLE_MARKER_COLOR : "#ffffff"}
-                  stroke={highlighted ? "white" : "#374151"}
-                  strokeWidth={0.5}
-                />
-                <title>{part.name}</title>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function BoneFigure({
-  view,
-  parts,
-  highlightIds,
-  showHighlight,
-  selectedId,
-  onSelect,
-}: {
-  view: AnatomyView;
-  parts: BoneAnatomyPart[];
-  highlightIds: Set<string>;
-  showHighlight: boolean;
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div className="flex flex-col items-center">
-      <p className="mb-1 text-xs font-medium text-gray-500">
-        {ANATOMY_VIEW_LABELS[view]}
-      </p>
-      <div className="relative aspect-[435.687/841.89] w-72 sm:w-80">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={BONE_IMAGE_SRC[view]}
-          alt={`人体骨格${ANATOMY_VIEW_LABELS[view]}図`}
-          className="absolute inset-0 h-full w-full object-contain"
-        />
-        <svg
-          viewBox={BONE_IMAGE_VIEW_BOX}
-          className="absolute inset-0 h-full w-full"
-        >
-          {parts.map((part) => {
-            const selected = part.id === selectedId;
-            const matched = showHighlight && highlightIds.has(part.id);
-            const highlighted = matched || selected;
-            const dimmed = showHighlight && !highlightIds.has(part.id) && !selected;
-            const onRight = part.x >= 218;
-            return (
-              <g
-                key={part.id}
-                onClick={() => onSelect(part.id)}
-                className="cursor-pointer"
-                opacity={dimmed ? 0.3 : 1}
-              >
-                {highlighted && (
-                  <circle
-                    cx={part.x}
-                    cy={part.y}
-                    r={22}
-                    fill={MUSCLE_HIGHLIGHT_COLOR}
-                    fillOpacity={0.25}
-                  />
-                )}
-                {selected && (
-                  <circle
-                    cx={part.x}
-                    cy={part.y}
-                    r={16}
-                    fill="none"
-                    stroke="#2563eb"
-                    strokeWidth={3.5}
-                  />
-                )}
-                <circle
-                  cx={part.x}
-                  cy={part.y}
-                  r={highlighted ? 10 : 8}
-                  fill={highlighted ? MUSCLE_HIGHLIGHT_COLOR : "#475569"}
-                  stroke="white"
-                  strokeWidth={2}
-                />
-                <text
-                  x={onRight ? part.x + 13 : part.x - 13}
-                  y={part.y + 4}
-                  fontSize={16}
-                  fontWeight={highlighted ? 700 : 400}
-                  textAnchor={onRight ? "start" : "end"}
-                  fill={highlighted ? MUSCLE_HIGHLIGHT_COLOR : "#1f2937"}
-                  stroke="white"
-                  strokeWidth={3}
-                  paintOrder="stroke"
-                >
-                  {part.name}
-                </text>
-                <title>{part.name}</title>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-    </div>
-  );
-}
-
 export default function AnatomyPage() {
   const [query, setQuery] = useState("");
-  const [activeType, setActiveType] = useState<AnatomyType>("muscle");
-  const [activeView, setActiveView] = useState<AnatomyView>("front");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const matches = useMemo(
@@ -245,29 +69,9 @@ export default function AnatomyPage() {
     [query],
   );
   const hasQuery = query.trim().length > 0;
-  const highlightIds = useMemo(
-    () => new Set(matches.map((part) => part.id)),
-    [matches],
-  );
-
-  function handleQueryChange(value: string) {
-    setQuery(value);
-    const nextMatches = searchAnatomyParts(ANATOMY_PARTS, value);
-    if (value.trim() && nextMatches.length > 0) {
-      const stillVisible = nextMatches.some(
-        (part) => part.type === activeType && part.view === activeView,
-      );
-      if (!stillVisible) {
-        setActiveType(nextMatches[0].type);
-        setActiveView(nextMatches[0].view);
-      }
-    }
-  }
 
   function handleSelect(part: AnatomyPart) {
     setSelectedId(part.id);
-    setActiveType(part.type);
-    setActiveView(part.view);
   }
 
   const listSource = hasQuery ? matches : ANATOMY_PARTS;
@@ -307,109 +111,74 @@ export default function AnatomyPage() {
         : [],
     [selectedPart],
   );
-  const visibleMuscleParts = ANATOMY_PARTS.filter(
-    (part): part is MuscleAnatomyPart =>
-      part.type === "muscle" && part.view === activeView,
-  );
-  const visibleBoneParts = ANATOMY_PARTS.filter(
-    (part): part is BoneAnatomyPart =>
-      part.type === "bone" && part.view === activeView,
-  );
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-semibold">筋肉・骨</h1>
         <p className="mt-1 text-sm text-gray-600">
-          全身の主要な筋肉・骨を、リアルな全身図と検索で確認できます。お客様へ運動やトレーニング部位を説明する際の参考にご活用ください。
-        </p>
-        <p className="mt-1 text-xs text-gray-400">
-          ※
-          前鋸筋・中殿筋など一部の小さな筋肉は図に専用の輪郭が無いため、赤い塗りつぶしは隣接する筋肉と同じ範囲になります(詳細は選択時の説明に記載)。それぞれの位置には個別の青いマーカーが付いているので、マーカーをクリックすれば正しく選択できます。
+          全身の主要な筋肉・骨を、一覧と検索で確認できます。お客様へ運動やトレーニング部位を説明する際の参考にご活用ください。
         </p>
       </div>
+
+      <section className="rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="mb-3 font-medium">筋肉部位 早見図</h2>
+        <p className="mb-2 text-xs text-gray-500">
+          全身の主要な筋肉の位置を示す参考図です。詳しい説明は下の「部位一覧」から確認できます。
+        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/anatomy/muscle-diagram.jpg"
+          alt="人体の主要筋肉部位図解(前面・背面、色分け)"
+          width={MUSCLE_DIAGRAM_IMAGE.width}
+          height={MUSCLE_DIAGRAM_IMAGE.height}
+          className="mx-auto rounded-lg border border-gray-100"
+          style={{
+            maxWidth: 640,
+            width: "100%",
+            height: "auto",
+            aspectRatio: `${MUSCLE_DIAGRAM_IMAGE.width} / ${MUSCLE_DIAGRAM_IMAGE.height}`,
+          }}
+        />
+      </section>
+
+      <section className="rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="mb-3 font-medium">骨部位 早見図</h2>
+        <p className="mb-2 text-xs text-gray-500">
+          全身の主要な骨の位置を示す参考図です。詳しい説明は下の「部位一覧」から確認できます。
+        </p>
+        <div className="grid gap-6 sm:grid-cols-3">
+          {BONE_DIAGRAM_IMAGES.map((diagram) => (
+            <div key={diagram.id}>
+              <p className="mb-1 text-center text-xs font-medium text-gray-500">
+                {diagram.title}
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={diagram.src}
+                alt={diagram.alt}
+                width={diagram.width}
+                height={diagram.height}
+                className="mx-auto rounded-lg border border-gray-100"
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  aspectRatio: `${diagram.width} / ${diagram.height}`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4">
         <input
           type="search"
           value={query}
-          onChange={(e) => handleQueryChange(e.target.value)}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="部位名で検索(例: 大胸筋、ふくらはぎ、骨盤)"
           className="w-full max-w-sm rounded border border-gray-300 px-3 py-2 text-sm"
         />
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-2">
-            {(["muscle", "bone"] as AnatomyType[]).map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setActiveType(type)}
-                className={`rounded-full border px-3 py-1 text-sm font-medium ${
-                  activeType === type
-                    ? "border-gray-900 bg-gray-900 text-white"
-                    : "border-gray-300 bg-white text-gray-600"
-                }`}
-              >
-                {ANATOMY_TYPE_LABELS[type]}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            {(["front", "back"] as AnatomyView[]).map((view) => (
-              <button
-                key={view}
-                type="button"
-                onClick={() => setActiveView(view)}
-                className={`rounded-full border px-3 py-1 text-sm font-medium ${
-                  activeView === view
-                    ? "border-gray-900 bg-gray-900 text-white"
-                    : "border-gray-300 bg-white text-gray-600"
-                }`}
-              >
-                {ANATOMY_VIEW_LABELS[view]}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            {(["muscle", "bone"] as AnatomyType[]).map((type) => (
-              <span key={type} className="flex items-center gap-1">
-                <span
-                  className={`inline-block h-2 w-2 rounded-full ${TYPE_DOT_CLASS[type]}`}
-                />
-                {ANATOMY_TYPE_LABELS[type]}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4 flex justify-center rounded-lg border border-gray-100 bg-gray-50 py-4">
-          {activeType === "muscle" ? (
-            <MuscleFigure
-              view={activeView}
-              parts={visibleMuscleParts}
-              highlightIds={highlightIds}
-              showHighlight={hasQuery}
-              selectedId={selectedId}
-              onSelect={(id) => {
-                const part = ANATOMY_PARTS.find((p) => p.id === id);
-                if (part) handleSelect(part);
-              }}
-            />
-          ) : (
-            <BoneFigure
-              view={activeView}
-              parts={visibleBoneParts}
-              highlightIds={highlightIds}
-              showHighlight={hasQuery}
-              selectedId={selectedId}
-              onSelect={(id) => {
-                const part = ANATOMY_PARTS.find((p) => p.id === id);
-                if (part) handleSelect(part);
-              }}
-            />
-          )}
-        </div>
 
         {selectedPart ? (
           <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
@@ -470,7 +239,7 @@ export default function AnatomyPage() {
           </div>
         ) : (
           <p className="mt-4 text-xs text-gray-400">
-            図または下の一覧から部位を選ぶと、詳しい説明が表示されます。
+            下の一覧から部位を選ぶと、詳しい説明が表示されます。
           </p>
         )}
       </section>
@@ -479,7 +248,7 @@ export default function AnatomyPage() {
         <h2 className="mb-3 font-medium">
           部位一覧(全{listSource.length}件)
         </h2>
-        <div className="space-y-5">
+        <div className="space-y-6">
           {groupedList.map(({ type, groups }) => (
             <div key={type}>
               <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-gray-700">
@@ -488,33 +257,43 @@ export default function AnatomyPage() {
                 />
                 {ANATOMY_TYPE_LABELS[type]}
               </h3>
-              <div className="space-y-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {groups.map((group) => (
-                  <div key={group.category}>
-                    <h4 className="mb-1.5 text-xs font-medium text-gray-500">
+                  <div
+                    key={group.category}
+                    className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                  >
+                    <h4 className="mb-2 border-b-2 border-gray-200 pb-2 text-base font-semibold text-blue-700">
                       {group.category}
                     </h4>
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    <ul className="divide-y divide-dashed divide-gray-200">
                       {group.parts.map((part) => (
-                        <button
-                          key={part.id}
-                          type="button"
-                          onClick={() => handleSelect(part)}
-                          className={`flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2 text-left text-sm ${
-                            part.id === selectedId
-                              ? "border-blue-400 bg-blue-50"
-                              : "border-gray-200 bg-gray-50 hover:border-gray-300"
-                          }`}
-                        >
-                          <span className="font-medium text-gray-900">
-                            {part.name}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {ANATOMY_VIEW_LABELS[part.view]}
-                          </span>
-                        </button>
+                        <li key={part.id}>
+                          <button
+                            type="button"
+                            onClick={() => handleSelect(part)}
+                            className={`flex w-full items-center justify-between gap-2 rounded px-1 py-2 text-left text-sm ${
+                              part.id === selectedId
+                                ? "bg-blue-50"
+                                : "hover:bg-gray-50"
+                            }`}
+                          >
+                            <span
+                              className={`font-bold ${
+                                part.id === selectedId
+                                  ? "text-blue-700"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {part.name}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {ANATOMY_VIEW_LABELS[part.view]}
+                            </span>
+                          </button>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </div>
                 ))}
               </div>
@@ -535,7 +314,7 @@ export default function AnatomyPage() {
           <span className="mx-1 font-medium text-rose-700">赤系の文字</span>
           、骨・関節は
           <span className="mx-1 font-medium text-slate-600">グレー系の文字</span>
-          で表示し、上の全身図と同じ色分けにしています。
+          で表示し、上の部位一覧の見出しと同じ色分けにしています。
         </p>
         <div className="mt-4 space-y-5">
           {EXERCISE_CATEGORY_ORDER.map((category) => (

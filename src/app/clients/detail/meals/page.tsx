@@ -91,6 +91,12 @@ function ClientMealsPageInner() {
   const remainingKcal = plan ? plan.targetIntakeCalories - totals.kcal : null;
 
   const summaryData = fillDailyMealTotals(rangeTotals, summaryDates);
+  // 週次(7日)表示のときだけ使う、直近7日の合計と目標(1日の目標×7日分)。
+  const weeklyTotals = sumMealLogAmounts(summaryData);
+  const weeklyTargetKcal = plan ? plan.targetIntakeCalories * 7 : null;
+  const weeklyTargetPfc = pfc
+    ? { proteinG: pfc.proteinG * 7, fatG: pfc.fatG * 7, carbG: pfc.carbG * 7 }
+    : null;
 
   return (
     <div className="space-y-6">
@@ -209,6 +215,45 @@ function ClientMealsPageInner() {
         </p>
       )}
 
+      {summaryRangeDays === "7" && (
+        <section className="rounded-lg border border-gray-200 bg-white p-4">
+          <h2 className="mb-2 font-medium">週間合計(直近7日)と目標との過不足</h2>
+          {rangeTotals.length >= 7 ? (
+            <div className="grid gap-4 sm:grid-cols-4">
+              <WeeklyStat
+                label="カロリー"
+                unit="kcal"
+                actual={weeklyTotals.kcal}
+                target={weeklyTargetKcal}
+              />
+              <WeeklyStat
+                label="たんぱく質"
+                unit="g"
+                actual={weeklyTotals.proteinG}
+                target={weeklyTargetPfc?.proteinG ?? null}
+              />
+              <WeeklyStat
+                label="脂質"
+                unit="g"
+                actual={weeklyTotals.fatG}
+                target={weeklyTargetPfc?.fatG ?? null}
+              />
+              <WeeklyStat
+                label="炭水化物"
+                unit="g"
+                actual={weeklyTotals.carbG}
+                target={weeklyTargetPfc?.carbG ?? null}
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">
+              直近7日分の記録が揃うと、週間の合計と目標との過不足が表示されます(現在
+              {rangeTotals.length}/7日分)。
+            </p>
+          )}
+        </section>
+      )}
+
       <section className="rounded-lg border border-gray-200 bg-white p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-medium">摂取カロリーの推移</h2>
@@ -308,6 +353,42 @@ function ClientMealsPageInner() {
           </tbody>
         </table>
       </section>
+    </div>
+  );
+}
+
+function WeeklyStat({
+  label,
+  unit,
+  actual,
+  target,
+}: {
+  label: string;
+  unit: string;
+  actual: number;
+  target: number | null;
+}) {
+  const diff = target !== null ? Math.round(actual - target) : null;
+  return (
+    <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-xl font-semibold">
+        {actual.toFixed(0)}
+        <span className="text-sm font-normal text-gray-500">{unit}</span>
+      </p>
+      {target !== null && diff !== null && (
+        <>
+          <p className="text-xs text-gray-400">
+            目標 {target.toFixed(0)}
+            {unit}
+          </p>
+          <p className="text-xs font-medium text-gray-700">
+            {diff > 0 ? `+${diff}` : diff}
+            {unit}
+            {diff > 0 ? "(超過)" : diff < 0 ? "(不足)" : ""}
+          </p>
+        </>
+      )}
     </div>
   );
 }

@@ -242,7 +242,7 @@ export const MUSCLE_EXERCISE_NOTES: string[] = [
   "ベンチプレスの烏口腕筋、デッドリフトの頭板状筋は、貢献度が小さい・裏付けとなる資料が限定的なため削除しています。",
 ];
 
-// 「筋肉・骨」ページの部位名(react-body-highlighter/骨格図側の表記)と、
+// 「筋肉・骨」ページの部位名(全身図側の表記)と、
 // この対応表側の表記が完全一致しない箇所を補う同義語。
 const MUSCLE_NAME_ALIASES: Record<string, string[]> = {
   骨盤: ["寛骨"],

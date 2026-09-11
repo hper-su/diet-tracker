@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import {
   INTRO_BEFORE,
   INTRO_BOLD,
@@ -9,6 +10,26 @@ import {
   CONTINUATION_TIPS,
   CLOSING_NOTE,
 } from "@/lib/nutrition-guidance";
+
+// 本文中の "**強調したい部分**" を、太字+色付きのテキストに変換して表示する。
+// お客様が読む解説文の中で、特に大事な一文だけを目立たせるための簡易記法。
+function Emphasized({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <strong key={i} className="font-bold text-rose-700">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return <Fragment key={i}>{part}</Fragment>;
+      })}
+    </>
+  );
+}
 
 export default function NutritionGuidancePage() {
   return (
@@ -24,7 +45,7 @@ export default function NutritionGuidancePage() {
         <p>
           {INTRO_BEFORE}
           <strong className="font-bold text-gray-900">「{INTRO_BOLD}」</strong>
-          {INTRO_AFTER}
+          <Emphasized text={INTRO_AFTER} />
         </p>
       </section>
 
@@ -72,9 +93,52 @@ export default function NutritionGuidancePage() {
 
             <div className="mt-2 space-y-2 text-sm text-gray-700">
               {priority.paragraphs.map((paragraph, i) => (
-                <p key={i}>{paragraph}</p>
+                <p key={i}>
+                  <Emphasized text={paragraph} />
+                </p>
               ))}
             </div>
+
+            {priority.combinationExample && (
+              <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <p className="text-sm font-medium text-gray-900">
+                  {priority.combinationExample.title}
+                </p>
+                <div className="mt-2 space-y-2">
+                  {priority.combinationExample.meals.map((meal) => (
+                    <div
+                      key={meal.time}
+                      className="flex flex-wrap items-center gap-1.5"
+                    >
+                      <span className="inline-flex shrink-0 items-center rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">
+                        {meal.time}
+                      </span>
+                      {meal.items.map((item) => (
+                        <span
+                          key={item}
+                          className="rounded-full border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-sm font-bold text-gray-900">
+                  {priority.combinationExample.total}
+                </p>
+              </div>
+            )}
+
+            {priority.paragraphsAfterExample && (
+              <div className="mt-3 space-y-2 text-sm text-gray-700">
+                {priority.paragraphsAfterExample.map((paragraph, i) => (
+                  <p key={i}>
+                    <Emphasized text={paragraph} />
+                  </p>
+                ))}
+              </div>
+            )}
 
             {priority.bulletList && (
               <div className="mt-2 text-sm text-gray-700">
@@ -83,7 +147,9 @@ export default function NutritionGuidancePage() {
                 )}
                 <ul className="mt-1 list-disc space-y-1 pl-5">
                   {priority.bulletList.map((item) => (
-                    <li key={item}>{item}</li>
+                    <li key={item}>
+                      <Emphasized text={item} />
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -92,7 +158,9 @@ export default function NutritionGuidancePage() {
             {priority.detailParagraphs && (
               <div className="mt-2 space-y-2 text-sm text-gray-700">
                 {priority.detailParagraphs.map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
+                  <p key={i}>
+                    <Emphasized text={paragraph} />
+                  </p>
                 ))}
               </div>
             )}
@@ -100,7 +168,9 @@ export default function NutritionGuidancePage() {
             {priority.detailBulletList && (
               <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-gray-700">
                 {priority.detailBulletList.map((item) => (
-                  <li key={item}>{item}</li>
+                  <li key={item}>
+                    <Emphasized text={item} />
+                  </li>
                 ))}
               </ul>
             )}
@@ -164,7 +234,9 @@ export default function NutritionGuidancePage() {
                         sub.title
                       )}
                     </p>
-                    <p className="mt-1 text-xs text-gray-600">{sub.body}</p>
+                    <p className="mt-1 text-xs text-gray-600">
+                      <Emphasized text={sub.body} />
+                    </p>
                   </div>
                 ))}
               </div>
@@ -172,7 +244,7 @@ export default function NutritionGuidancePage() {
 
             {priority.closingParagraph && (
               <p className="mt-3 text-sm text-gray-700">
-                {priority.closingParagraph}
+                <Emphasized text={priority.closingParagraph} />
               </p>
             )}
 
@@ -198,7 +270,9 @@ export default function NutritionGuidancePage() {
         <h2 className="font-semibold text-gray-900">続けるためのポイント</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-gray-700">
           {CONTINUATION_TIPS.map((tip) => (
-            <li key={tip}>{tip}</li>
+            <li key={tip}>
+              <Emphasized text={tip} />
+            </li>
           ))}
         </ul>
       </section>

@@ -25,8 +25,8 @@ describe("searchAnatomyParts", () => {
   });
 
   it("matches by category", () => {
-    const results = searchAnatomyParts(ANATOMY_PARTS, "頭部");
-    expect(results.every((p) => p.category === "頭部")).toBe(true);
+    const results = searchAnatomyParts(ANATOMY_PARTS, "背部");
+    expect(results.every((p) => p.category === "背部")).toBe(true);
     expect(results.length).toBeGreaterThan(0);
   });
 
@@ -52,14 +52,4 @@ describe("ANATOMY_PARTS data integrity", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("gives every muscle part a muscleKey and every bone part x/y coordinates", () => {
-    for (const part of ANATOMY_PARTS) {
-      if (part.type === "muscle") {
-        expect(part.muscleKey).toBeTruthy();
-      } else {
-        expect(typeof part.x).toBe("number");
-        expect(typeof part.y).toBe("number");
-      }
-    }
-  });
 });

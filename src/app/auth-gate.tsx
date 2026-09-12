@@ -19,6 +19,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       // localStorageにアクセスできない環境(プライベートブラウジング等)では
       // 判定できないため、安全側としてロック画面を表示する。
     }
+    // localStorageはサーバー側で読めない外部ストアのため、初回マウント後に
+    // 一度だけ読んで状態を確定させる必要がある(サーバー描画とのハイドレーション
+    // 不整合を避けるため、checking状態を経由する設計)。派生状態の同期ではなく
+    // 外部システムの読み取りなので、このeffect内でのsetStateは意図的なもの。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus(unlocked ? "unlocked" : "locked");
   }, []);
 

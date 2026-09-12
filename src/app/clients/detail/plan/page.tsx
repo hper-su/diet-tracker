@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useLiveQuery } from "@/lib/db/use-live-query";
 import { getClient } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
 import { listFoods } from "@/lib/db/foods";
@@ -92,7 +92,14 @@ function ClientPlanPageInner() {
     ]);
 
     return { client, planResult, foods, exercises, usualMeals };
-  }, [clientId]);
+  }, [clientId], [
+    "clients",
+    "measurements",
+    "usualExercises",
+    "foods",
+    "exercises",
+    "usualMeals",
+  ]);
 
   if (!Number.isInteger(clientId) || clientId <= 0) {
     return <NotFound />;

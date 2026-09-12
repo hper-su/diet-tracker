@@ -1,4 +1,4 @@
-import { db } from "./client";
+import { supabase, unwrap, run } from "./supabase";
 
 export type ProtocolCheckStepResult = {
   step: number; // conditions.tsのprotocolTable内でのインデックス(0始まり)
@@ -17,13 +17,15 @@ export type ProtocolCheck = {
 export async function listProtocolChecks(
   clientId: number,
 ): Promise<ProtocolCheck[]> {
-  const rows = await db.protocolChecks
-    .where("clientId")
-    .equals(clientId)
-    .toArray();
-  return rows
-    .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt) || a.id - b.id)
-    .map(({ clientId: _clientId, ...rest }) => rest);
+  const rows = await unwrap<(ProtocolCheck & { clientId: number })[]>(
+    supabase
+      .from("protocolChecks")
+      .select("*")
+      .eq("clientId", clientId)
+      .order("recordedAt", { ascending: true })
+      .order("id", { ascending: true }),
+  );
+  return rows.map(({ clientId: _clientId, ...rest }) => rest);
 }
 
 export type InsertProtocolCheckInput = {
@@ -37,15 +39,14 @@ export type InsertProtocolCheckInput = {
 export async function insertProtocolCheck(
   input: InsertProtocolCheckInput,
 ): Promise<void> {
-  await db.protocolChecks.add({ ...input });
+  await run(supabase.from("protocolChecks").insert({ ...input }));
 }
 
 export async function deleteProtocolCheck(
   clientId: number,
   id: number,
 ): Promise<void> {
-  const row = await db.protocolChecks.get(id);
-  if (row && row.clientId === clientId) {
-    await db.protocolChecks.delete(id);
-  }
+  await run(
+    supabase.from("protocolChecks").delete().eq("id", id).eq("clientId", clientId),
+  );
 }

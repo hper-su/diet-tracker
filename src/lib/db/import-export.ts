@@ -1,10 +1,9 @@
-import Dexie from "dexie";
-import {
-  db,
-  type ClientRecord,
-  type MeasurementRecord,
-  type MealLogRecord,
-  type ProtocolCheckRecord,
+import { supabase, selectAllRows } from "./supabase";
+import type {
+  ClientRecord,
+  MeasurementRecord,
+  MealLogRecord,
+  ProtocolCheckRecord,
 } from "./client";
 import type { Food } from "./foods";
 import type { UsualMeal } from "./usual-meals";
@@ -26,7 +25,7 @@ export type ExportedData = {
   protocolChecks: ProtocolCheckRecord[];
 };
 
-// 他端末への移行・バックアップ用に、全テーブルの内容を1つのJSONにまとめる。
+// バックアップ・共有DBの障害時復旧用に、全テーブルの内容を1つのJSONにまとめる。
 export async function exportAllData(): Promise<ExportedData> {
   const [
     clients,
@@ -38,14 +37,14 @@ export async function exportAllData(): Promise<ExportedData> {
     usualExercises,
     protocolChecks,
   ] = await Promise.all([
-    db.clients.toArray(),
-    db.measurements.toArray(),
-    db.foods.toArray(),
-    db.mealLogs.toArray(),
-    db.usualMeals.toArray(),
-    db.exercises.toArray(),
-    db.usualExercises.toArray(),
-    db.protocolChecks.toArray(),
+    selectAllRows<ClientRecord>("clients"),
+    selectAllRows<MeasurementRecord>("measurements"),
+    selectAllRows<Food>("foods"),
+    selectAllRows<MealLogRecord>("mealLogs"),
+    selectAllRows<UsualMeal>("usualMeals"),
+    selectAllRows<Exercise>("exercises"),
+    selectAllRows<UsualExercise>("usualExercises"),
+    selectAllRows<ProtocolCheckRecord>("protocolChecks"),
   ]);
 
   return {
@@ -62,8 +61,8 @@ export async function exportAllData(): Promise<ExportedData> {
   };
 }
 
-// exportしているのはテスト容易性のため(importAllDataはIndexedDBの
-// トランザクションを伴うため、その手前までの純粋なロジックを個別に検証できるようにする)。
+// exportしているのはテスト容易性のため(importAllDataはSupabaseへの通信を
+// 伴うため、その手前までの純粋なロジックを個別に検証できるようにする)。
 export function isExportedData(
   value: unknown,
 ): value is Omit<ExportedData, "protocolChecks"> & {
@@ -98,6 +97,7 @@ export class ImportFormatError extends Error {
 
 const MEAL_TYPES = new Set(["breakfast", "lunch", "dinner", "snack"]);
 const EXERCISE_CATEGORIES = new Set(["生活活動", "運動"]);
+const UNIQUE_VIOLATION = "23505";
 
 function isFiniteNonNegative(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
@@ -211,53 +211,20 @@ export function validateAndSanitize(
   return { ...data, mealLogs, usualMeals, usualExercises, protocolChecks };
 }
 
-// インポートは既存データを全て置き換える(お客様データをこの端末に丸ごと
-// 反映するための機能のため、マージではなく上書きにする)。
+// インポートは既存データを全て置き換える(共有DBの内容を丸ごと差し替えるための
+// 機能のため、マージではなく上書きにする)。削除・再投入・シーケンス調整を
+// Postgres側のimport_all_data関数(supabase/schema.sql参照)にまとめて1回の
+// トランザクションで行うことで、途中の1テーブルだけ失敗して共有DBが
+// 中途半端な状態のまま残る事態を防ぐ(失敗時はDB側で自動的に全ロールバックされる)。
 export async function importAllData(raw: unknown): Promise<void> {
   if (!isExportedData(raw)) {
     throw new ImportFormatError();
   }
   const data = validateAndSanitize(raw);
 
-  try {
-    await db.transaction(
-      "rw",
-      [
-        db.clients,
-        db.measurements,
-        db.foods,
-        db.mealLogs,
-        db.usualMeals,
-        db.exercises,
-        db.usualExercises,
-        db.protocolChecks,
-      ],
-      async () => {
-        await Promise.all([
-          db.clients.clear(),
-          db.measurements.clear(),
-          db.foods.clear(),
-          db.mealLogs.clear(),
-          db.usualMeals.clear(),
-          db.exercises.clear(),
-          db.usualExercises.clear(),
-          db.protocolChecks.clear(),
-        ]);
-
-        await Promise.all([
-          db.clients.bulkAdd(data.clients),
-          db.measurements.bulkAdd(data.measurements),
-          db.foods.bulkAdd(data.foods),
-          db.mealLogs.bulkAdd(data.mealLogs),
-          db.usualMeals.bulkAdd(data.usualMeals),
-          db.exercises.bulkAdd(data.exercises),
-          db.usualExercises.bulkAdd(data.usualExercises),
-          db.protocolChecks.bulkAdd(data.protocolChecks),
-        ]);
-      },
-    );
-  } catch (error) {
-    if (error instanceof Dexie.ConstraintError) {
+  const { error } = await supabase.rpc("import_all_data", { payload: data });
+  if (error) {
+    if (error.code === UNIQUE_VIOLATION) {
       throw new ImportFormatError(
         "食品マスタまたは運動マスタに、同じ分類・名前の重複データが含まれているためインポートできませんでした。",
       );

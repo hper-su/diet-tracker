@@ -3,8 +3,9 @@
 import { useEffect } from "react";
 import { BASE_PATH } from "@/lib/base-path";
 
-// アプリ全体を機内モードでも動かすためのService Worker登録。
-// public/sw.js が out/ 内の全ファイルをキャッシュする(scripts/generate-sw-manifest.mjs参照)。
+// ホーム画面へのインストール(PWA化)のためのService Worker登録。
+// このアプリは常時オンライン前提のため、public/sw.js はオフラインキャッシュを
+// 行わない(過去にキャッシュされたものが残っていれば削除するだけ)。
 export function ServiceWorkerRegister() {
   useEffect(() => {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {

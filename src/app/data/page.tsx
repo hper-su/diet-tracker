@@ -65,8 +65,9 @@ export default function DataPage() {
       <div>
         <h1 className="text-xl font-semibold">データ管理</h1>
         <p className="mt-1 text-sm text-gray-600">
-          このアプリのデータは、この端末のブラウザ内だけに保存されています(サーバーには送信されません)。
-          別の端末でも使う場合は、この画面でエクスポートしたファイルを、別の端末のこの画面からインポートしてください。
+          このアプリのデータは、どの端末からでも同じ内容が見られるようクラウド上の共有データベースに
+          保存されています(利用にはインターネット接続が必要です)。この画面のエクスポート/インポートは、
+          バックアップの保存や、万一のトラブル時に共有データベースの内容を丸ごと復元するために使います。
         </p>
       </div>
 
@@ -87,8 +88,9 @@ export default function DataPage() {
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <h2 className="font-semibold">インポート</h2>
         <p className="mt-1 text-sm text-gray-600">
-          エクスポートしたJSONファイルを選択すると、この端末の現在のデータを置き換えます
-          (この操作は元に戻せません。必要であれば先に現在のデータをエクスポートしてください)。
+          エクスポートしたJSONファイルを選択すると、共有データベースの現在のデータを置き換えます。
+          この変更は全端末に反映されます(この操作は元に戻せません。必要であれば先に現在のデータを
+          エクスポートしてください)。
         </p>
         <input
           ref={fileInputRef}

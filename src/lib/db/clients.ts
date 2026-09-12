@@ -1,4 +1,5 @@
-import { db } from "./client";
+import { supabase, unwrap, run } from "./supabase";
+import type { ClientRecord } from "./client";
 import type { Gender } from "@/lib/health/bmr";
 import {
   DEFAULT_ACTIVITY_LEVEL,
@@ -26,16 +27,20 @@ export type Client = {
 };
 
 export async function listClients(): Promise<Client[]> {
-  const rows = await db.clients.orderBy("createdAt").reverse().toArray();
+  const rows = await unwrap<ClientRecord[]>(
+    supabase.from("clients").select("*").order("createdAt", { ascending: false }),
+  );
   return rows.map(stripCreatedAt);
 }
 
 export async function getClient(id: number): Promise<Client | null> {
-  const row = await db.clients.get(id);
+  const row = await unwrap<ClientRecord | null>(
+    supabase.from("clients").select("*").eq("id", id).maybeSingle(),
+  );
   return row ? stripCreatedAt(row) : null;
 }
 
-function stripCreatedAt(row: Client & { createdAt: string }): Client {
+function stripCreatedAt(row: ClientRecord): Client {
   const { createdAt: _createdAt, ...client } = row;
   // 過去に存在した"diet"プリセット(現在は"health"に統合済み)など、現行の
   // PFCPresetに存在しない値が保存されたままの古いレコードのフォールバック。
@@ -54,21 +59,26 @@ export type InsertClientInput = {
 };
 
 export async function insertClient(input: InsertClientInput): Promise<number> {
-  const id = await db.clients.add({
-    name: input.name,
-    birthdate: input.birthdate,
-    heightCm: input.heightCm,
-    gender: input.gender,
-    activityLevel: DEFAULT_ACTIVITY_LEVEL,
-    pfcPreset: DEFAULT_PFC_PRESET,
-    targetMonthlyWeightChangeKg: null,
-    targetWeightChangeKg: null,
-    targetPeriodMonths: null,
-    targetWeightKg: null,
-    memo: input.memo,
-    createdAt: new Date().toISOString(),
-  });
-  return id;
+  const row = await unwrap<{ id: number }>(
+    supabase
+      .from("clients")
+      .insert({
+        name: input.name,
+        birthdate: input.birthdate,
+        heightCm: input.heightCm,
+        gender: input.gender,
+        activityLevel: DEFAULT_ACTIVITY_LEVEL,
+        pfcPreset: DEFAULT_PFC_PRESET,
+        targetMonthlyWeightChangeKg: null,
+        targetWeightChangeKg: null,
+        targetPeriodMonths: null,
+        targetWeightKg: null,
+        memo: input.memo,
+      })
+      .select("id")
+      .single(),
+  );
+  return row.id;
 }
 
 export type UpdateClientProfileInput = {
@@ -85,15 +95,20 @@ export async function updateClientProfile(
   id: number,
   input: UpdateClientProfileInput,
 ): Promise<void> {
-  await db.clients.update(id, {
-    name: input.name,
-    birthdate: input.birthdate,
-    heightCm: input.heightCm,
-    gender: input.gender,
-    activityLevel: input.activityLevel,
-    pfcPreset: input.pfcPreset,
-    memo: input.memo,
-  });
+  await run(
+    supabase
+      .from("clients")
+      .update({
+        name: input.name,
+        birthdate: input.birthdate,
+        heightCm: input.heightCm,
+        gender: input.gender,
+        activityLevel: input.activityLevel,
+        pfcPreset: input.pfcPreset,
+        memo: input.memo,
+      })
+      .eq("id", id),
+  );
 }
 
 export async function updateClientGoal(
@@ -103,10 +118,15 @@ export async function updateClientGoal(
   targetPeriodMonths: number,
   targetWeightKg: number | null,
 ): Promise<void> {
-  await db.clients.update(id, {
-    targetMonthlyWeightChangeKg,
-    targetWeightChangeKg,
-    targetPeriodMonths,
-    targetWeightKg,
-  });
+  await run(
+    supabase
+      .from("clients")
+      .update({
+        targetMonthlyWeightChangeKg,
+        targetWeightChangeKg,
+        targetPeriodMonths,
+        targetWeightKg,
+      })
+      .eq("id", id),
+  );
 }

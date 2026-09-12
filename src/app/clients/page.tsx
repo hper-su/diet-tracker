@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useLiveQuery } from "@/lib/db/use-live-query";
 import { listClients } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
 import { NewClientForm } from "./new-client-form";
@@ -13,7 +13,7 @@ const GENDER_LABELS: Record<string, string> = {
 };
 
 export default function ClientsPage() {
-  const clients = useLiveQuery(() => listClients(), []);
+  const clients = useLiveQuery(() => listClients(), [], ["clients"]);
 
   return (
     <div className="space-y-6">

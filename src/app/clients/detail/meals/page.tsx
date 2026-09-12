@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useLiveQuery } from "@/lib/db/use-live-query";
 import { getClient } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
 import { listFoods } from "@/lib/db/foods";
@@ -58,7 +58,14 @@ function ClientMealsPageInner() {
     ]);
 
     return { client, foods, usualMeals, logs, planResult, rangeTotals };
-  }, [clientId, date, summaryFromDate]);
+  }, [clientId, date, summaryFromDate], [
+    "clients",
+    "foods",
+    "usualMeals",
+    "mealLogs",
+    "measurements",
+    "usualExercises",
+  ]);
 
   if (!Number.isInteger(clientId) || clientId <= 0) {
     return <NotFound />;
@@ -305,53 +312,55 @@ function ClientMealsPageInner() {
         <h2 className="border-b border-gray-200 p-4 font-medium">
           {date} の記録
         </h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-500">
-              <th className="px-4 py-2">区分</th>
-              <th className="px-4 py-2">食品</th>
-              <th className="px-4 py-2">数量</th>
-              <th className="px-4 py-2">kcal</th>
-              <th className="px-4 py-2">P/F/C(g)</th>
-              <th className="px-4 py-2">メモ</th>
-              <th className="px-4 py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log) => (
-              <tr key={log.id} className="border-t border-gray-100">
-                <td className="px-4 py-2">{MEAL_TYPE_LABELS[log.mealType]}</td>
-                <td className="px-4 py-2">{log.foodName}</td>
-                <td className="px-4 py-2">{log.quantity}</td>
-                <td className="px-4 py-2">{log.kcal.toFixed(0)}</td>
-                <td className="px-4 py-2 text-gray-500">
-                  {log.proteinG.toFixed(1)}/{log.fatG.toFixed(1)}/
-                  {log.carbG.toFixed(1)}
-                </td>
-                <td className="px-4 py-2 text-gray-500">{log.memo ?? ""}</td>
-                <td className="px-4 py-2 text-right">
-                  <form action={deleteMealLogAction}>
-                    <input type="hidden" name="id" value={log.id} />
-                    <input type="hidden" name="client_id" value={clientId} />
-                    <button
-                      type="submit"
-                      className="text-xs text-gray-400 hover:text-red-600"
-                    >
-                      削除
-                    </button>
-                  </form>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="px-4 py-2">区分</th>
+                <th className="px-4 py-2">食品</th>
+                <th className="px-4 py-2">数量</th>
+                <th className="px-4 py-2">kcal</th>
+                <th className="px-4 py-2">P/F/C(g)</th>
+                <th className="px-4 py-2">メモ</th>
+                <th className="px-4 py-2" />
               </tr>
-            ))}
-            {logs.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
-                  この日の記録はまだありません。
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {logs.map((log) => (
+                <tr key={log.id} className="border-t border-gray-100">
+                  <td className="px-4 py-2">{MEAL_TYPE_LABELS[log.mealType]}</td>
+                  <td className="px-4 py-2">{log.foodName}</td>
+                  <td className="px-4 py-2">{log.quantity}</td>
+                  <td className="px-4 py-2">{log.kcal.toFixed(0)}</td>
+                  <td className="px-4 py-2 text-gray-500">
+                    {log.proteinG.toFixed(1)}/{log.fatG.toFixed(1)}/
+                    {log.carbG.toFixed(1)}
+                  </td>
+                  <td className="px-4 py-2 text-gray-500">{log.memo ?? ""}</td>
+                  <td className="px-4 py-2 text-right">
+                    <form action={deleteMealLogAction}>
+                      <input type="hidden" name="id" value={log.id} />
+                      <input type="hidden" name="client_id" value={clientId} />
+                      <button
+                        type="submit"
+                        className="text-xs text-gray-400 hover:text-red-600"
+                      >
+                        削除
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+              {logs.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
+                    この日の記録はまだありません。
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );

@@ -1,5 +1,4 @@
-import Dexie from "dexie";
-import { db } from "./client";
+import { supabase, selectAllRows, unwrap, run } from "./supabase";
 
 export type Food = {
   id: number;
@@ -12,10 +11,12 @@ export type Food = {
   carbG: number;
 };
 
+const UNIQUE_VIOLATION = "23505";
+
 // 食事記録の食品選択(コンボボックス)用。プレーンなデータとしてクライアントへ渡すだけなので、
 // 件数が多くても問題ない(お客様が使う分だけ都度検索できるようにするのはUI側の役割)。
 export async function listFoods(): Promise<Food[]> {
-  const rows = await db.foods.toArray();
+  const rows = await selectAllRows<Food>("foods");
   return rows.sort(
     (a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
   );
@@ -25,7 +26,7 @@ export async function listFoods(): Promise<Food[]> {
 // 外食編の献立例で、実在の商品の中から組み合わせを選ぶための候補取得に使う)。
 export async function listFoodsByCategories(categories: string[]): Promise<Food[]> {
   if (categories.length === 0) return [];
-  return db.foods.where("category").anyOf(categories).toArray();
+  return unwrap<Food[]>(supabase.from("foods").select("*").in("category", categories));
 }
 
 // 食品名の完全一致で1件取得する(献立例の代表食品取得など、名前で特定の食品を
@@ -34,10 +35,13 @@ export async function listFoodsByCategories(categories: string[]): Promise<Food[
 // idが最も小さい(＝最初に登録された)行を返す。
 export async function getFoodByName(name: string, category?: string): Promise<Food | null> {
   if (category) {
-    const row = await db.foods.where({ category, name }).first();
-    return row ?? null;
+    return unwrap<Food | null>(
+      supabase.from("foods").select("*").eq("category", category).eq("name", name).maybeSingle(),
+    );
   }
-  const rows = await db.foods.where("name").equals(name).sortBy("id");
+  const rows = await unwrap<Food[]>(
+    supabase.from("foods").select("*").eq("name", name).order("id", { ascending: true }),
+  );
   return rows[0] ?? null;
 }
 
@@ -52,19 +56,18 @@ export type FoodsPage = {
 
 // 食品マスタ管理画面用。数千件規模を一度に描画すると重いため、
 // 検索語(カテゴリ・品名のいずれかに部分一致)とページ番号で絞り込んで返す。
+// (検索語に含まれる記号がPostgRESTのフィルタ構文と衝突しないよう、絞り込み自体は
+// 全件取得した上でJS側で行う。旧Dexie版も同様に全件取得してJS側で絞り込んでいた)。
 export async function listFoodsPage(query: string, page: number): Promise<FoodsPage> {
   const pageSize = FOOD_MASTER_PAGE_SIZE;
   const safePage = Math.max(1, Math.floor(page) || 1);
 
-  const all = await db.foods.toArray();
+  const all = await listFoods();
   const matched = query
     ? all.filter(
         (food) => food.category.includes(query) || food.name.includes(query),
       )
     : all;
-  matched.sort(
-    (a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
-  );
 
   const total = matched.length;
   const offset = (safePage - 1) * pageSize;
@@ -78,12 +81,15 @@ export async function listFoodsPage(query: string, page: number): Promise<FoodsP
 }
 
 export async function countFoods(): Promise<number> {
-  return db.foods.count();
+  const { count, error } = await supabase
+    .from("foods")
+    .select("*", { count: "exact", head: true });
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export async function getFood(id: number): Promise<Food | null> {
-  const row = await db.foods.get(id);
-  return row ?? null;
+  return unwrap<Food | null>(supabase.from("foods").select("*").eq("id", id).maybeSingle());
 }
 
 export type InsertFoodInput = {
@@ -101,15 +107,14 @@ export type InsertFoodResult =
   | { ok: false; error: "duplicate_name" };
 
 export async function insertFood(input: InsertFoodInput): Promise<InsertFoodResult> {
-  try {
-    await db.foods.add({ ...input } as Food);
-    return { ok: true };
-  } catch (error) {
-    if (error instanceof Dexie.ConstraintError) {
+  const { error } = await supabase.from("foods").insert({ ...input });
+  if (error) {
+    if (error.code === UNIQUE_VIOLATION) {
       return { ok: false, error: "duplicate_name" };
     }
     throw error;
   }
+  return { ok: true };
 }
 
 export type UpdateFoodInput = InsertFoodInput;
@@ -119,38 +124,26 @@ export type UpdateFoodResult =
   | { ok: false; error: "duplicate_name" };
 
 export async function updateFood(id: number, input: UpdateFoodInput): Promise<UpdateFoodResult> {
-  try {
-    await db.transaction("rw", db.foods, async () => {
-      const existing = await db.foods
-        .where({ category: input.category, name: input.name })
-        .first();
-      if (existing && existing.id !== id) {
-        throw new Dexie.ConstraintError("duplicate_name");
-      }
-      await db.foods.update(id, { ...input });
-    });
-    return { ok: true };
-  } catch (error) {
-    if (error instanceof Dexie.ConstraintError) {
+  const { error } = await supabase.from("foods").update({ ...input }).eq("id", id);
+  if (error) {
+    if (error.code === UNIQUE_VIOLATION) {
       return { ok: false, error: "duplicate_name" };
     }
     throw error;
   }
+  return { ok: true };
 }
 
+// mealLogs/usualMealsのfoodId(ON DELETE SET NULL)はDB側の外部キー制約が
+// 自動的にnullへ補正する(food_name/kcal等はスナップショットとして残っているので
+// 表示上の実害はない)。
 export async function deleteFood(id: number): Promise<void> {
-  await db.transaction("rw", db.foods, db.mealLogs, db.usualMeals, async () => {
-    await db.foods.delete(id);
-    // SQLite版の ON DELETE SET NULL 相当: 参照していたfood_idをnullにする
-    // (food_name/kcal等はスナップショットとして残っているので表示上の実害はない)。
-    await db.mealLogs.where("foodId").equals(id).modify({ foodId: null });
-    await db.usualMeals.where("foodId").equals(id).modify({ foodId: null });
-  });
+  await run(supabase.from("foods").delete().eq("id", id));
 }
 
 // 食品登録フォームの分類入力に補完候補を出すため、既存の分類を重複なく返す。
 export async function listFoodCategories(): Promise<string[]> {
-  const rows = await db.foods.toArray();
+  const rows = await selectAllRows<{ category: string }>("foods", "category");
   const categories = new Set(rows.map((row) => row.category).filter((c) => c !== ""));
   return Array.from(categories).sort((a, b) => a.localeCompare(b));
 }

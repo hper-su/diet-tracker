@@ -1,4 +1,4 @@
-import { db } from "./client";
+import { supabase, unwrap, run } from "./supabase";
 
 export type Measurement = {
   id: number;
@@ -13,10 +13,15 @@ export type Measurement = {
 
 // 古い記録から新しい記録の順(グラフ描画・findLatestNonNullでの直近値探索に使う順)。
 export async function listMeasurements(clientId: number): Promise<Measurement[]> {
-  const rows = await db.measurements.where("clientId").equals(clientId).toArray();
-  return rows
-    .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt) || a.id - b.id)
-    .map(({ clientId: _clientId, ...rest }) => rest);
+  const rows = await unwrap<(Measurement & { clientId: number })[]>(
+    supabase
+      .from("measurements")
+      .select("*")
+      .eq("clientId", clientId)
+      .order("recordedAt", { ascending: true })
+      .order("id", { ascending: true }),
+  );
+  return rows.map(({ clientId: _clientId, ...rest }) => rest);
 }
 
 export type InsertMeasurementInput = {
@@ -31,12 +36,11 @@ export type InsertMeasurementInput = {
 };
 
 export async function insertMeasurement(input: InsertMeasurementInput): Promise<void> {
-  await db.measurements.add({ ...input });
+  await run(supabase.from("measurements").insert({ ...input }));
 }
 
 export async function deleteMeasurement(clientId: number, id: number): Promise<void> {
-  const row = await db.measurements.get(id);
-  if (row && row.clientId === clientId) {
-    await db.measurements.delete(id);
-  }
+  await run(
+    supabase.from("measurements").delete().eq("id", id).eq("clientId", clientId),
+  );
 }

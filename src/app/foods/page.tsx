@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useLiveQuery } from "@/lib/db/use-live-query";
 import { listFoodsPage, countFoods, listFoodCategories } from "@/lib/db/foods";
 import { FoodForm } from "./food-form";
 import { FoodRow } from "./food-row";
@@ -31,7 +31,7 @@ function FoodsPageInner() {
       listFoodCategories(),
     ]);
     return { foods, total, totalPages, grandTotal, categories };
-  }, [query, page]);
+  }, [query, page], ["foods"]);
 
   function pageHref(targetPage: number): string {
     const params = new URLSearchParams();

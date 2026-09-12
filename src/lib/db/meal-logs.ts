@@ -1,4 +1,4 @@
-import { db } from "./client";
+import { supabase, unwrap, run } from "./supabase";
 import type { DailyMealTotal } from "@/lib/health/meal-totals";
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
@@ -33,13 +33,16 @@ export async function listMealLogsByDate(
   clientId: number,
   recordedAt: string,
 ): Promise<MealLog[]> {
-  const rows = await db.mealLogs
-    .where("[clientId+recordedAt]")
-    .equals([clientId, recordedAt])
-    .toArray();
+  const rows = await unwrap<(MealLog & { clientId: number })[]>(
+    supabase
+      .from("mealLogs")
+      .select("*")
+      .eq("clientId", clientId)
+      .eq("recordedAt", recordedAt)
+      .order("id", { ascending: true }),
+  );
 
   return rows
-    .sort((a, b) => a.id - b.id)
     .map(stripClientId)
     .sort((a, b) => MEAL_TYPE_ORDER[a.mealType] - MEAL_TYPE_ORDER[b.mealType]);
 }
@@ -51,10 +54,16 @@ export async function listMealLogTotalsByDateRange(
   fromDate: string,
   toDate: string,
 ): Promise<DailyMealTotal[]> {
-  const rows = await db.mealLogs
-    .where("[clientId+recordedAt]")
-    .between([clientId, fromDate], [clientId, toDate], true, true)
-    .toArray();
+  const rows = await unwrap<
+    Pick<MealLog, "recordedAt" | "kcal" | "proteinG" | "fatG" | "carbG">[]
+  >(
+    supabase
+      .from("mealLogs")
+      .select("recordedAt, kcal, proteinG, fatG, carbG")
+      .eq("clientId", clientId)
+      .gte("recordedAt", fromDate)
+      .lte("recordedAt", toDate),
+  );
 
   const totalsByDate = new Map<string, DailyMealTotal>();
   for (const row of rows) {
@@ -95,20 +104,16 @@ export type InsertMealLogInput = {
 };
 
 export async function insertMealLog(input: InsertMealLogInput): Promise<void> {
-  await db.mealLogs.add({ ...input });
+  await run(supabase.from("mealLogs").insert({ ...input }));
 }
 
-// 複数件をまとめて登録する(「普段の3食から記録を作成」など)。1件でも失敗した
-// 場合に一部だけ登録された状態が残らないよう、1つのトランザクションで行う。
+// 複数件をまとめて登録する(「普段の3食から記録を作成」など)。
 export async function insertMealLogs(inputs: InsertMealLogInput[]): Promise<void> {
-  await db.transaction("rw", db.mealLogs, async () => {
-    await db.mealLogs.bulkAdd(inputs.map((input) => ({ ...input })));
-  });
+  await run(supabase.from("mealLogs").insert(inputs.map((input) => ({ ...input }))));
 }
 
 export async function deleteMealLog(clientId: number, id: number): Promise<void> {
-  const row = await db.mealLogs.get(id);
-  if (row && row.clientId === clientId) {
-    await db.mealLogs.delete(id);
-  }
+  await run(
+    supabase.from("mealLogs").delete().eq("id", id).eq("clientId", clientId),
+  );
 }

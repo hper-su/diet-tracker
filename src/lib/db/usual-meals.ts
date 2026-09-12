@@ -1,4 +1,4 @@
-import { db } from "./client";
+import { supabase, unwrap, run } from "./supabase";
 
 export type UsualMealType = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -25,10 +25,16 @@ const MEAL_TYPE_ORDER: Record<UsualMealType, number> = {
 // お客様が普段食べている食事(朝食・昼食・夕食・間食)の目安を、
 // 実際の日々の食事記録(meal_logs)とは別に管理する。
 export async function listUsualMeals(clientId: number): Promise<UsualMeal[]> {
-  const rows = await db.usualMeals.where("clientId").equals(clientId).toArray();
-  return rows
-    .sort((a, b) => a.id - b.id)
-    .sort((a, b) => MEAL_TYPE_ORDER[a.mealType] - MEAL_TYPE_ORDER[b.mealType]);
+  const rows = await unwrap<UsualMeal[]>(
+    supabase
+      .from("usualMeals")
+      .select("*")
+      .eq("clientId", clientId)
+      .order("id", { ascending: true }),
+  );
+  return rows.sort(
+    (a, b) => MEAL_TYPE_ORDER[a.mealType] - MEAL_TYPE_ORDER[b.mealType],
+  );
 }
 
 export type InsertUsualMealInput = {
@@ -44,17 +50,14 @@ export type InsertUsualMealInput = {
 };
 
 // 複数件をまとめて登録する(1回のフォーム送信で複数品目を追加する場合)。
-// 1件でも失敗した場合に一部だけ登録された状態が残らないよう、1つの
-// トランザクションで行う。
+// 1回のINSERT文で送るため、1件でも失敗した場合に一部だけ登録された状態が
+// 残ることはない。
 export async function insertUsualMeals(inputs: InsertUsualMealInput[]): Promise<void> {
-  await db.transaction("rw", db.usualMeals, async () => {
-    await db.usualMeals.bulkAdd(inputs.map((input) => ({ ...input })) as UsualMeal[]);
-  });
+  await run(supabase.from("usualMeals").insert(inputs.map((input) => ({ ...input }))));
 }
 
 export async function deleteUsualMeal(clientId: number, id: number): Promise<void> {
-  const row = await db.usualMeals.get(id);
-  if (row && row.clientId === clientId) {
-    await db.usualMeals.delete(id);
-  }
+  await run(
+    supabase.from("usualMeals").delete().eq("id", id).eq("clientId", clientId),
+  );
 }

@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useLiveQuery } from "@/lib/db/use-live-query";
 import { getClient } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
 import { listMeasurements } from "@/lib/db/measurements";
@@ -40,7 +40,7 @@ function ClientDetailPageInner() {
         ])
       : [[], []];
     return { client, measurements, protocolChecks };
-  }, [clientId]);
+  }, [clientId], ["clients", "measurements", "protocolChecks"]);
 
   if (!Number.isInteger(clientId) || clientId <= 0) {
     return <NotFound />;

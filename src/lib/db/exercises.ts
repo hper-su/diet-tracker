@@ -1,4 +1,4 @@
-import { db } from "./client";
+import { supabase, unwrap } from "./supabase";
 
 export type ExerciseCategory = "生活活動" | "運動";
 
@@ -11,7 +11,7 @@ export type Exercise = {
 
 // 運動習慣フォームの種目選択(セレクトボックス)用。
 export async function listExercises(): Promise<Exercise[]> {
-  const rows = await db.exercises.toArray();
+  const rows = await unwrap<Exercise[]>(supabase.from("exercises").select("*"));
   return rows.sort(
     (a, b) =>
       a.category.localeCompare(b.category) ||
@@ -21,6 +21,7 @@ export async function listExercises(): Promise<Exercise[]> {
 }
 
 export async function getExercise(id: number): Promise<Exercise | null> {
-  const row = await db.exercises.get(id);
-  return row ?? null;
+  return unwrap<Exercise | null>(
+    supabase.from("exercises").select("*").eq("id", id).maybeSingle(),
+  );
 }

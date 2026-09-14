@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLiveQuery } from "@/lib/db/use-live-query";
 import { listFoodsPage, countFoods, listFoodCategories } from "@/lib/db/foods";
+import { formatNumberJa } from "@/lib/format/number";
 import { FoodForm } from "./food-form";
 import { FoodRow } from "./food-row";
 
@@ -52,7 +53,7 @@ function FoodsPageInner() {
       <section className="rounded-lg border border-gray-200 bg-white">
         <div className="border-b border-gray-200 p-4">
           <h2 className="mb-3 font-medium">
-            登録済みの食品(全{grandTotal.toLocaleString()}件)
+            登録済みの食品(全{formatNumberJa(grandTotal)}件)
           </h2>
           <form className="flex gap-2">
             <input
@@ -71,10 +72,10 @@ function FoodsPageInner() {
           </form>
           <p className="mt-2 text-xs text-gray-400">
             {query
-              ? `「${query}」に一致する食品 ${total.toLocaleString()}件中 ${
+              ? `「${query}」に一致する食品 ${formatNumberJa(total)}件中 ${
                   foods.length
                 }件を表示しています。`
-              : `全${total.toLocaleString()}件を分類・食品名順で表示しています。`}
+              : `全${formatNumberJa(total)}件を分類・食品名順で表示しています。`}
           </p>
           <p className="mt-1 text-[10px] text-gray-400">{DATA_SOURCE_NOTE}</p>
         </div>

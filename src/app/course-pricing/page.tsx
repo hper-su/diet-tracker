@@ -3,8 +3,8 @@ import {
   ADDON_FEES,
   ADDON_NOTE,
   PRICING_FOOTNOTE,
-  PRICING_FORMULA_EXAMPLE,
 } from "@/lib/course-pricing";
+import { formatNumberJa } from "@/lib/format/number";
 
 export default function CoursePricingPage() {
   return (
@@ -41,10 +41,10 @@ export default function CoursePricingPage() {
                       </td>
                       <td className="px-3 py-2 text-gray-700">{fee.sessions}回</td>
                       <td className="px-3 py-2 text-gray-700">
-                        {fee.totalFee.toLocaleString()}円
+                        {formatNumberJa(fee.totalFee)}円
                       </td>
                       <td className="px-3 py-2 text-gray-700">
-                        {fee.perSession.toLocaleString()}円
+                        {formatNumberJa(fee.perSession)}円
                       </td>
                     </tr>
                   ))}
@@ -57,7 +57,7 @@ export default function CoursePricingPage() {
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="font-semibold text-gray-900">追加分</h2>
+        <h2 className="font-semibold text-gray-900">追加セッション</h2>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -74,10 +74,10 @@ export default function CoursePricingPage() {
                     {fee.sessions}回
                   </td>
                   <td className="px-3 py-2 text-gray-700">
-                    {fee.totalFee.toLocaleString()}円
+                    {formatNumberJa(fee.totalFee)}円
                   </td>
                   <td className="px-3 py-2 text-gray-700">
-                    {fee.perSession.toLocaleString()}円
+                    {formatNumberJa(fee.perSession)}円
                   </td>
                 </tr>
               ))}
@@ -88,7 +88,6 @@ export default function CoursePricingPage() {
       </section>
 
       <p className="text-xs text-gray-500">{PRICING_FOOTNOTE}</p>
-      <p className="text-xs text-gray-500">{PRICING_FORMULA_EXAMPLE}</p>
     </div>
   );
 }

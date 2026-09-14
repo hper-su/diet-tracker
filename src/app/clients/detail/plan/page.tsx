@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useLiveQuery } from "@/lib/db/use-live-query";
 import { getClient } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
+import { formatNumberJa } from "@/lib/format/number";
 import { listFoods } from "@/lib/db/foods";
 import { listExercises } from "@/lib/db/exercises";
 import { listUsualMeals, type UsualMealType } from "@/lib/db/usual-meals";
@@ -278,7 +279,7 @@ function ClientPlanPageInner() {
           <section className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
             <p className="font-medium">カロリーと体重変化の目安</p>
             <p className="mt-1 text-xs">
-              体脂肪を1kg減らす・増やすには、約{KCAL_PER_KG_BODY_WEIGHT.toLocaleString()}
+              体脂肪を1kg減らす・増やすには、約{formatNumberJa(KCAL_PER_KG_BODY_WEIGHT)}
               kcalの摂取カロリーの過不足(消費または蓄積)が必要とされています。上の「摂取目標カロリー」は、この目安と1か月あたりの目標体重変化から算出しています。
             </p>
           </section>

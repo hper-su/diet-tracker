@@ -91,7 +91,7 @@ export default function GIFoodsPage() {
         <h2 className="font-medium text-gray-900">GI値とは</h2>
         <p>
           GI値(グリセミック・インデックス、Glycemic
-          Index)は、食後の血糖値の上がりやすさを、ブドウ糖(グルコース)を摂取した場合を100として相対的に数値化した指標です。同じ糖質量でも、GI値が高い食品ほど血糖値が急上昇しやすく、低い食品ほど緩やかに上昇するとされています。血糖コントロールを意識した食事指導の参考情報として使えます。
+          Index)は、食後の血糖値の上がりやすさを、ブドウ糖(グルコース)を摂取した場合を100として相対的に数値化した指標です。同じ糖質量でも、GI値が高い食品ほど血糖値が急上昇しやすく、低い食品ほど緩やかに上昇するとされています。血糖値の変動を穏やかにしたいときの、食品選びの参考にしてください。
         </p>
         <div className="grid gap-2 sm:grid-cols-3">
           <div className="rounded-lg border border-red-200 bg-red-50 p-3">

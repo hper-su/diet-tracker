@@ -1,33 +1,71 @@
 import Link from "next/link";
-import { Fragment } from "react";
+import { Emphasized } from "@/components/emphasized";
+import { StatBox } from "@/components/stat-box";
 import {
   INTRO_BEFORE,
   INTRO_BOLD,
   INTRO_AFTER,
+  INTRO_HIGHLIGHT,
+  INTRO_POINT,
   NUTRITION_PRIORITIES,
   PRACTICE_INTRO,
-  PRACTICE_ROWS,
+  PRACTICE_STEPS,
   CONTINUATION_TIPS,
   CLOSING_NOTE,
+  type ToneCard,
 } from "@/lib/nutrition-guidance";
 
-// 本文中の "**強調したい部分**" を、太字+色付きのテキストに変換して表示する。
-// お客様が読む解説文の中で、特に大事な一文だけを目立たせるための簡易記法。
-function Emphasized({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+// 「控えめに/積極的に」「NG/OK」「高GI/低GI」のような2択の対比カード。
+function ToneCards({ cards }: { cards: ToneCard[] }) {
   return (
-    <>
-      {parts.map((part, i) => {
-        if (part.startsWith("**") && part.endsWith("**")) {
-          return (
-            <strong key={i} className="font-bold text-rose-700">
-              {part.slice(2, -2)}
-            </strong>
-          );
-        }
-        return <Fragment key={i}>{part}</Fragment>;
-      })}
-    </>
+    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      {cards.map((card) => (
+        <div
+          key={card.label}
+          className={`rounded-lg border-l-4 bg-gray-50 p-3 ${
+            card.tone === "good" ? "border-l-emerald-500" : "border-l-rose-400"
+          }`}
+        >
+          <p
+            className={`text-sm font-semibold ${
+              card.tone === "good" ? "text-emerald-700" : "text-rose-700"
+            }`}
+          >
+            {card.label}
+          </p>
+          <p className="mt-1 text-sm text-gray-700">
+            <Emphasized text={card.description} />
+          </p>
+          {card.foods && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {card.foods.map((food) => (
+                <span
+                  key={food}
+                  className="rounded-full border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700"
+                >
+                  {food}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BulletList({ intro, items }: { intro?: string; items: string[] }) {
+  return (
+    <div className="mt-2 text-sm text-gray-700">
+      {intro && <p className="font-medium">{intro}</p>}
+      <ul className="mt-1 list-disc space-y-1 pl-5">
+        {items.map((item) => (
+          <li key={item}>
+            <Emphasized text={item} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -42,35 +80,50 @@ export default function NutritionGuidancePage() {
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
-        <p>
-          {INTRO_BEFORE}
-          <strong className="font-bold text-gray-900">「{INTRO_BOLD}」</strong>
-          <Emphasized text={INTRO_AFTER} />
+        <p className="text-xs font-semibold tracking-wide text-gray-400">
+          大前提
+        </p>
+        <p className="mt-1 text-base font-bold text-gray-900">
+          {INTRO_BEFORE}「{INTRO_BOLD}」{INTRO_AFTER}
+        </p>
+
+        <div className="mt-3">
+          <StatBox stat={INTRO_HIGHLIGHT} />
+        </div>
+
+        <p className="mt-2 rounded-lg bg-gray-50 p-3">
+          <Emphasized text={INTRO_POINT} />
         </p>
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="font-semibold text-gray-900">実践的な組み立て方</h2>
         <p className="mt-2 text-sm text-gray-700">{PRACTICE_INTRO}</p>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500">
-                <th className="px-3 py-2">優先度</th>
-                <th className="px-3 py-2">やること</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PRACTICE_ROWS.map((row) => (
-                <tr key={row.action} className="border-t border-gray-100">
-                  <td className="px-3 py-2 whitespace-nowrap font-medium text-gray-900">
-                    {row.priority}
-                  </td>
-                  <td className="px-3 py-2 text-gray-700">{row.action}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {PRACTICE_STEPS.map((step) => (
+            <div
+              key={step.order}
+              className={`flex items-start gap-3 rounded-lg border p-3 ${
+                step.isPremise
+                  ? "border-gray-300 bg-gray-50 sm:col-span-2"
+                  : "border-gray-200"
+              }`}
+            >
+              <span
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ${
+                  step.isPremise ? "bg-gray-500" : "bg-gray-900"
+                }`}
+              >
+                {step.isPremise ? "!" : step.order}
+              </span>
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  {step.title}
+                </p>
+                <p className="mt-0.5 text-xs text-gray-500">{step.summary}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -99,81 +152,40 @@ export default function NutritionGuidancePage() {
               ))}
             </div>
 
-            {priority.combinationExample && (
-              <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <p className="text-sm font-medium text-gray-900">
-                  {priority.combinationExample.title}
-                </p>
-                <div className="mt-2 space-y-2">
-                  {priority.combinationExample.meals.map((meal) => (
-                    <div
-                      key={meal.time}
-                      className="flex flex-wrap items-center gap-1.5"
-                    >
-                      <span className="inline-flex shrink-0 items-center rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">
-                        {meal.time}
-                      </span>
-                      {meal.items.map((item) => (
-                        <span
-                          key={item}
-                          className="rounded-full border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700"
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-3 text-sm font-bold text-gray-900">
-                  {priority.combinationExample.total}
-                </p>
-              </div>
-            )}
-
-            {priority.paragraphsAfterExample && (
-              <div className="mt-3 space-y-2 text-sm text-gray-700">
-                {priority.paragraphsAfterExample.map((paragraph, i) => (
-                  <p key={i}>
-                    <Emphasized text={paragraph} />
-                  </p>
-                ))}
-              </div>
-            )}
-
             {priority.bulletList && (
-              <div className="mt-2 text-sm text-gray-700">
-                {priority.bulletListIntro && (
-                  <p className="font-medium">{priority.bulletListIntro}</p>
-                )}
-                <ul className="mt-1 list-disc space-y-1 pl-5">
-                  {priority.bulletList.map((item) => (
-                    <li key={item}>
-                      <Emphasized text={item} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <BulletList
+                intro={priority.bulletListIntro}
+                items={priority.bulletList}
+              />
             )}
 
             {priority.detailParagraphs && (
-              <div className="mt-2 space-y-2 text-sm text-gray-700">
-                {priority.detailParagraphs.map((paragraph, i) => (
-                  <p key={i}>
-                    <Emphasized text={paragraph} />
+              <div className="mt-3 rounded-lg bg-gray-50 p-3">
+                {priority.detailHeading && (
+                  <p className="text-sm font-medium text-gray-900">
+                    {priority.detailHeading}
                   </p>
-                ))}
+                )}
+                <div className="mt-1 space-y-2 text-sm text-gray-700">
+                  {priority.detailParagraphs.map((paragraph, i) => (
+                    <p key={i}>
+                      <Emphasized text={paragraph} />
+                    </p>
+                  ))}
+                </div>
+                {priority.detailBulletList && (
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-gray-700">
+                    {priority.detailBulletList.map((item) => (
+                      <li key={item}>
+                        <Emphasized text={item} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 
-            {priority.detailBulletList && (
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-gray-700">
-                {priority.detailBulletList.map((item) => (
-                  <li key={item}>
-                    <Emphasized text={item} />
-                  </li>
-                ))}
-              </ul>
-            )}
+            {priority.toneCards && <ToneCards cards={priority.toneCards} />}
 
             {priority.comparisonRows && priority.comparisonColumns && (
               <div className="mt-3 space-y-2">
@@ -213,8 +225,75 @@ export default function NutritionGuidancePage() {
               </div>
             )}
 
+            {priority.combinationExample && (
+              <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <p className="text-sm font-medium text-gray-900">
+                  {priority.combinationExample.title}
+                </p>
+                <div className="mt-2 space-y-2">
+                  {priority.combinationExample.meals.map((meal) => (
+                    <div
+                      key={meal.time}
+                      className="flex flex-wrap items-center gap-1.5"
+                    >
+                      <span className="inline-flex shrink-0 items-center rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">
+                        {meal.time}
+                      </span>
+                      {meal.items.map((item) => (
+                        <span
+                          key={item}
+                          className="rounded-full border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-sm font-bold text-gray-900">
+                  {priority.combinationExample.total}
+                </p>
+              </div>
+            )}
+
+            {priority.secondaryBulletList && (
+              <BulletList
+                intro={priority.secondaryBulletListTitle}
+                items={priority.secondaryBulletList}
+              />
+            )}
+
+            {priority.subheading2 && (
+              <h4 className="mt-4 text-sm font-semibold text-gray-900">
+                {priority.subheading2}
+              </h4>
+            )}
+
+            {priority.paragraphsAfterExample && (
+              <div className="mt-2 space-y-2 text-sm text-gray-700">
+                {priority.paragraphsAfterExample.map((paragraph, i) => (
+                  <p key={i}>
+                    <Emphasized text={paragraph} />
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {priority.statHighlight && (
+              <div className="mt-3">
+                <StatBox stat={priority.statHighlight} />
+              </div>
+            )}
+
+            {priority.tipsList && (
+              <BulletList
+                intro={priority.tipsListIntro}
+                items={priority.tipsList}
+              />
+            )}
+
             {priority.subSections && (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 {priority.subSections.map((sub) => (
                   <div
                     key={sub.title}

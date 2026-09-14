@@ -1,3 +1,4 @@
+import type { LabeledPoint } from "@/lib/menstrual-cycle";
 import {
   INTRO_PARAGRAPH,
   CYCLE_PHASES,
@@ -17,6 +18,22 @@ import {
   IRREGULARITY_ACTION_PARAGRAPH,
   CLOSING_NOTE,
 } from "@/lib/menstrual-cycle";
+
+function PointCards({ points }: { points: LabeledPoint[] }) {
+  return (
+    <div className="mt-2 grid gap-3 sm:grid-cols-2">
+      {points.map((point) => (
+        <div
+          key={point.title}
+          className="rounded-lg border border-gray-100 bg-gray-50 p-3"
+        >
+          <p className="text-sm font-medium text-gray-900">{point.title}</p>
+          <p className="mt-1 text-sm text-gray-700">{point.body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function MenstrualCyclePage() {
   return (
@@ -56,27 +73,17 @@ export default function MenstrualCyclePage() {
         <div className="mt-2 space-y-2 text-sm text-gray-700">
           <p>{TRAINING_INTRO_PARAGRAPH}</p>
           <p className="font-medium">{TRAINING_POINTS_INTRO}</p>
-          <ul className="list-disc space-y-1 pl-5">
-            {TRAINING_POINTS.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
         </div>
+        <PointCards points={TRAINING_POINTS} />
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="font-semibold text-gray-900">
           ダイエット(食事管理)について
         </h2>
-        <div className="mt-2 space-y-2 text-sm text-gray-700">
-          <p>{DIET_INTRO_PARAGRAPH}</p>
-          <ul className="list-disc space-y-1 pl-5">
-            {DIET_CHANGES.map((change) => (
-              <li key={change}>{change}</li>
-            ))}
-          </ul>
-          <p>{DIET_NOTE_PARAGRAPH}</p>
-        </div>
+        <p className="mt-2 text-sm text-gray-700">{DIET_INTRO_PARAGRAPH}</p>
+        <PointCards points={DIET_CHANGES} />
+        <p className="mt-3 text-sm text-gray-700">{DIET_NOTE_PARAGRAPH}</p>
 
         <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
           <h3 className="font-medium text-gray-900">
@@ -97,11 +104,7 @@ export default function MenstrualCyclePage() {
           <h3 className="font-medium text-gray-900">
             ◆ 生理中に気をつけたいこと
           </h3>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-700">
-            {PERIOD_CARE_POINTS.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
+          <PointCards points={PERIOD_CARE_POINTS} />
         </div>
       </section>
 

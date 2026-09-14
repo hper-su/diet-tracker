@@ -34,19 +34,33 @@ export const TRAINING_INTRO_PARAGRAPH =
 export const TRAINING_POINTS_INTRO =
   "そのため、以下のポイントを大切にしてみてください。";
 
-export const TRAINING_POINTS: string[] = [
-  "「この時期だから追い込まなきゃ」「この時期だから休まなきゃ」と型にはめる必要はありません。",
-  "それよりも、その日の体調やお疲れ具合を優先して、強度を一緒に調整していきましょう。",
-  "「なんとなく調子が良い/悪い」というご自身の感覚を、遠慮なく教えてください。トレーニング内容の調整に活かします。",
+export type LabeledPoint = {
+  title: string;
+  body: string;
+};
+
+export const TRAINING_POINTS: LabeledPoint[] = [
+  {
+    title: "型にはめない",
+    body: "「この時期だから追い込まなきゃ」「休まなきゃ」と決めつける必要はありません。",
+  },
+  {
+    title: "その日の体調を優先",
+    body: "体調や疲労具合を優先して、強度を一緒に調整していきましょう。",
+  },
+  {
+    title: "感覚を教えてもらう",
+    body: "「なんとなく調子が良い/悪い」というご自身の感覚を、遠慮なく教えてください。トレーニング内容の調整に活かします。",
+  },
 ];
 
 export const DIET_INTRO_PARAGRAPH =
   "生理前(排卵後〜生理前の時期)は、以下のような変化が起こりやすい時期です。";
 
-export const DIET_CHANGES: string[] = [
-  "体が水分をため込みやすくなる",
-  "食欲が増えやすくなる",
-  "気分が不安定になりやすい",
+export const DIET_CHANGES: LabeledPoint[] = [
+  { title: "水分をため込みやすい", body: "むくみが出やすくなります。" },
+  { title: "食欲が増えやすい", body: "自然な体の反応です。" },
+  { title: "気分が不安定になりやすい", body: "ホルモン変化の影響です。" },
 ];
 
 export const DIET_NOTE_PARAGRAPH =
@@ -63,9 +77,15 @@ export const SWEET_CRAVING_SWAPS: string[] = [
 export const SWEET_CRAVING_CLOSING =
   "また、お肉・魚・卵・大豆製品などのタンパク質や、野菜・きのこ・海藻などの食物繊維をしっかり摂ると、満腹感が続きやすくなります。";
 
-export const PERIOD_CARE_POINTS: string[] = [
-  "経血で鉄分が失われるため、レバーや赤身のお肉、豆類、青菜などを意識して摂ると効果的です。",
-  "体調が優れないときは、無理に激しい運動をせず、ストレッチや軽めの運動に切り替えてOKです。",
+export const PERIOD_CARE_POINTS: LabeledPoint[] = [
+  {
+    title: "鉄分を意識して摂る",
+    body: "経血で鉄分が失われるため、レバーや赤身のお肉、豆類、青菜などを意識して摂ると効果的です。",
+  },
+  {
+    title: "無理せず切り替える",
+    body: "体調が優れないときは、無理に激しい運動をせず、ストレッチや軽めの運動に切り替えてOKです。",
+  },
 ];
 
 export const IRREGULARITY_INTRO_PARAGRAPH =
@@ -83,4 +103,4 @@ export const IRREGULARITY_ACTION_PARAGRAPH =
   "もしそのような変化があれば、我慢せずに教えてください。食事量やトレーニング強度を一緒に見直しますし、必要であれば婦人科の受診もおすすめします。";
 
 export const CLOSING_NOTE =
-  "体のリズムには個人差があります。一般的な傾向はあっても、それが必ずしもご自身に当てはまるとは限りません。不調を感じたときは遠慮なくお声がけくださいね。";
+  "体のリズムには個人差があります。一般的な傾向はあっても、それが必ずしもご自身に当てはまるとは限りません。不調を感じたときは遠慮なくお声がけくださいね。一緒に、無理なく続けられるペースを見つけていきましょう。";

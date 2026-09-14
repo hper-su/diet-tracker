@@ -12,6 +12,31 @@ import {
 import type { ValidationResult } from "./result";
 
 const VALID_GENDERS: Gender[] = ["male", "female", "other"];
+const BIRTHDATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const BIRTHDATE_PATTERN_NO_DASH = /^\d{8}$/;
+
+// "YYYY-MM-DD"と、区切りなしの"YYYYMMDD"の両方を受け付け、
+// 保存形式(YYYY-MM-DD)に正規化する。
+function normalizeBirthdate(raw: string): string | null {
+  if (BIRTHDATE_PATTERN.test(raw)) return raw;
+  if (BIRTHDATE_PATTERN_NO_DASH.test(raw)) {
+    return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+  }
+  return null;
+}
+
+// new Date("1988-02-30")は「不正な日付」としてNaNにはならず、3月1日として
+// 繰り上がってしまう(JSのDateの仕様)。年月日を構成要素に戻して一致するかを
+// 確かめることで、存在しない日付(2月30日、4月31日など)を確実に弾く。
+function isValidCalendarDate(normalized: string): boolean {
+  const [year, month, day] = normalized.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
 
 export type ClientInput = {
   name: string;
@@ -41,7 +66,22 @@ export function validateClientInput(
     return { ok: false, error: "お名前を入力してください。" };
   }
 
-  const birthdate = input.birthdate || null;
+  const birthdateRaw = input.birthdate.trim();
+  let birthdate: string | null = null;
+  if (birthdateRaw) {
+    const normalized = normalizeBirthdate(birthdateRaw);
+    if (!normalized) {
+      return {
+        ok: false,
+        error:
+          "生年月日はYYYY-MM-DD、または区切りなしのYYYYMMDD形式で入力してください(例: 1988-03-20 / 19880320)。",
+      };
+    }
+    if (!isValidCalendarDate(normalized)) {
+      return { ok: false, error: "生年月日が正しい日付ではありません。" };
+    }
+    birthdate = normalized;
+  }
 
   let heightCm: number | null = null;
   if (input.heightRaw) {

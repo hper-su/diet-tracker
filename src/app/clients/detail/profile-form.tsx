@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { updateClientProfileAction } from "./profile-actions";
+import { BirthdateField } from "@/components/birthdate-field";
 import type { Client } from "@/lib/db/clients";
 import {
   ACTIVITY_LEVELS,
@@ -44,15 +45,7 @@ export function ProfileForm({ client }: { client: Client }) {
             className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </label>
-        <label className="block text-sm">
-          <span className="mb-1 block text-xs text-gray-500">生年月日</span>
-          <input
-            name="birthdate"
-            type="date"
-            defaultValue={client.birthdate ?? ""}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-          />
-        </label>
+        <BirthdateField defaultValue={client.birthdate ?? ""} />
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-gray-500">身長(cm)</span>
           <input

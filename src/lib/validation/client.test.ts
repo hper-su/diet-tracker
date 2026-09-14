@@ -63,6 +63,50 @@ describe("validateClientInput", () => {
     });
   });
 
+  it("accepts a birthdate without dashes and normalizes it", () => {
+    const result = validateClientInput({ ...BASE_INPUT, birthdate: "19880320" });
+    expect(result.ok && result.data.birthdate).toBe("1988-03-20");
+  });
+
+  it("rejects a birthdate in an unsupported format", () => {
+    expect(
+      validateClientInput({ ...BASE_INPUT, birthdate: "1988/03/20" }),
+    ).toEqual({
+      ok: false,
+      error:
+        "生年月日はYYYY-MM-DD、または区切りなしのYYYYMMDD形式で入力してください(例: 1988-03-20 / 19880320)。",
+    });
+  });
+
+  it("rejects a birthdate that is not a real date", () => {
+    expect(
+      validateClientInput({ ...BASE_INPUT, birthdate: "1988-13-40" }),
+    ).toEqual({ ok: false, error: "生年月日が正しい日付ではありません。" });
+  });
+
+  it("rejects a day that overflows within a valid month (e.g. Feb 30)", () => {
+    expect(
+      validateClientInput({ ...BASE_INPUT, birthdate: "1988-02-30" }),
+    ).toEqual({ ok: false, error: "生年月日が正しい日付ではありません。" });
+  });
+
+  it("rejects Feb 29 on a non-leap year", () => {
+    expect(
+      validateClientInput({ ...BASE_INPUT, birthdate: "2023-02-29" }),
+    ).toEqual({ ok: false, error: "生年月日が正しい日付ではありません。" });
+  });
+
+  it("accepts Feb 29 on a leap year", () => {
+    const result = validateClientInput({ ...BASE_INPUT, birthdate: "2024-02-29" });
+    expect(result.ok && result.data.birthdate).toBe("2024-02-29");
+  });
+
+  it("rejects a birthdate without dashes that is not a real date", () => {
+    expect(
+      validateClientInput({ ...BASE_INPUT, birthdate: "19881340" }),
+    ).toEqual({ ok: false, error: "生年月日が正しい日付ではありません。" });
+  });
+
   it("rejects a non-positive height", () => {
     expect(validateClientInput({ ...BASE_INPUT, heightRaw: "0" })).toEqual({
       ok: false,

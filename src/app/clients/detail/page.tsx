@@ -9,13 +9,12 @@ import { formatClientName } from "@/lib/format/client-name";
 import { listMeasurements } from "@/lib/db/measurements";
 import { listProtocolChecks } from "@/lib/db/protocol-checks";
 import { findLatestNonNull } from "@/lib/health/measurements";
-import { calculateBMI } from "@/lib/health/bmi";
 import { projectWeightAchievement } from "@/lib/health/weight-projection";
 import { ClientTabs } from "./client-tabs";
 import { ProfileForm } from "./profile-form";
 import { MeasurementForm } from "./measurement-form";
 import { MeasurementChart, type MeasurementPoint } from "./measurement-chart";
-import { deleteMeasurementAction } from "./measurement-actions";
+import { MeasurementRow } from "./measurement-row";
 import { ProtocolCheckForm } from "./protocol-check-form";
 import { ProtocolCheckHistory } from "./protocol-check-history";
 
@@ -153,32 +152,12 @@ function ClientDetailPageInner() {
             </thead>
             <tbody>
               {[...measurements].reverse().map((m) => (
-                <tr key={m.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2 whitespace-nowrap">{m.recordedAt}</td>
-                  <td className="px-4 py-2">{m.weightKg ?? "-"}</td>
-                  <td className="px-4 py-2">
-                    {client.heightCm != null && m.weightKg != null
-                      ? (calculateBMI({ weightKg: m.weightKg, heightCm: client.heightCm }) ?? "-")
-                      : "-"}
-                  </td>
-                  <td className="px-4 py-2">{m.bodyFatPct ?? "-"}</td>
-                  <td className="px-4 py-2">{m.muscleMassKg ?? "-"}</td>
-                  <td className="px-4 py-2">{m.visceralFatLevel ?? "-"}</td>
-                  <td className="px-4 py-2">{m.bmrKcal ?? "-"}</td>
-                  <td className="px-4 py-2 text-gray-500">{m.memo ?? ""}</td>
-                  <td className="px-4 py-2 text-right">
-                    <form action={deleteMeasurementAction}>
-                      <input type="hidden" name="id" value={m.id} />
-                      <input type="hidden" name="client_id" value={client.id} />
-                      <button
-                        type="submit"
-                        className="text-xs text-gray-400 hover:text-red-600"
-                      >
-                        削除
-                      </button>
-                    </form>
-                  </td>
-                </tr>
+                <MeasurementRow
+                  key={m.id}
+                  measurement={m}
+                  clientId={client.id}
+                  heightCm={client.heightCm}
+                />
               ))}
               {measurements.length === 0 && (
                 <tr>

@@ -39,6 +39,30 @@ export async function insertMeasurement(input: InsertMeasurementInput): Promise<
   await run(supabase.from("measurements").insert({ ...input }));
 }
 
+export type UpdateMeasurementInput = {
+  recordedAt: string;
+  weightKg: number | null;
+  bodyFatPct: number | null;
+  muscleMassKg: number | null;
+  visceralFatLevel: number | null;
+  bmrKcal: number | null;
+  memo: string | null;
+};
+
+export async function updateMeasurement(
+  clientId: number,
+  id: number,
+  input: UpdateMeasurementInput,
+): Promise<void> {
+  await run(
+    supabase
+      .from("measurements")
+      .update({ ...input })
+      .eq("id", id)
+      .eq("clientId", clientId),
+  );
+}
+
 export async function deleteMeasurement(clientId: number, id: number): Promise<void> {
   await run(
     supabase.from("measurements").delete().eq("id", id).eq("clientId", clientId),

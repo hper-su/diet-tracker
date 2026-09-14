@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { addClientAction, type AddClientState } from "./actions";
 import { getBodyAverageForGender } from "@/lib/health/body-averages";
+import { BirthdateField } from "@/components/birthdate-field";
 
 export function NewClientForm() {
   const [state, formAction, pending] = useActionState(
@@ -65,16 +66,7 @@ function NewClientFormFields({
             className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </label>
-        <label className="block text-sm">
-          <span className="mb-1 block text-xs text-gray-500">
-            生年月日(任意)
-          </span>
-          <input
-            name="birthdate"
-            type="date"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-          />
-        </label>
+        <BirthdateField optional />
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-gray-500">性別(任意)</span>
           <select

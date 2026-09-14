@@ -17,6 +17,7 @@ import {
   findRelatedExercisesForBone,
   findRelatedExercisesForMuscle,
 } from "@/lib/muscle-exercises";
+import { BASE_PATH } from "@/lib/base-path";
 
 // public/anatomy/配下の全身図イラスト。色検出によるハイライト連動は
 // 精度が不十分だったため廃止し、参考画像として静的に表示するのみとする。
@@ -128,7 +129,7 @@ export default function AnatomyPage() {
         </p>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/anatomy/muscle-diagram.jpg"
+          src={`${BASE_PATH}/anatomy/muscle-diagram.jpg`}
           alt="人体の主要筋肉部位図解(前面・背面、色分け)"
           width={MUSCLE_DIAGRAM_IMAGE.width}
           height={MUSCLE_DIAGRAM_IMAGE.height}
@@ -155,7 +156,7 @@ export default function AnatomyPage() {
               </p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={diagram.src}
+                src={`${BASE_PATH}${diagram.src}`}
                 alt={diagram.alt}
                 width={diagram.width}
                 height={diagram.height}

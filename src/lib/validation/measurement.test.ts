@@ -6,6 +6,7 @@ const BASE_INPUT = {
   weightRaw: "",
   bodyFatRaw: "",
   muscleMassRaw: "",
+  bodyWaterRaw: "",
   visceralFatRaw: "",
   bmrRaw: "",
   memo: "",
@@ -22,7 +23,7 @@ describe("validateMeasurementInput", () => {
     expect(validateMeasurementInput(BASE_INPUT)).toEqual({
       ok: false,
       error:
-        "体重・体脂肪率・筋肉量・内臓脂肪・基礎代謝のいずれか1つ以上を入力してください。",
+        "体重・体脂肪率・筋肉量・体水分率・内臓脂肪・基礎代謝のいずれか1つ以上を入力してください。",
     });
   });
 
@@ -38,6 +39,7 @@ describe("validateMeasurementInput", () => {
         weightKg: 68.5,
         bodyFatPct: null,
         muscleMassKg: null,
+        bodyWaterPct: null,
         visceralFatLevel: null,
         bmrKcal: null,
         memo: null,
@@ -51,6 +53,7 @@ describe("validateMeasurementInput", () => {
       weightRaw: "68.5",
       bodyFatRaw: "18.2",
       muscleMassRaw: "55.1",
+      bodyWaterRaw: "58.3",
       visceralFatRaw: "8",
       bmrRaw: "1550",
       memo: "朝食前に測定",
@@ -62,6 +65,7 @@ describe("validateMeasurementInput", () => {
         weightKg: 68.5,
         bodyFatPct: 18.2,
         muscleMassKg: 55.1,
+        bodyWaterPct: 58.3,
         visceralFatLevel: 8,
         bmrKcal: 1550,
         memo: "朝食前に測定",

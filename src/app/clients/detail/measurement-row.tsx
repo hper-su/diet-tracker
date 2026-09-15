@@ -51,6 +51,7 @@ export function MeasurementRow({
         <td className="px-4 py-2">{bmi ?? "-"}</td>
         <td className="px-4 py-2">{measurement.bodyFatPct ?? "-"}</td>
         <td className="px-4 py-2">{measurement.muscleMassKg ?? "-"}</td>
+        <td className="px-4 py-2">{measurement.bodyWaterPct ?? "-"}</td>
         <td className="px-4 py-2">{measurement.visceralFatLevel ?? "-"}</td>
         <td className="px-4 py-2">{measurement.bmrKcal ?? "-"}</td>
         <td className="px-4 py-2 text-gray-500">{measurement.memo ?? ""}</td>
@@ -79,8 +80,8 @@ export function MeasurementRow({
 
   return (
     <tr className="border-t border-gray-100 bg-gray-50">
-      <td colSpan={9} className="px-4 py-3">
-        <form action={formAction} className="grid gap-2 sm:grid-cols-8">
+      <td colSpan={10} className="px-4 py-3">
+        <form action={formAction} className="grid gap-2 sm:grid-cols-9">
           <input type="hidden" name="id" value={measurement.id} />
           <input type="hidden" name="client_id" value={clientId} />
           <label className="block text-xs">
@@ -98,7 +99,7 @@ export function MeasurementRow({
             <input
               name="weight_kg"
               type="number"
-              step="0.1"
+              step="0.01"
               defaultValue={measurement.weightKg ?? ""}
               className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />
@@ -118,8 +119,18 @@ export function MeasurementRow({
             <input
               name="muscle_mass_kg"
               type="number"
-              step="0.1"
+              step="0.01"
               defaultValue={measurement.muscleMassKg ?? ""}
+              className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+            />
+          </label>
+          <label className="block text-xs">
+            <span className="mb-1 block text-gray-500">体水分率(%)</span>
+            <input
+              name="body_water_pct"
+              type="number"
+              step="0.1"
+              defaultValue={measurement.bodyWaterPct ?? ""}
               className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />
           </label>
@@ -151,7 +162,7 @@ export function MeasurementRow({
               className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />
           </label>
-          <div className="flex items-end gap-2 sm:col-span-8">
+          <div className="flex items-end gap-2 sm:col-span-9">
             {state?.error && !errorDismissed && (
               <p className="text-xs text-red-600">{state.error}</p>
             )}

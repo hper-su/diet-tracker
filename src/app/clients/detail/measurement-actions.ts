@@ -13,6 +13,7 @@ function readMeasurementFormData(formData: FormData) {
     weightRaw: String(formData.get("weight_kg") ?? ""),
     bodyFatRaw: String(formData.get("body_fat_pct") ?? ""),
     muscleMassRaw: String(formData.get("muscle_mass_kg") ?? ""),
+    bodyWaterRaw: String(formData.get("body_water_pct") ?? ""),
     visceralFatRaw: String(formData.get("visceral_fat_level") ?? ""),
     bmrRaw: String(formData.get("bmr_kcal") ?? ""),
     memo: String(formData.get("memo") ?? ""),

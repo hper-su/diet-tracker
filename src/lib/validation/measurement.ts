@@ -5,6 +5,7 @@ export type MeasurementInput = {
   weightRaw: string;
   bodyFatRaw: string;
   muscleMassRaw: string;
+  bodyWaterRaw: string;
   visceralFatRaw: string;
   bmrRaw: string;
   memo: string;
@@ -15,6 +16,7 @@ export type MeasurementData = {
   weightKg: number | null;
   bodyFatPct: number | null;
   muscleMassKg: number | null;
+  bodyWaterPct: number | null;
   visceralFatLevel: number | null;
   bmrKcal: number | null;
   memo: string | null;
@@ -49,13 +51,14 @@ export function validateMeasurementInput(
     !input.weightRaw &&
     !input.bodyFatRaw &&
     !input.muscleMassRaw &&
+    !input.bodyWaterRaw &&
     !input.visceralFatRaw &&
     !input.bmrRaw
   ) {
     return {
       ok: false,
       error:
-        "体重・体脂肪率・筋肉量・内臓脂肪・基礎代謝のいずれか1つ以上を入力してください。",
+        "体重・体脂肪率・筋肉量・体水分率・内臓脂肪・基礎代謝のいずれか1つ以上を入力してください。",
     };
   }
 
@@ -63,6 +66,7 @@ export function validateMeasurementInput(
     ["weightKg", { raw: input.weightRaw, label: "体重" }],
     ["bodyFatPct", { raw: input.bodyFatRaw, label: "体脂肪率" }],
     ["muscleMassKg", { raw: input.muscleMassRaw, label: "筋肉量" }],
+    ["bodyWaterPct", { raw: input.bodyWaterRaw, label: "体水分率" }],
     ["visceralFatLevel", { raw: input.visceralFatRaw, label: "内臓脂肪レベル" }],
     ["bmrKcal", { raw: input.bmrRaw, label: "基礎代謝" }],
   ];
@@ -83,6 +87,7 @@ export function validateMeasurementInput(
       weightKg: values.weightKg,
       bodyFatPct: values.bodyFatPct,
       muscleMassKg: values.muscleMassKg,
+      bodyWaterPct: values.bodyWaterPct,
       visceralFatLevel: values.visceralFatLevel,
       bmrKcal: values.bmrKcal,
       memo: input.memo || null,

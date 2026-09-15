@@ -28,6 +28,7 @@ create table if not exists measurements (
   "weightKg" double precision,
   "bodyFatPct" double precision,
   "muscleMassKg" double precision,
+  "bodyWaterPct" double precision,
   "visceralFatLevel" double precision,
   "bmrKcal" double precision,
   memo text
@@ -242,14 +243,15 @@ begin
 
   insert into measurements (
     id, "clientId", "recordedAt", "weightKg", "bodyFatPct", "muscleMassKg",
-    "visceralFatLevel", "bmrKcal", memo
+    "bodyWaterPct", "visceralFatLevel", "bmrKcal", memo
   )
   select
     id, "clientId", "recordedAt", "weightKg", "bodyFatPct", "muscleMassKg",
-    "visceralFatLevel", "bmrKcal", memo
+    "bodyWaterPct", "visceralFatLevel", "bmrKcal", memo
   from jsonb_to_recordset(payload->'measurements') as t(
     id integer, "clientId" integer, "recordedAt" text, "weightKg" double precision,
     "bodyFatPct" double precision, "muscleMassKg" double precision,
+    "bodyWaterPct" double precision,
     "visceralFatLevel" double precision, "bmrKcal" double precision, memo text
   );
 

@@ -144,6 +144,7 @@ function ClientDetailPageInner() {
                 <th className="px-4 py-2">BMI</th>
                 <th className="px-4 py-2">体脂肪率(%)</th>
                 <th className="px-4 py-2">筋肉量(kg)</th>
+                <th className="px-4 py-2">体水分率(%)</th>
                 <th className="px-4 py-2">内臓脂肪</th>
                 <th className="px-4 py-2">基礎代謝(kcal)</th>
                 <th className="px-4 py-2">メモ</th>
@@ -161,7 +162,7 @@ function ClientDetailPageInner() {
               ))}
               {measurements.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={10} className="px-4 py-6 text-center text-gray-500">
                     まだ記録がありません。
                   </td>
                 </tr>

@@ -53,8 +53,8 @@ export function MeasurementForm({
           <input
             name="weight_kg"
             type="number"
-            step="0.1"
-            placeholder="例: 65.0"
+            step="0.01"
+            placeholder="例: 65.05"
             className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
           {normalWeightRange && (
@@ -84,8 +84,20 @@ export function MeasurementForm({
           <input
             name="muscle_mass_kg"
             type="number"
+            step="0.01"
+            placeholder="例: 50.05"
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block text-xs text-gray-500">
+            体水分率(%)
+          </span>
+          <input
+            name="body_water_pct"
+            type="number"
             step="0.1"
-            placeholder="例: 50.0"
+            placeholder="例: 55.0"
             className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </label>

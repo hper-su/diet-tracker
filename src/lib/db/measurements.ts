@@ -6,6 +6,7 @@ export type Measurement = {
   weightKg: number | null;
   bodyFatPct: number | null;
   muscleMassKg: number | null;
+  bodyWaterPct: number | null;
   visceralFatLevel: number | null;
   bmrKcal: number | null;
   memo: string | null;
@@ -30,6 +31,7 @@ export type InsertMeasurementInput = {
   weightKg: number | null;
   bodyFatPct: number | null;
   muscleMassKg: number | null;
+  bodyWaterPct: number | null;
   visceralFatLevel: number | null;
   bmrKcal: number | null;
   memo: string | null;
@@ -44,6 +46,7 @@ export type UpdateMeasurementInput = {
   weightKg: number | null;
   bodyFatPct: number | null;
   muscleMassKg: number | null;
+  bodyWaterPct: number | null;
   visceralFatLevel: number | null;
   bmrKcal: number | null;
   memo: string | null;

@@ -126,6 +126,7 @@ describe("validateAndSanitize", () => {
       weightKg: 60,
       bodyFatPct: null,
       muscleMassKg: null,
+      bodyWaterPct: null,
       visceralFatLevel: null,
       bmrKcal: null,
       memo: null,

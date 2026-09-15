@@ -1,4 +1,5 @@
 import { supabase, unwrap, run } from "./supabase";
+import { notifyChange } from "./realtime";
 import type { ClientRecord } from "./client";
 import type { Gender } from "@/lib/health/bmr";
 import {
@@ -78,6 +79,7 @@ export async function insertClient(input: InsertClientInput): Promise<number> {
       .select("id")
       .single(),
   );
+  notifyChange(["clients"]);
   return row.id;
 }
 
@@ -109,6 +111,7 @@ export async function updateClientProfile(
       })
       .eq("id", id),
   );
+  notifyChange(["clients"]);
 }
 
 export async function updateClientGoal(
@@ -129,4 +132,5 @@ export async function updateClientGoal(
       })
       .eq("id", id),
   );
+  notifyChange(["clients"]);
 }

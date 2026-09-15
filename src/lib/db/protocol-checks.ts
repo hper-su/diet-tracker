@@ -1,4 +1,5 @@
 import { supabase, unwrap, run } from "./supabase";
+import { notifyChange } from "./realtime";
 
 export type ProtocolCheckStepResult = {
   step: number; // conditions.tsのprotocolTable内でのインデックス(0始まり)
@@ -40,6 +41,7 @@ export async function insertProtocolCheck(
   input: InsertProtocolCheckInput,
 ): Promise<void> {
   await run(supabase.from("protocolChecks").insert({ ...input }));
+  notifyChange(["protocolChecks"]);
 }
 
 export async function deleteProtocolCheck(
@@ -49,4 +51,5 @@ export async function deleteProtocolCheck(
   await run(
     supabase.from("protocolChecks").delete().eq("id", id).eq("clientId", clientId),
   );
+  notifyChange(["protocolChecks"]);
 }

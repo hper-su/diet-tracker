@@ -1,4 +1,5 @@
 import { supabase, unwrap, run } from "./supabase";
+import { notifyChange } from "./realtime";
 
 export type UsualExercise = {
   id: number;
@@ -33,10 +34,12 @@ export type InsertUsualExerciseInput = {
 
 export async function insertUsualExercise(input: InsertUsualExerciseInput): Promise<void> {
   await run(supabase.from("usualExercises").insert({ ...input }));
+  notifyChange(["usualExercises"]);
 }
 
 export async function deleteUsualExercise(clientId: number, id: number): Promise<void> {
   await run(
     supabase.from("usualExercises").delete().eq("id", id).eq("clientId", clientId),
   );
+  notifyChange(["usualExercises"]);
 }

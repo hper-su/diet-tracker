@@ -1,4 +1,5 @@
 import { supabase, unwrap, run } from "./supabase";
+import { notifyChange } from "./realtime";
 
 export type UsualMealType = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -54,10 +55,12 @@ export type InsertUsualMealInput = {
 // 残ることはない。
 export async function insertUsualMeals(inputs: InsertUsualMealInput[]): Promise<void> {
   await run(supabase.from("usualMeals").insert(inputs.map((input) => ({ ...input }))));
+  notifyChange(["usualMeals"]);
 }
 
 export async function deleteUsualMeal(clientId: number, id: number): Promise<void> {
   await run(
     supabase.from("usualMeals").delete().eq("id", id).eq("clientId", clientId),
   );
+  notifyChange(["usualMeals"]);
 }

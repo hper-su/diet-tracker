@@ -1,4 +1,5 @@
 import { supabase, unwrap, run, runWithColumnFallback } from "./supabase";
+import { notifyChange } from "./realtime";
 
 export type Measurement = {
   id: number;
@@ -40,9 +41,11 @@ export type InsertMeasurementInput = {
 export async function insertMeasurement(
   input: InsertMeasurementInput,
 ): Promise<{ droppedColumns: string[] }> {
-  return runWithColumnFallback(input, (row) =>
+  const result = await runWithColumnFallback(input, (row) =>
     supabase.from("measurements").insert(row),
   );
+  notifyChange(["measurements"]);
+  return result;
 }
 
 export type UpdateMeasurementInput = {
@@ -61,17 +64,20 @@ export async function updateMeasurement(
   id: number,
   input: UpdateMeasurementInput,
 ): Promise<{ droppedColumns: string[] }> {
-  return runWithColumnFallback(input, (row) =>
+  const result = await runWithColumnFallback(input, (row) =>
     supabase
       .from("measurements")
       .update(row)
       .eq("id", id)
       .eq("clientId", clientId),
   );
+  notifyChange(["measurements"]);
+  return result;
 }
 
 export async function deleteMeasurement(clientId: number, id: number): Promise<void> {
   await run(
     supabase.from("measurements").delete().eq("id", id).eq("clientId", clientId),
   );
+  notifyChange(["measurements"]);
 }

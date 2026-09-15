@@ -1,5 +1,5 @@
 import { supabase, selectAllRows, unwrap, run } from "./supabase";
-import { subscribeToChanges } from "./realtime";
+import { notifyChange, subscribeToChanges } from "./realtime";
 
 export type Food = {
   id: number;
@@ -141,6 +141,7 @@ export async function insertFood(input: InsertFoodInput): Promise<InsertFoodResu
     }
     throw error;
   }
+  notifyChange(["foods"]);
   return { ok: true };
 }
 
@@ -158,6 +159,7 @@ export async function updateFood(id: number, input: UpdateFoodInput): Promise<Up
     }
     throw error;
   }
+  notifyChange(["foods"]);
   return { ok: true };
 }
 
@@ -166,6 +168,7 @@ export async function updateFood(id: number, input: UpdateFoodInput): Promise<Up
 // 表示上の実害はない)。
 export async function deleteFood(id: number): Promise<void> {
   await run(supabase.from("foods").delete().eq("id", id));
+  notifyChange(["foods"]);
 }
 
 // 食品登録フォームの分類入力に補完候補を出すため、既存の分類を重複なく返す。

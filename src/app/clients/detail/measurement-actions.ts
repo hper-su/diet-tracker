@@ -5,7 +5,20 @@ import {
 } from "@/lib/db/measurements";
 import { validateMeasurementInput } from "@/lib/validation/measurement";
 
-export type AddMeasurementState = { error?: string } | undefined;
+// マイグレーション未適用でまだ存在しない列は、DB層が黙って除いて保存する
+// (runWithColumnFallback)。除かれた列があれば、お客様の入力が実は
+// 保存されていないことに気づけるよう、フォームに警告として表示する。
+const COLUMN_LABELS: Record<string, string> = {
+  bodyWaterPct: "体水分率",
+};
+
+function buildDroppedColumnsWarning(droppedColumns: string[]): string | undefined {
+  if (droppedColumns.length === 0) return undefined;
+  const labels = droppedColumns.map((column) => COLUMN_LABELS[column] ?? column);
+  return `${labels.join("・")}はデータベースの準備が完了していないため保存されませんでした(他の項目は保存済みです)。`;
+}
+
+export type AddMeasurementState = { error?: string; warning?: string } | undefined;
 
 function readMeasurementFormData(formData: FormData) {
   return validateMeasurementInput({
@@ -35,10 +48,12 @@ export async function addMeasurementAction(
     return { error: result.error };
   }
 
-  await insertMeasurement({ clientId, ...result.data });
+  const { droppedColumns } = await insertMeasurement({ clientId, ...result.data });
+  const warning = buildDroppedColumnsWarning(droppedColumns);
+  return warning ? { warning } : undefined;
 }
 
-export type UpdateMeasurementState = { error?: string } | undefined;
+export type UpdateMeasurementState = { error?: string; warning?: string } | undefined;
 
 export async function updateMeasurementAction(
   _prevState: UpdateMeasurementState,
@@ -55,7 +70,9 @@ export async function updateMeasurementAction(
     return { error: result.error };
   }
 
-  await updateMeasurement(clientId, id, result.data);
+  const { droppedColumns } = await updateMeasurement(clientId, id, result.data);
+  const warning = buildDroppedColumnsWarning(droppedColumns);
+  return warning ? { warning } : undefined;
 }
 
 export async function deleteMeasurementAction(formData: FormData) {

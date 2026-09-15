@@ -22,9 +22,9 @@ export function MeasurementRow({
     updateMeasurementAction,
     undefined,
   );
-  // キャンセル後に編集欄を開き直したとき、前回送信時のエラーが
+  // キャンセル後に編集欄を開き直したとき、前回送信時のエラー・警告が
   // (再送信していないのに)表示され続けないようにするためのフラグ。
-  const [errorDismissed, setErrorDismissed] = useState(false);
+  const [messageDismissed, setMessageDismissed] = useState(false);
 
   // 保存が成功したら(pendingがtrue->falseに変わり、エラーが無ければ)編集欄を閉じる。
   // pendingがfalse->trueに変わるとき(=新規送信開始)は、古いエラーの表示を解除する。
@@ -32,8 +32,8 @@ export function MeasurementRow({
   if (pending !== prevPending) {
     setPrevPending(pending);
     if (pending) {
-      setErrorDismissed(false);
-    } else if (!state?.error) {
+      setMessageDismissed(false);
+    } else if (!state?.error && !state?.warning) {
       setEditing(false);
     }
   }
@@ -163,8 +163,11 @@ export function MeasurementRow({
             />
           </label>
           <div className="flex items-end gap-2 sm:col-span-9">
-            {state?.error && !errorDismissed && (
+            {state?.error && !messageDismissed && (
               <p className="text-xs text-red-600">{state.error}</p>
+            )}
+            {state?.warning && !messageDismissed && (
+              <p className="text-xs text-amber-600">{state.warning}</p>
             )}
             <button
               type="submit"
@@ -178,7 +181,7 @@ export function MeasurementRow({
               disabled={pending}
               onClick={() => {
                 setEditing(false);
-                setErrorDismissed(true);
+                setMessageDismissed(true);
               }}
               className="rounded border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50 disabled:opacity-50"
             >

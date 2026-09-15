@@ -29,3 +29,19 @@ export function calculateAge(
 
   return age >= 0 ? age : null;
 }
+
+// お客様一覧で「本日が誕生日」のお客様が分かるようにするための簡易判定。
+// 年は無視し、月日だけを比較する。
+export function isBirthdayToday(
+  birthdate: string,
+  today: Date = todayAsUtcMidnight(),
+): boolean {
+  const birth = new Date(birthdate);
+  if (Number.isNaN(birth.getTime())) {
+    return false;
+  }
+  return (
+    today.getUTCMonth() === birth.getUTCMonth() &&
+    today.getUTCDate() === birth.getUTCDate()
+  );
+}

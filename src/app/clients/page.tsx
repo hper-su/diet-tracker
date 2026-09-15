@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useLiveQuery } from "@/lib/db/use-live-query";
 import { listClients } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
+import { isBirthdayToday } from "@/lib/health/age";
 import { NewClientForm } from "./new-client-form";
 
 const GENDER_LABELS: Record<string, string> = {
@@ -32,6 +33,11 @@ export default function ClientsPage() {
                 <span className="font-medium">
                   {formatClientName(client.name)}
                 </span>
+                {client.birthdate && isBirthdayToday(client.birthdate) && (
+                  <span title="本日お誕生日です" className="ml-1">
+                    🎂
+                  </span>
+                )}
                 {client.gender && (
                   <span className="ml-2 text-xs text-gray-500">
                     {GENDER_LABELS[client.gender]}

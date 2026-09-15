@@ -26,9 +26,9 @@ export default function ClientsPage() {
           <li key={client.id}>
             <Link
               href={`/clients/detail?id=${client.id}`}
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3 hover:bg-gray-50"
             >
-              <div>
+              <div className="min-w-0">
                 <span className="font-medium">
                   {formatClientName(client.name)}
                 </span>
@@ -38,10 +38,12 @@ export default function ClientsPage() {
                   </span>
                 )}
                 {client.memo && (
-                  <p className="text-xs text-gray-500">{client.memo}</p>
+                  <p className="text-xs break-words text-gray-500">
+                    {client.memo}
+                  </p>
                 )}
               </div>
-              <span className="text-xs text-gray-400">
+              <span className="shrink-0 text-xs text-gray-400">
                 {client.birthdate ?? ""}
                 {client.heightCm ? ` ・ ${client.heightCm}cm` : ""}
               </span>

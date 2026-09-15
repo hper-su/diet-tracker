@@ -322,7 +322,7 @@ function ClientMealsPageInner() {
                 <th className="px-4 py-2">kcal</th>
                 <th className="px-4 py-2">P/F/C(g)</th>
                 <th className="px-4 py-2">メモ</th>
-                <th className="px-4 py-2" />
+                <th className="sticky right-0 bg-white px-4 py-2" />
               </tr>
             </thead>
             <tbody>
@@ -337,13 +337,13 @@ function ClientMealsPageInner() {
                     {log.carbG.toFixed(1)}
                   </td>
                   <td className="px-4 py-2 text-gray-500">{log.memo ?? ""}</td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="sticky right-0 bg-white px-4 py-2 text-right">
                     <form action={deleteMealLogAction}>
                       <input type="hidden" name="id" value={log.id} />
                       <input type="hidden" name="client_id" value={clientId} />
                       <button
                         type="submit"
-                        className="text-xs text-gray-400 hover:text-red-600"
+                        className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
                       >
                         削除
                       </button>

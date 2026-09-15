@@ -24,7 +24,7 @@ export function ProtocolCheckHistory({
               <th className="px-4 py-2">症状</th>
               <th className="px-4 py-2">結果</th>
               <th className="px-4 py-2">メモ</th>
-              <th className="px-4 py-2" />
+              <th className="sticky right-0 bg-white px-4 py-2" />
             </tr>
           </thead>
           <tbody>
@@ -61,7 +61,7 @@ export function ProtocolCheckHistory({
                   <td className="px-4 py-2 text-gray-500">
                     {check.memo ?? ""}
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="sticky right-0 bg-white px-4 py-2 text-right">
                     <form action={deleteProtocolCheckAction}>
                       <input type="hidden" name="id" value={check.id} />
                       <input
@@ -71,7 +71,7 @@ export function ProtocolCheckHistory({
                       />
                       <button
                         type="submit"
-                        className="text-xs text-gray-400 hover:text-red-600"
+                        className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
                       >
                         削除
                       </button>

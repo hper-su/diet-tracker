@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./sw-register";
 import { AuthGate } from "./auth-gate";
+import { SignOutButton } from "./sign-out-button";
 import { BASE_PATH } from "@/lib/base-path";
 
 // next/metadataの manifest/icons は <Link> と違い basePath が自動で付与されない
@@ -55,7 +56,7 @@ export default function RootLayout({
                 <Link href="/" className="font-semibold">
                   食事・体組成管理
                 </Link>
-                <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                <nav className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
                   {NAV_LINKS.map((link) => (
                     <Link
                       key={link.href}
@@ -66,6 +67,7 @@ export default function RootLayout({
                     </Link>
                   ))}
                 </nav>
+                <SignOutButton />
               </div>
             </header>
             <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">

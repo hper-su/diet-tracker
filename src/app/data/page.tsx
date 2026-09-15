@@ -8,6 +8,23 @@ type Status =
   | { type: "success"; message: string }
   | { type: "error"; message: string };
 
+// Supabaseのエラーはネイティブの Error ではなく、message プロパティを持つ
+// プレーンオブジェクト(PostgrestError等)で投げられることがある。
+// instanceof Error で弾いてString(error)にフォールバックすると
+// "[object Object]" になってしまうため、messageプロパティも見る。
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+  return String(error);
+}
+
 export default function DataPage() {
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [importing, setImporting] = useState(false);
@@ -28,10 +45,7 @@ export default function DataPage() {
       URL.revokeObjectURL(url);
       setStatus({ type: "success", message: "エクスポートが完了しました。" });
     } catch (error) {
-      setStatus({
-        type: "error",
-        message: error instanceof Error ? error.message : String(error),
-      });
+      setStatus({ type: "error", message: getErrorMessage(error) });
     }
   }
 
@@ -50,9 +64,7 @@ export default function DataPage() {
       const message =
         error instanceof ImportFormatError
           ? error.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
+          : getErrorMessage(error);
       setStatus({ type: "error", message });
     } finally {
       setImporting(false);

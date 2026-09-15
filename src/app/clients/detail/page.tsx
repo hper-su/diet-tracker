@@ -148,7 +148,7 @@ function ClientDetailPageInner() {
                 <th className="px-4 py-2">内臓脂肪</th>
                 <th className="px-4 py-2">基礎代謝(kcal)</th>
                 <th className="px-4 py-2">メモ</th>
-                <th className="px-4 py-2" />
+                <th className="sticky right-0 bg-white px-4 py-2" />
               </tr>
             </thead>
             <tbody>

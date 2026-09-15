@@ -90,7 +90,7 @@ function FoodsPageInner() {
                 <th className="px-4 py-2">P(g)</th>
                 <th className="px-4 py-2">F(g)</th>
                 <th className="px-4 py-2">C(g)</th>
-                <th className="px-4 py-2" />
+                <th className="sticky right-0 bg-white px-4 py-2" />
               </tr>
             </thead>
             <tbody>

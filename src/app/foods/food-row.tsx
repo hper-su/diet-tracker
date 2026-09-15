@@ -32,11 +32,11 @@ export function FoodRow({ food }: { food: Food }) {
         <td className="px-4 py-2">{food.proteinG}</td>
         <td className="px-4 py-2">{food.fatG}</td>
         <td className="px-4 py-2">{food.carbG}</td>
-        <td className="px-4 py-2 text-right whitespace-nowrap">
+        <td className="sticky right-0 bg-white px-4 py-2 text-right whitespace-nowrap">
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="text-xs text-gray-400 hover:text-gray-900"
+            className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-900"
           >
             編集
           </button>
@@ -44,7 +44,7 @@ export function FoodRow({ food }: { food: Food }) {
             <input type="hidden" name="id" value={food.id} />
             <button
               type="submit"
-              className="ml-3 text-xs text-gray-400 hover:text-red-600"
+              className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
             >
               削除
             </button>

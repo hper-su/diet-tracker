@@ -1,7 +1,20 @@
 import { updateClientGoal } from "@/lib/db/clients";
 import { parsePositiveNumber } from "@/lib/validation/result";
 
-export type UpdatePlanGoalState = { error?: string } | undefined;
+// マイグレーション未適用でまだ存在しない列は、DB層が黙って除いて保存する
+// (runWithColumnFallback)。除かれた列があれば、お客様の入力が実は
+// 保存されていないことに気づけるよう、フォームに警告として表示する。
+const COLUMN_LABELS: Record<string, string> = {
+  targetBodyFatPct: "目標体脂肪率",
+};
+
+function buildDroppedColumnsWarning(droppedColumns: string[]): string | undefined {
+  if (droppedColumns.length === 0) return undefined;
+  const labels = droppedColumns.map((column) => COLUMN_LABELS[column] ?? column);
+  return `${labels.join("・")}はデータベースの準備が完了していないため保存されませんでした(他の項目は保存済みです)。`;
+}
+
+export type UpdatePlanGoalState = { error?: string; warning?: string } | undefined;
 
 export async function updatePlanGoal(
   _prevState: UpdatePlanGoalState,
@@ -42,5 +55,27 @@ export async function updatePlanGoal(
     targetWeightKg = result.data;
   }
 
-  await updateClientGoal(clientId, monthlyGoal, change, months, targetWeightKg);
+  const targetBodyFatRaw = String(formData.get("target_body_fat_pct") ?? "").trim();
+  let targetBodyFatPct: number | null = null;
+  if (targetBodyFatRaw) {
+    const result = parsePositiveNumber(
+      targetBodyFatRaw,
+      "目標体脂肪率(%)は正の数で入力してください。",
+    );
+    if (!result.ok) {
+      return result;
+    }
+    targetBodyFatPct = result.data;
+  }
+
+  const { droppedColumns } = await updateClientGoal(
+    clientId,
+    monthlyGoal,
+    change,
+    months,
+    targetWeightKg,
+    targetBodyFatPct,
+  );
+
+  return { warning: buildDroppedColumnsWarning(droppedColumns) };
 }

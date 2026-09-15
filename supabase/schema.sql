@@ -13,10 +13,13 @@ create table if not exists clients (
   gender text,
   "activityLevel" text not null,
   "pfcPreset" text not null,
+  course text,
+  purpose text,
   "targetMonthlyWeightChangeKg" double precision,
   "targetWeightChangeKg" double precision,
   "targetPeriodMonths" double precision,
   "targetWeightKg" double precision,
+  "targetBodyFatPct" double precision,
   memo text,
   "createdAt" timestamptz not null default now()
 );
@@ -230,18 +233,22 @@ begin
 
   insert into clients (
     id, name, birthdate, "heightCm", gender, "activityLevel", "pfcPreset",
+    course, purpose,
     "targetMonthlyWeightChangeKg", "targetWeightChangeKg", "targetPeriodMonths",
-    "targetWeightKg", memo, "createdAt"
+    "targetWeightKg", "targetBodyFatPct", memo, "createdAt"
   )
   select
     id, name, birthdate, "heightCm", gender, "activityLevel", "pfcPreset",
+    course, purpose,
     "targetMonthlyWeightChangeKg", "targetWeightChangeKg", "targetPeriodMonths",
-    "targetWeightKg", memo, "createdAt"
+    "targetWeightKg", "targetBodyFatPct", memo, "createdAt"
   from jsonb_to_recordset(payload->'clients') as t(
     id integer, name text, birthdate text, "heightCm" double precision, gender text,
     "activityLevel" text, "pfcPreset" text,
+    course text, purpose text,
     "targetMonthlyWeightChangeKg" double precision, "targetWeightChangeKg" double precision,
     "targetPeriodMonths" double precision, "targetWeightKg" double precision,
+    "targetBodyFatPct" double precision,
     memo text, "createdAt" timestamptz
   );
 

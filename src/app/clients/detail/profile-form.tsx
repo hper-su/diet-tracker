@@ -114,6 +114,24 @@ export function ProfileForm({ client }: { client: Client }) {
             {PFC_PRESETS[pfcPreset].description}
           </span>
         </label>
+        <label className="block text-sm">
+          <span className="mb-1 block text-xs text-gray-500">
+            コース/プロテイン(任意)
+          </span>
+          <input
+            name="course"
+            defaultValue={client.course ?? ""}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block text-xs text-gray-500">目的(任意)</span>
+          <input
+            name="purpose"
+            defaultValue={client.purpose ?? ""}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
         <label className="block text-sm sm:col-span-2">
           <span className="mb-1 block text-xs text-gray-500">メモ(任意)</span>
           <input
@@ -124,7 +142,10 @@ export function ProfileForm({ client }: { client: Client }) {
         </label>
       </div>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-      {!pending && state?.success && (
+      {state?.warning && (
+        <p className="text-sm text-amber-600">{state.warning}</p>
+      )}
+      {!pending && state?.success && !state?.warning && (
         <p className="text-sm text-green-600">保存しました。</p>
       )}
       <button

@@ -8,11 +8,13 @@ export function PlanGoalForm({
   currentWeightChangeKg,
   currentPeriodMonths,
   currentTargetWeightKg,
+  currentTargetBodyFatPct,
 }: {
   clientId: number;
   currentWeightChangeKg: number | null;
   currentPeriodMonths: number | null;
   currentTargetWeightKg: number | null;
+  currentTargetBodyFatPct: number | null;
 }) {
   const [state, formAction, pending] = useActionState(
     updatePlanGoal,
@@ -21,7 +23,7 @@ export function PlanGoalForm({
 
   return (
     <form
-      key={`${currentWeightChangeKg}-${currentPeriodMonths}-${currentTargetWeightKg}`}
+      key={`${currentWeightChangeKg}-${currentPeriodMonths}-${currentTargetWeightKg}-${currentTargetBodyFatPct}`}
       action={formAction}
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
     >
@@ -69,12 +71,29 @@ export function PlanGoalForm({
             className="w-full max-w-[10rem] rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </label>
+        <label className="block text-sm">
+          <span className="mb-1 block text-xs text-gray-500">
+            目標体脂肪率(%)・任意
+          </span>
+          <input
+            name="target_body_fat_pct"
+            type="number"
+            step="0.1"
+            min="0.1"
+            defaultValue={currentTargetBodyFatPct ?? ""}
+            placeholder="例: 22.0"
+            className="w-full max-w-[10rem] rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
       </div>
       <p className="text-xs text-gray-500">
         例: 3か月で5kg減量したい場合は、体重変化に「-5.0」、期間に「3」と入力してください(1か月あたり約-1.67kgのペースで算出します)。
         目標体重を入力すると、「概要」タブの体重推移グラフに目標ラインと到達予測日を表示します。
       </p>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.warning && (
+        <p className="text-sm text-amber-600">{state.warning}</p>
+      )}
       <button
         type="submit"
         disabled={pending}

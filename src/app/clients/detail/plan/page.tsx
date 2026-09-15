@@ -153,6 +153,7 @@ function ClientPlanPageInner() {
         currentWeightChangeKg={client.targetWeightChangeKg}
         currentPeriodMonths={client.targetPeriodMonths}
         currentTargetWeightKg={client.targetWeightKg}
+        currentTargetBodyFatPct={client.targetBodyFatPct}
       />
 
       <section className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">

@@ -1,4 +1,4 @@
-import { supabase, unwrap, run } from "./supabase";
+import { supabase, unwrap, runWithColumnFallback } from "./supabase";
 import { notifyChange } from "./realtime";
 import type { ClientRecord } from "./client";
 import type { Gender } from "@/lib/health/bmr";
@@ -20,10 +20,13 @@ export type Client = {
   gender: Gender | null;
   activityLevel: ActivityLevel;
   pfcPreset: PFCPreset;
+  course: string | null;
+  purpose: string | null;
   targetMonthlyWeightChangeKg: number | null;
   targetWeightChangeKg: number | null;
   targetPeriodMonths: number | null;
   targetWeightKg: number | null;
+  targetBodyFatPct: number | null;
   memo: string | null;
 };
 
@@ -90,28 +93,31 @@ export type UpdateClientProfileInput = {
   gender: Gender | null;
   activityLevel: ActivityLevel;
   pfcPreset: PFCPreset;
+  course: string | null;
+  purpose: string | null;
   memo: string | null;
 };
 
 export async function updateClientProfile(
   id: number,
   input: UpdateClientProfileInput,
-): Promise<void> {
-  await run(
-    supabase
-      .from("clients")
-      .update({
-        name: input.name,
-        birthdate: input.birthdate,
-        heightCm: input.heightCm,
-        gender: input.gender,
-        activityLevel: input.activityLevel,
-        pfcPreset: input.pfcPreset,
-        memo: input.memo,
-      })
-      .eq("id", id),
+): Promise<{ droppedColumns: string[] }> {
+  const result = await runWithColumnFallback(
+    {
+      name: input.name,
+      birthdate: input.birthdate,
+      heightCm: input.heightCm,
+      gender: input.gender,
+      activityLevel: input.activityLevel,
+      pfcPreset: input.pfcPreset,
+      course: input.course,
+      purpose: input.purpose,
+      memo: input.memo,
+    },
+    (row) => supabase.from("clients").update(row).eq("id", id),
   );
   notifyChange(["clients"]);
+  return result;
 }
 
 export async function updateClientGoal(
@@ -120,17 +126,18 @@ export async function updateClientGoal(
   targetWeightChangeKg: number,
   targetPeriodMonths: number,
   targetWeightKg: number | null,
-): Promise<void> {
-  await run(
-    supabase
-      .from("clients")
-      .update({
-        targetMonthlyWeightChangeKg,
-        targetWeightChangeKg,
-        targetPeriodMonths,
-        targetWeightKg,
-      })
-      .eq("id", id),
+  targetBodyFatPct: number | null,
+): Promise<{ droppedColumns: string[] }> {
+  const result = await runWithColumnFallback(
+    {
+      targetMonthlyWeightChangeKg,
+      targetWeightChangeKg,
+      targetPeriodMonths,
+      targetWeightKg,
+      targetBodyFatPct,
+    },
+    (row) => supabase.from("clients").update(row).eq("id", id),
   );
   notifyChange(["clients"]);
+  return result;
 }

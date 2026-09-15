@@ -1,4 +1,5 @@
 import { supabase, unwrap, run } from "./supabase";
+import { notifyChange } from "./realtime";
 import type { DailyMealTotal } from "@/lib/health/meal-totals";
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
@@ -106,6 +107,7 @@ export type InsertMealLogInput = {
 // 複数件をまとめて登録する(食事記録フォームの複数行送信、「普段の3食から記録を作成」など)。
 export async function insertMealLogs(inputs: InsertMealLogInput[]): Promise<void> {
   await run(supabase.from("mealLogs").insert(inputs.map((input) => ({ ...input }))));
+  notifyChange(["mealLogs"]);
 }
 
 export type UpdateMealLogInput = {
@@ -129,10 +131,12 @@ export async function updateMealLog(
   await run(
     supabase.from("mealLogs").update({ ...input }).eq("id", id).eq("clientId", clientId),
   );
+  notifyChange(["mealLogs"]);
 }
 
 export async function deleteMealLog(clientId: number, id: number): Promise<void> {
   await run(
     supabase.from("mealLogs").delete().eq("id", id).eq("clientId", clientId),
   );
+  notifyChange(["mealLogs"]);
 }

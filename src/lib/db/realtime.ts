@@ -51,3 +51,15 @@ export function subscribeToChanges(
     listeners.delete(listener);
   };
 }
+
+// 自分自身が行った変更を即座に画面へ反映するための通知。Supabase Realtimeの
+// 通知はサーバーへの往復が発生するため、変更した本人の画面では体感できる遅延
+// (数百ms〜数秒)が生じる。書き込みに成功した直後にdb層からこれを呼ぶことで、
+// 往復を待たずにその場で再取得させる(他端末への反映は従来通りRealtime経由)。
+export function notifyChange(tables: readonly TableName[]): void {
+  for (const listener of listeners) {
+    if (tables.some((table) => listener.tables.has(table))) {
+      listener.callback();
+    }
+  }
+}

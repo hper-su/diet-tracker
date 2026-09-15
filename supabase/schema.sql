@@ -222,16 +222,12 @@ security definer
 set search_path = public
 as $$
 begin
-  -- Supabase(pg-safeupdate)はWHERE句の無いDELETE/UPDATEを既定でブロックする。
-  -- この関数は全件を意図的に削除するため、常に真になるwhere trueを付けて回避する。
-  delete from "protocolChecks" where true;
-  delete from "usualExercises" where true;
-  delete from "usualMeals" where true;
-  delete from "mealLogs" where true;
-  delete from measurements where true;
-  delete from clients where true;
-  delete from foods where true;
-  delete from exercises where true;
+  -- Supabase(pg-safeupdate)はWHERE句の無いDELETE/UPDATEを既定でブロックするが、
+  -- TRUNCATEは対象外なので回避できる。関連テーブルを1文でまとめて指定すれば、
+  -- 外部キーの参照順を気にする必要もない。
+  truncate table
+    "protocolChecks", "usualExercises", "usualMeals", "mealLogs",
+    measurements, clients, foods, exercises;
 
   insert into clients (
     id, name, birthdate, "heightCm", gender, "activityLevel", "pfcPreset",

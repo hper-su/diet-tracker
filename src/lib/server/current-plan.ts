@@ -68,9 +68,10 @@ export type CurrentPlanResult = {
 // お客様のプロフィールと測定値の最新値から、ダイエット/増量プランを算出する。
 // 概要・プラン・食事記録の各ページから使う共通ロジック。
 export async function getCurrentDietPlan(clientId: number): Promise<CurrentPlanResult> {
-  const [client, measurements] = await Promise.all([
+  const [client, measurements, usualExercises] = await Promise.all([
     getClient(clientId),
     listMeasurements(clientId),
+    listUsualExercises(clientId),
   ]);
 
   const latestWeight = findLatestNonNull(measurements, "weightKg");
@@ -123,7 +124,6 @@ export async function getCurrentDietPlan(clientId: number): Promise<CurrentPlanR
     latestWeight?.weightKg != null &&
     client?.targetMonthlyWeightChangeKg != null;
 
-  const usualExercises = await listUsualExercises(clientId);
   const weightForExerciseKcal =
     latestWeight?.weightKg != null ? Number(latestWeight.weightKg) : null;
 
@@ -197,26 +197,33 @@ export async function getCurrentDietPlan(clientId: number): Promise<CurrentPlanR
   // (コンビニ編・外食編は分類(カテゴリ)単位で候補を取るため、この問題は起きない)。
   let mealSuggestions: DailyMealSuggestions | null = null;
   let mealSuggestionsError: string | null = null;
+  let mealCombos: MealCombosByEdition | null = null;
+  let mealCombosError: string | null = null;
+
   if (perMealTarget) {
-    try {
-      const templates = (await getMealTemplates()).MEAL_TEMPLATES_BY_GOAL[pfcPreset];
+    // お互いに依存しないので並列に取得する(順番に待つと、家庭料理編・コンビニ編・
+    // 外食編それぞれの取得時間が単純に合算されてしまう)。
+    const [templatesResult, combosResult] = await Promise.allSettled([
+      getMealTemplates(),
+      getMealCombos(perMealTarget),
+    ]);
+
+    if (templatesResult.status === "fulfilled") {
+      const templates = templatesResult.value.MEAL_TEMPLATES_BY_GOAL[pfcPreset];
       mealSuggestions = {
         breakfast: buildMealMenu(templates.breakfast, perMealTarget),
         lunch: buildMealMenu(templates.lunch, perMealTarget),
         dinner: buildMealMenu(templates.dinner, perMealTarget),
       };
-    } catch (error) {
-      mealSuggestionsError =
-        error instanceof Error ? error.message : String(error);
+    } else {
+      const error = templatesResult.reason;
+      mealSuggestionsError = error instanceof Error ? error.message : String(error);
     }
-  }
 
-  let mealCombos: MealCombosByEdition | null = null;
-  let mealCombosError: string | null = null;
-  if (perMealTarget) {
-    try {
-      mealCombos = await getMealCombos(perMealTarget);
-    } catch (error) {
+    if (combosResult.status === "fulfilled") {
+      mealCombos = combosResult.value;
+    } else {
+      const error = combosResult.reason;
       mealCombosError = error instanceof Error ? error.message : String(error);
     }
   }

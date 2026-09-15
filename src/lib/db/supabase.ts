@@ -20,18 +20,39 @@ export const supabase = createClient(url, anonKey);
 // なるため、1000件ずつページングして取りこぼしを防ぐ。
 const SELECT_ALL_PAGE_SIZE = 1000;
 
+// 1ページ目で件数(count)も一緒に取得し、残りのページは(存在するとわかっている
+// 範囲だけ)並列に取得する。食品マスタ(3,000件超)のように何ページも必要な
+// テーブルで、ページを1つずつ順番に待つより大幅に速くなる。
 export async function selectAllRows<T>(table: string, columns = "*"): Promise<T[]> {
-  const rows: T[] = [];
-  for (let offset = 0; ; offset += SELECT_ALL_PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from(table)
-      .select(columns)
-      .order("id", { ascending: true })
-      .range(offset, offset + SELECT_ALL_PAGE_SIZE - 1);
+  const first = await supabase
+    .from(table)
+    .select(columns, { count: "exact" })
+    .order("id", { ascending: true })
+    .range(0, SELECT_ALL_PAGE_SIZE - 1);
+  if (first.error) throw first.error;
+
+  const firstPage = (first.data ?? []) as T[];
+  const total = first.count ?? firstPage.length;
+
+  const remainingPageOffsets: number[] = [];
+  for (let offset = SELECT_ALL_PAGE_SIZE; offset < total; offset += SELECT_ALL_PAGE_SIZE) {
+    remainingPageOffsets.push(offset);
+  }
+
+  const remainingPages = await Promise.all(
+    remainingPageOffsets.map((offset) =>
+      supabase
+        .from(table)
+        .select(columns)
+        .order("id", { ascending: true })
+        .range(offset, offset + SELECT_ALL_PAGE_SIZE - 1),
+    ),
+  );
+
+  const rows = [...firstPage];
+  for (const { data, error } of remainingPages) {
     if (error) throw error;
-    const page = (data ?? []) as T[];
-    rows.push(...page);
-    if (page.length < SELECT_ALL_PAGE_SIZE) break;
+    rows.push(...((data ?? []) as T[]));
   }
   return rows;
 }

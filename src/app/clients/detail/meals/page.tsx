@@ -15,18 +15,12 @@ import { getCurrentDietPlan } from "@/lib/server/current-plan";
 import { addDaysISODate, listISODateRange, todayISODate } from "@/lib/date";
 import { ClientTabs } from "../client-tabs";
 import { MealLogForm } from "./meal-log-form";
+import { MealLogRow } from "./meal-log-row";
 import { MealSummaryChart, PFCTrendChart } from "./meal-summary-chart";
-import { deleteMealLogAction, addUsualMealsAsLogAction } from "./actions";
+import { addUsualMealsAsLogAction } from "./actions";
 
 const SUMMARY_RANGES = { "7": "週次(7日)", "30": "月次(30日)" } as const;
 type SummaryRangeDays = keyof typeof SUMMARY_RANGES;
-
-const MEAL_TYPE_LABELS: Record<string, string> = {
-  breakfast: "朝食",
-  lunch: "昼食",
-  dinner: "夕食",
-  snack: "間食",
-};
 
 export default function ClientMealsPage() {
   return (
@@ -327,29 +321,7 @@ function ClientMealsPageInner() {
             </thead>
             <tbody>
               {logs.map((log) => (
-                <tr key={log.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2">{MEAL_TYPE_LABELS[log.mealType]}</td>
-                  <td className="px-4 py-2">{log.foodName}</td>
-                  <td className="px-4 py-2">{log.quantity}</td>
-                  <td className="px-4 py-2">{log.kcal.toFixed(0)}</td>
-                  <td className="px-4 py-2 text-gray-500">
-                    {log.proteinG.toFixed(1)}/{log.fatG.toFixed(1)}/
-                    {log.carbG.toFixed(1)}
-                  </td>
-                  <td className="px-4 py-2 text-gray-500">{log.memo ?? ""}</td>
-                  <td className="sticky right-0 bg-white px-4 py-2 text-right">
-                    <form action={deleteMealLogAction}>
-                      <input type="hidden" name="id" value={log.id} />
-                      <input type="hidden" name="client_id" value={clientId} />
-                      <button
-                        type="submit"
-                        className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
-                      >
-                        削除
-                      </button>
-                    </form>
-                  </td>
-                </tr>
+                <MealLogRow key={log.id} log={log} clientId={clientId} foods={foods} />
               ))}
               {logs.length === 0 && (
                 <tr>

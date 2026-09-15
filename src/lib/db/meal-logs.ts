@@ -108,6 +108,29 @@ export async function insertMealLogs(inputs: InsertMealLogInput[]): Promise<void
   await run(supabase.from("mealLogs").insert(inputs.map((input) => ({ ...input }))));
 }
 
+export type UpdateMealLogInput = {
+  recordedAt: string;
+  mealType: MealType;
+  foodId: number | null;
+  foodName: string;
+  quantity: number;
+  kcal: number;
+  proteinG: number;
+  fatG: number;
+  carbG: number;
+  memo: string | null;
+};
+
+export async function updateMealLog(
+  clientId: number,
+  id: number,
+  input: UpdateMealLogInput,
+): Promise<void> {
+  await run(
+    supabase.from("mealLogs").update({ ...input }).eq("id", id).eq("clientId", clientId),
+  );
+}
+
 export async function deleteMealLog(clientId: number, id: number): Promise<void> {
   await run(
     supabase.from("mealLogs").delete().eq("id", id).eq("clientId", clientId),

@@ -1,6 +1,7 @@
 import { getFood } from "@/lib/db/foods";
 import {
   insertMealLogs,
+  updateMealLog,
   deleteMealLog,
   type InsertMealLogInput,
 } from "@/lib/db/meal-logs";
@@ -108,6 +109,54 @@ export async function addUsualMealsAsLogAction(formData: FormData) {
       memo: null,
     })),
   );
+}
+
+export type UpdateMealLogState = { error?: string } | undefined;
+
+export async function updateMealLogAction(
+  _prevState: UpdateMealLogState,
+  formData: FormData,
+): Promise<UpdateMealLogState> {
+  const id = Number(formData.get("id"));
+  const clientId = Number(formData.get("client_id"));
+  if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(clientId) || clientId <= 0) {
+    return { error: "記録が指定されていません。" };
+  }
+
+  const result = validateMealLogInput({
+    recordedAt: String(formData.get("recorded_at") ?? ""),
+    mealTypeRaw: String(formData.get("meal_type") ?? ""),
+    foodIdRaw: String(formData.get("food_id") ?? ""),
+    quantityRaw: String(formData.get("quantity") ?? ""),
+    memo: String(formData.get("memo") ?? ""),
+  });
+
+  if (!result.ok) {
+    return { error: result.error };
+  }
+
+  const food = await getFood(result.data.foodId);
+  if (!food) {
+    return { error: "指定された食品が見つかりません。" };
+  }
+
+  const amounts = calculateMealLogAmounts(
+    { kcal: food.kcal, proteinG: food.proteinG, fatG: food.fatG, carbG: food.carbG },
+    result.data.quantity,
+  );
+
+  await updateMealLog(clientId, id, {
+    recordedAt: result.data.recordedAt,
+    mealType: result.data.mealType,
+    foodId: food.id,
+    foodName: food.name,
+    quantity: result.data.quantity,
+    kcal: amounts.kcal,
+    proteinG: amounts.proteinG,
+    fatG: amounts.fatG,
+    carbG: amounts.carbG,
+    memo: result.data.memo,
+  });
 }
 
 export async function deleteMealLogAction(formData: FormData) {

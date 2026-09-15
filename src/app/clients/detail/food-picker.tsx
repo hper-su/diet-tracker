@@ -18,9 +18,9 @@ export type FoodPickerHandle = {
 // 入力しながら候補を絞り込めるコンボボックスにして検索性を上げる。
 export const FoodPicker = forwardRef<
   FoodPickerHandle,
-  { foods: Food[]; name: string; required?: boolean }
->(function FoodPicker({ foods, name, required }, ref) {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  { foods: Food[]; name: string; required?: boolean; defaultFood?: Food | null }
+>(function FoodPicker({ foods, name, required, defaultFood }, ref) {
+  const [selectedId, setSelectedId] = useState<number | null>(defaultFood?.id ?? null);
   const combo = useSearchCombobox();
   const { query, setQuery, isOpen, setIsOpen, highlighted } = combo;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +31,15 @@ export const FoodPicker = forwardRef<
       combo.reset();
     },
   }));
+
+  // 編集フォームなど、既存の選択済み食品をあらかじめ表示したい場合に使う
+  // (defaultValueと同様、マウント時の初期表示だけに使い、以後の変化は追わない)。
+  useEffect(() => {
+    if (defaultFood) {
+      setQuery(formatLabel(defaultFood));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // requiredはvalue(=selectedId)ではなく見た目上のテキスト欄に付いていると、
   // 候補を選ばず文字だけ入力した状態でもネイティブのバリデーションを通って

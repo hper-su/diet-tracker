@@ -103,11 +103,7 @@ export type InsertMealLogInput = {
   memo: string | null;
 };
 
-export async function insertMealLog(input: InsertMealLogInput): Promise<void> {
-  await run(supabase.from("mealLogs").insert({ ...input }));
-}
-
-// 複数件をまとめて登録する(「普段の3食から記録を作成」など)。
+// 複数件をまとめて登録する(食事記録フォームの複数行送信、「普段の3食から記録を作成」など)。
 export async function insertMealLogs(inputs: InsertMealLogInput[]): Promise<void> {
   await run(supabase.from("mealLogs").insert(inputs.map((input) => ({ ...input }))));
 }

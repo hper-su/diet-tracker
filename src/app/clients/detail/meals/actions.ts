@@ -1,11 +1,18 @@
 import { getFood } from "@/lib/db/foods";
-import { insertMealLog, insertMealLogs, deleteMealLog } from "@/lib/db/meal-logs";
+import {
+  insertMealLogs,
+  deleteMealLog,
+  type InsertMealLogInput,
+} from "@/lib/db/meal-logs";
 import { listUsualMeals } from "@/lib/db/usual-meals";
 import { validateMealLogInput } from "@/lib/validation/meal-log";
 import { calculateMealLogAmounts } from "@/lib/health/meal-totals";
 
 export type AddMealLogState = { error?: string } | undefined;
 
+// 1回の送信で複数の品目(meal_type[]・food_id[]・quantity[]・memo[])をまとめて登録できるようにする。
+// 行ごとに区分を選べるため、朝食・昼食などを混在させて一括登録できる。
+// 未入力の行(食品が選ばれていない行)は無視し、1件も選ばれていなければエラーにする。
 export async function addMealLogAction(
   _prevState: AddMealLogState,
   formData: FormData,
@@ -14,42 +21,66 @@ export async function addMealLogAction(
   if (!Number.isInteger(clientId) || clientId <= 0) {
     return { error: "お客様が指定されていません。" };
   }
+  const recordedAt = String(formData.get("recorded_at") ?? "");
 
-  const result = validateMealLogInput({
-    recordedAt: String(formData.get("recorded_at") ?? ""),
-    mealTypeRaw: String(formData.get("meal_type") ?? ""),
-    foodIdRaw: String(formData.get("food_id") ?? ""),
-    quantityRaw: String(formData.get("quantity") ?? ""),
-    memo: String(formData.get("memo") ?? ""),
-  });
+  const mealTypes = formData.getAll("meal_type").map(String);
+  const foodIds = formData.getAll("food_id").map(String);
+  const quantities = formData.getAll("quantity").map(String);
+  const memos = formData.getAll("memo").map(String);
 
-  if (!result.ok) {
-    return { error: result.error };
+  const entries = foodIds
+    .map((foodIdRaw, i) => ({
+      mealTypeRaw: mealTypes[i] ?? "",
+      foodIdRaw,
+      quantityRaw: quantities[i] ?? "",
+      memo: memos[i] ?? "",
+    }))
+    .filter((entry) => entry.foodIdRaw);
+
+  if (entries.length === 0) {
+    return { error: "食品を1件以上選択してください。" };
   }
 
-  const food = await getFood(result.data.foodId);
-  if (!food) {
-    return { error: "指定された食品が見つかりません。" };
+  const toInsert: InsertMealLogInput[] = [];
+
+  for (const entry of entries) {
+    const result = validateMealLogInput({
+      recordedAt,
+      mealTypeRaw: entry.mealTypeRaw,
+      foodIdRaw: entry.foodIdRaw,
+      quantityRaw: entry.quantityRaw,
+      memo: entry.memo,
+    });
+    if (!result.ok) {
+      return { error: result.error };
+    }
+
+    const food = await getFood(result.data.foodId);
+    if (!food) {
+      return { error: "指定された食品が見つかりません。" };
+    }
+
+    const amounts = calculateMealLogAmounts(
+      { kcal: food.kcal, proteinG: food.proteinG, fatG: food.fatG, carbG: food.carbG },
+      result.data.quantity,
+    );
+
+    toInsert.push({
+      clientId,
+      recordedAt: result.data.recordedAt,
+      mealType: result.data.mealType,
+      foodId: food.id,
+      foodName: food.name,
+      quantity: result.data.quantity,
+      kcal: amounts.kcal,
+      proteinG: amounts.proteinG,
+      fatG: amounts.fatG,
+      carbG: amounts.carbG,
+      memo: result.data.memo,
+    });
   }
 
-  const amounts = calculateMealLogAmounts(
-    { kcal: food.kcal, proteinG: food.proteinG, fatG: food.fatG, carbG: food.carbG },
-    result.data.quantity,
-  );
-
-  await insertMealLog({
-    clientId,
-    recordedAt: result.data.recordedAt,
-    mealType: result.data.mealType,
-    foodId: food.id,
-    foodName: food.name,
-    quantity: result.data.quantity,
-    kcal: amounts.kcal,
-    proteinG: amounts.proteinG,
-    fatG: amounts.fatG,
-    carbG: amounts.carbG,
-    memo: result.data.memo,
-  });
+  await insertMealLogs(toInsert);
 }
 
 // 「プラン」タブに登録済みの普段の3食を、指定日の食事記録としてまとめて複製する。

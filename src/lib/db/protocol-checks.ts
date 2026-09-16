@@ -13,7 +13,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { assertBelongsToClient } from "./firestore-helpers";
+import { belongsToClient } from "./firestore-helpers";
 
 const COLLECTION = "protocolChecks";
 
@@ -75,6 +75,6 @@ export async function insertProtocolCheck(input: InsertProtocolCheckInput): Prom
 }
 
 export async function deleteProtocolCheck(clientId: string, id: string): Promise<void> {
-  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await deleteDoc(doc(db, COLLECTION, id));
 }

@@ -302,10 +302,12 @@ async function deleteAllDocs(collectionName: string): Promise<void> {
 // 同じ日付・同じお客様内での並び順を復元するためのcreatedAt代用値。
 // 旧Supabase版の連番id("42"など)は登録順を表していたため、その数値をそのまま
 // ミリ秒に変換して使うと元の順序を保てる。Firestore生まれのid(ランダムな
-// 英数字文字列)はNumber()がNaNになるため、その場合は現在時刻にフォールバックする。
-function orderingTimestamp(id: string): Timestamp {
+// 英数字文字列)はNumber()がNaNになるため、その場合は現在時刻+配列内の
+// 位置(index)をずらして使う(同一ループ内でTimestamp.now()を繰り返すと
+// ほぼ同時刻になり、元の順序が復元後に崩れてしまうため)。
+function orderingTimestamp(id: string, index: number): Timestamp {
   const n = Number(id);
-  return Number.isFinite(n) ? Timestamp.fromMillis(n) : Timestamp.now();
+  return Number.isFinite(n) ? Timestamp.fromMillis(n) : Timestamp.fromMillis(Date.now() + index);
 }
 
 // 各レコードのidをそのままFirestoreのドキュメントIDとして使う(addDocによる
@@ -314,16 +316,30 @@ function orderingTimestamp(id: string): Timestamp {
 async function setAllDocs<T extends { id: string }>(
   collectionName: string,
   rows: T[],
-  extra?: (row: T) => Record<string, unknown>,
+  extra?: (row: T, index: number) => Record<string, unknown>,
 ): Promise<void> {
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = writeBatch(db);
-    for (const row of rows.slice(i, i + BATCH_SIZE)) {
+    rows.slice(i, i + BATCH_SIZE).forEach((row, offset) => {
       const { id, ...rest } = row;
-      batch.set(doc(db, collectionName, id), { ...rest, ...extra?.(row) });
-    }
+      batch.set(doc(db, collectionName, id), { ...rest, ...extra?.(row, i + offset) });
+    });
     await batch.commit();
   }
+}
+
+// 1コレクションぶんの「全削除→再投入」をまとめて行う。削除と再投入を
+// コレクションごとに直列で行うことで、途中のコレクションで失敗しても、
+// まだ手を付けていない後続のコレクションは削除前の(古いままの)データが
+// 残る(全コレクションを先に削除してから再投入する場合に比べ、失敗時に
+// 失われるデータの範囲を最小限にできる)。
+async function replaceCollection<T extends { id: string }>(
+  collectionName: string,
+  rows: T[],
+  extra?: (row: T, index: number) => Record<string, unknown>,
+): Promise<void> {
+  await deleteAllDocs(collectionName);
+  await setAllDocs(collectionName, rows, extra);
 }
 
 // インポートは既存データを全て置き換える(共有DBの内容を丸ごと差し替えるための
@@ -341,34 +357,30 @@ export async function importAllData(raw: unknown): Promise<void> {
   }
   const data = validateAndSanitize(normalized);
 
-  for (const name of COLLECTIONS) {
-    await deleteAllDocs(name);
-  }
-
   const clientCreatedAt = new Map(
     data.clients.map((c) => [c.id, c.createdAt] as const),
   );
 
-  await setAllDocs("clients", data.clients, (client) => ({
+  await replaceCollection("clients", data.clients, (client) => ({
     createdAt: clientCreatedAt.get(client.id)
       ? Timestamp.fromDate(new Date(clientCreatedAt.get(client.id)!))
       : serverTimestamp(),
   }));
-  await setAllDocs("foods", data.foods);
-  await setAllDocs("exercises", data.exercises);
-  await setAllDocs("measurements", data.measurements, (row) => ({
-    createdAt: orderingTimestamp(row.id),
+  await replaceCollection("foods", data.foods);
+  await replaceCollection("exercises", data.exercises);
+  await replaceCollection("measurements", data.measurements, (row, index) => ({
+    createdAt: orderingTimestamp(row.id, index),
   }));
-  await setAllDocs("mealLogs", data.mealLogs, (row) => ({
-    createdAt: orderingTimestamp(row.id),
+  await replaceCollection("mealLogs", data.mealLogs, (row, index) => ({
+    createdAt: orderingTimestamp(row.id, index),
   }));
-  await setAllDocs("usualMeals", data.usualMeals, (row) => ({
-    createdAt: orderingTimestamp(row.id),
+  await replaceCollection("usualMeals", data.usualMeals, (row, index) => ({
+    createdAt: orderingTimestamp(row.id, index),
   }));
-  await setAllDocs("usualExercises", data.usualExercises, (row) => ({
-    createdAt: orderingTimestamp(row.id),
+  await replaceCollection("usualExercises", data.usualExercises, (row, index) => ({
+    createdAt: orderingTimestamp(row.id, index),
   }));
-  await setAllDocs("protocolChecks", data.protocolChecks, (row) => ({
-    createdAt: orderingTimestamp(row.id),
+  await replaceCollection("protocolChecks", data.protocolChecks, (row, index) => ({
+    createdAt: orderingTimestamp(row.id, index),
   }));
 }

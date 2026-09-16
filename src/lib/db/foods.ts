@@ -203,18 +203,25 @@ export async function updateFood(id: string, input: UpdateFoodInput): Promise<Up
   return { ok: true };
 }
 
+// Firestoreの1バッチあたりの書き込み上限(500件)を踏まえた安全マージン。
+const MAX_BATCH_WRITES = 450;
+
 // mealLogs/usualMealsのfoodIdは、Postgres版ではON DELETE SET NULLで自動的に
 // nullへ補正されていたが、Firestoreに外部キー制約が無いためここで明示的に行う
 // (foodName/kcal等はスナップショットとして残っているので表示上の実害はない)。
+// 参照件数がバッチ上限を超えることもあるため、チャンクに分けて書き込む。
 export async function deleteFood(id: string): Promise<void> {
   for (const collectionName of ["mealLogs", "usualMeals"] as const) {
     const referencing = await getDocs(
       query(collection(db, collectionName), where("foodId", "==", id)),
     );
-    if (referencing.empty) continue;
-    const batch = writeBatch(db);
-    referencing.docs.forEach((d) => batch.update(d.ref, { foodId: null }));
-    await batch.commit();
+    for (let i = 0; i < referencing.docs.length; i += MAX_BATCH_WRITES) {
+      const batch = writeBatch(db);
+      for (const d of referencing.docs.slice(i, i + MAX_BATCH_WRITES)) {
+        batch.update(d.ref, { foodId: null });
+      }
+      await batch.commit();
+    }
   }
   await deleteDoc(doc(db, COLLECTION, id));
 }

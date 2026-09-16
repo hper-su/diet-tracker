@@ -13,7 +13,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { assertBelongsToClient } from "./firestore-helpers";
+import { belongsToClient } from "./firestore-helpers";
 
 const COLLECTION = "usualExercises";
 
@@ -69,6 +69,6 @@ export async function insertUsualExercise(input: InsertUsualExerciseInput): Prom
 }
 
 export async function deleteUsualExercise(clientId: string, id: string): Promise<void> {
-  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await deleteDoc(doc(db, COLLECTION, id));
 }

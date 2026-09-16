@@ -14,7 +14,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { assertBelongsToClient } from "./firestore-helpers";
+import { belongsToClient } from "./firestore-helpers";
 
 const COLLECTION = "measurements";
 
@@ -97,11 +97,11 @@ export async function updateMeasurement(
   id: string,
   input: UpdateMeasurementInput,
 ): Promise<void> {
-  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await updateDoc(doc(db, COLLECTION, id), { ...input });
 }
 
 export async function deleteMeasurement(clientId: string, id: string): Promise<void> {
-  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await deleteDoc(doc(db, COLLECTION, id));
 }

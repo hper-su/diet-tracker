@@ -14,7 +14,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { assertBelongsToClient } from "./firestore-helpers";
+import { belongsToClient } from "./firestore-helpers";
 import type { DailyMealTotal } from "@/lib/health/meal-totals";
 
 const COLLECTION = "mealLogs";
@@ -160,11 +160,11 @@ export async function updateMealLog(
   id: string,
   input: UpdateMealLogInput,
 ): Promise<void> {
-  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await updateDoc(doc(db, COLLECTION, id), { ...input });
 }
 
 export async function deleteMealLog(clientId: string, id: string): Promise<void> {
-  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await deleteDoc(doc(db, COLLECTION, id));
 }

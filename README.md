@@ -18,9 +18,14 @@ Firestore(クラウド上のドキュメントデータベース)にすべての
    「Users」タブからスタッフ用のログインアカウント(メールアドレス・パスワード)を1件作成する
 4. Firestore Database → 「ルール」タブに、リポジトリの `firestore.rules` の内容をそのまま
    貼り付けて公開する(ログイン済みユーザーのみ全操作可、というルール)
-5. プロジェクトの概要画面から「アプリを追加」→ウェブアプリを登録し、表示される
+5. Firestore Database → 「インデックス」タブ→「複合」で、`firestore.indexes.json` に
+   記載されている6件の複合インデックスを手動で作成する(Firebase CLIを使わない場合、
+   1件ずつ「インデックスを作成」から `collectionGroup`/`fields` の内容をそのまま入力する。
+   作成し忘れても、該当する画面を開いた際にコンソールにインデックス作成用リンク付きの
+   エラーが表示されるので、それをクリックして作成することもできる)
+6. プロジェクトの概要画面から「アプリを追加」→ウェブアプリを登録し、表示される
    `firebaseConfig` の値を控える
-6. リポジトリ直下に `.env.local` を作成し(`.env.local.example` をコピーして使う)、
+7. リポジトリ直下に `.env.local` を作成し(`.env.local.example` をコピーして使う)、
    控えた値を設定する
 
 ```
@@ -98,6 +103,9 @@ node scripts/export-sqlite-to-json.cjs
 - `src/app/data` : 全データのエクスポート/インポート(バックアップ・復元)
 - `firestore.rules` : Firebaseコンソールの Firestore Database → ルール タブに貼り付ける
   アクセス制御(ログイン済みユーザーのみ全操作可)
+- `firestore.indexes.json` : `clientId`絞り込み+日付順ソートを行うクエリ(measurements/
+  mealLogs/usualMeals/usualExercises/protocolChecks)に必要な複合インデックスの定義。
+  Firebase CLIが無い場合はコンソールから手動で同じ内容を作成する(セットアップ手順参照)
 - `supabase/schema.sql` : (過去のSupabase版、参考用)当時のテーブル定義・RLS・
   運動マスタ初期データのSQL。現在のバックエンドはFirestoreのため実運用では使わない
 - `scripts/extract-mext-foods.cjs` / `extract-pfc-balance-table.cjs` : 文部科学省の公式Excel等から

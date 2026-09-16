@@ -13,7 +13,7 @@ function baseData(): ExportedData {
     exportedAt: "2026-09-09T00:00:00.000Z",
     clients: [
       {
-        id: 1,
+        id: "1",
         name: "テスト太郎",
         birthdate: null,
         heightCm: null,
@@ -34,7 +34,7 @@ function baseData(): ExportedData {
     measurements: [],
     foods: [
       {
-        id: 1,
+        id: "1",
         category: "主食",
         name: "白米",
         servingLabel: "1杯",
@@ -47,13 +47,13 @@ function baseData(): ExportedData {
     mealLogs: [],
     usualMeals: [],
     exercises: [
-      { id: 1, category: "運動", name: "ウォーキング", mets: 3.5 },
+      { id: "1", category: "運動", name: "ウォーキング", mets: 3.5 },
     ],
     usualExercises: [],
     protocolChecks: [
       {
-        id: 1,
-        clientId: 1,
+        id: "1",
+        clientId: "1",
         recordedAt: "2026-09-09",
         conditionId: "lumbar",
         results: [{ step: 0, achieved: true }],
@@ -116,15 +116,15 @@ describe("validateAndSanitize", () => {
 
   it("throws when a protocol check references a non-existent client", () => {
     const data = baseData();
-    data.protocolChecks[0].clientId = 999;
+    data.protocolChecks[0].clientId = "999";
     expect(() => validateAndSanitize(data)).toThrow(ImportFormatError);
   });
 
   it("throws when a measurement references a non-existent client", () => {
     const data = baseData();
     data.measurements.push({
-      id: 1,
-      clientId: 999,
+      id: "1",
+      clientId: "999",
       recordedAt: "2026-09-09",
       weightKg: 60,
       bodyFatPct: null,
@@ -146,11 +146,11 @@ describe("validateAndSanitize", () => {
   it("nulls out a mealLog's foodId when the referenced food no longer exists", () => {
     const data = baseData();
     data.mealLogs.push({
-      id: 1,
-      clientId: 1,
+      id: "1",
+      clientId: "1",
       recordedAt: "2026-09-09",
       mealType: "lunch",
-      foodId: 999,
+      foodId: "999",
       foodName: "存在しない食品",
       quantity: 1,
       kcal: 100,
@@ -166,8 +166,8 @@ describe("validateAndSanitize", () => {
   it("throws when a mealLog references a non-existent client", () => {
     const data = baseData();
     data.mealLogs.push({
-      id: 1,
-      clientId: 999,
+      id: "1",
+      clientId: "999",
       recordedAt: "2026-09-09",
       mealType: "lunch",
       foodId: null,
@@ -185,9 +185,9 @@ describe("validateAndSanitize", () => {
   it("nulls out a usualExercise's exerciseId when the referenced exercise no longer exists", () => {
     const data = baseData();
     data.usualExercises.push({
-      id: 1,
-      clientId: 1,
-      exerciseId: 999,
+      id: "1",
+      clientId: "1",
+      exerciseId: "999",
       exerciseName: "存在しない運動",
       mets: 3,
       durationMin: 30,

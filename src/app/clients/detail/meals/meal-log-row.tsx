@@ -26,7 +26,7 @@ export function MealLogRow({
   foods,
 }: {
   log: MealLog;
-  clientId: number;
+  clientId: string;
   foods: Food[];
 }) {
   const [editing, setEditing] = useState(false);

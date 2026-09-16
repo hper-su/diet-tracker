@@ -14,7 +14,7 @@ describe("validateUsualExerciseInput", () => {
     expect(validateUsualExerciseInput(BASE_INPUT)).toEqual({
       ok: true,
       data: {
-        exerciseId: 3,
+        exerciseId: "3",
         customName: null,
         customMets: null,
         durationMin: 30,

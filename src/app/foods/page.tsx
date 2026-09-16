@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLiveQuery } from "@/lib/db/use-live-query";
-import { listFoodsPage, countFoods, listFoodCategories } from "@/lib/db/foods";
+import { listFoodsPage, countFoods, listFoodCategories, subscribeToFoods } from "@/lib/db/foods";
 import { formatNumberJa } from "@/lib/format/number";
 import { FoodForm } from "./food-form";
 import { FoodRow } from "./food-row";
@@ -32,7 +32,7 @@ function FoodsPageInner() {
       listFoodCategories(),
     ]);
     return { foods, total, totalPages, grandTotal, categories };
-  }, [query, page], ["foods"]);
+  }, [query, page], [subscribeToFoods]);
 
   function pageHref(targetPage: number): string {
     const params = new URLSearchParams();

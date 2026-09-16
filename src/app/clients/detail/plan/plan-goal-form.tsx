@@ -10,7 +10,7 @@ export function PlanGoalForm({
   currentTargetWeightKg,
   currentTargetBodyFatPct,
 }: {
-  clientId: number;
+  clientId: string;
   currentWeightChangeKg: number | null;
   currentPeriodMonths: number | null;
   currentTargetWeightKg: number | null;
@@ -91,9 +91,6 @@ export function PlanGoalForm({
         目標体重を入力すると、「概要」タブの体重推移グラフに目標ラインと到達予測日を表示します。
       </p>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-      {state?.warning && (
-        <p className="text-sm text-amber-600">{state.warning}</p>
-      )}
       <button
         type="submit"
         disabled={pending}

@@ -20,7 +20,7 @@ export const FoodPicker = forwardRef<
   FoodPickerHandle,
   { foods: Food[]; name: string; required?: boolean; defaultFood?: Food | null }
 >(function FoodPicker({ foods, name, required, defaultFood }, ref) {
-  const [selectedId, setSelectedId] = useState<number | null>(defaultFood?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(defaultFood?.id ?? null);
   const combo = useSearchCombobox();
   const { query, setQuery, isOpen, setIsOpen, highlighted } = combo;
   const inputRef = useRef<HTMLInputElement>(null);

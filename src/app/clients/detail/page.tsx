@@ -4,10 +4,10 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLiveQuery } from "@/lib/db/use-live-query";
-import { getClient } from "@/lib/db/clients";
+import { getClient, subscribeToClients } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
-import { listMeasurements } from "@/lib/db/measurements";
-import { listProtocolChecks } from "@/lib/db/protocol-checks";
+import { listMeasurements, subscribeToMeasurements } from "@/lib/db/measurements";
+import { listProtocolChecks, subscribeToProtocolChecks } from "@/lib/db/protocol-checks";
 import { findLatestNonNull } from "@/lib/health/measurements";
 import { projectWeightAchievement } from "@/lib/health/weight-projection";
 import { ClientTabs } from "./client-tabs";
@@ -28,7 +28,7 @@ export default function ClientDetailPage() {
 
 function ClientDetailPageInner() {
   const searchParams = useSearchParams();
-  const clientId = Number(searchParams.get("id"));
+  const clientId = searchParams.get("id") ?? "";
 
   const data = useLiveQuery(async () => {
     const client = await getClient(clientId);
@@ -39,9 +39,13 @@ function ClientDetailPageInner() {
         ])
       : [[], []];
     return { client, measurements, protocolChecks };
-  }, [clientId], ["clients", "measurements", "protocolChecks"]);
+  }, [clientId], [
+    subscribeToClients,
+    (cb) => subscribeToMeasurements(clientId, cb),
+    (cb) => subscribeToProtocolChecks(clientId, cb),
+  ]);
 
-  if (!Number.isInteger(clientId) || clientId <= 0) {
+  if (!clientId) {
     return <NotFound />;
   }
 

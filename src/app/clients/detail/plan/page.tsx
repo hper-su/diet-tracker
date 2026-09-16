@@ -4,12 +4,14 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLiveQuery } from "@/lib/db/use-live-query";
-import { getClient } from "@/lib/db/clients";
+import { getClient, subscribeToClients } from "@/lib/db/clients";
+import { subscribeToMeasurements } from "@/lib/db/measurements";
+import { subscribeToUsualExercises } from "@/lib/db/usual-exercises";
 import { formatClientName } from "@/lib/format/client-name";
 import { formatNumberJa } from "@/lib/format/number";
-import { listFoods } from "@/lib/db/foods";
-import { listExercises } from "@/lib/db/exercises";
-import { listUsualMeals, type UsualMealType } from "@/lib/db/usual-meals";
+import { listFoods, subscribeToFoods } from "@/lib/db/foods";
+import { listExercises, subscribeToExercises } from "@/lib/db/exercises";
+import { listUsualMeals, subscribeToUsualMeals, type UsualMealType } from "@/lib/db/usual-meals";
 import { getCurrentDietPlan } from "@/lib/server/current-plan";
 import { buildDietPlanFormulas } from "@/lib/health/diet-plan";
 import { KCAL_PER_KG_BODY_WEIGHT } from "@/lib/health/calorie-adjustment";
@@ -79,7 +81,7 @@ export default function ClientPlanPage() {
 
 function ClientPlanPageInner() {
   const searchParams = useSearchParams();
-  const clientId = Number(searchParams.get("id"));
+  const clientId = searchParams.get("id") ?? "";
 
   const data = useLiveQuery(async () => {
     const client = await getClient(clientId);
@@ -94,15 +96,15 @@ function ClientPlanPageInner() {
 
     return { client, planResult, foods, exercises, usualMeals };
   }, [clientId], [
-    "clients",
-    "measurements",
-    "usualExercises",
-    "foods",
-    "exercises",
-    "usualMeals",
+    subscribeToClients,
+    (cb) => subscribeToMeasurements(clientId, cb),
+    (cb) => subscribeToUsualExercises(clientId, cb),
+    subscribeToFoods,
+    subscribeToExercises,
+    (cb) => subscribeToUsualMeals(clientId, cb),
   ]);
 
-  if (!Number.isInteger(clientId) || clientId <= 0) {
+  if (!clientId) {
     return <NotFound />;
   }
 

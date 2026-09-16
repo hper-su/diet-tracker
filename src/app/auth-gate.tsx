@@ -1,35 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/lib/db/supabase";
+import type { User } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/db/firebase";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null | "checking">("checking");
+  const [user, setUser] = useState<User | null | "checking">("checking");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
+    const unsubscribe = onAuthStateChanged(auth, (newUser) => {
+      setUser(newUser);
     });
-    return () => subscription.unsubscribe();
+    return unsubscribe;
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setVerifying(true);
     setError(false);
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (signInError) {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch {
       setError(true);
       setPassword("");
     }
@@ -38,11 +34,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   // 初回マウント時のセッション確認が終わるまでは、サーバー側の描画と
   // 揃えるため何も出さない(ログイン画面/本体のどちらかで確定させない)。
-  if (session === "checking") {
+  if (user === "checking") {
     return <div className="min-h-screen bg-gray-50" />;
   }
 
-  if (!session) {
+  if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <form

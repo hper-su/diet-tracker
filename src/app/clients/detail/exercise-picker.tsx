@@ -22,7 +22,7 @@ export const ExercisePicker = forwardRef<
   ExercisePickerHandle,
   { exercises: Exercise[] }
 >(function ExercisePicker({ exercises }, ref) {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isCustom, setIsCustom] = useState(false);
   const combo = useSearchCombobox();
   const { query, setQuery, isOpen, setIsOpen, highlighted } = combo;

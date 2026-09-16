@@ -2,27 +2,15 @@
 
 import { useRef, useState } from "react";
 import { exportAllData, importAllData, ImportFormatError } from "@/lib/db/import-export";
+import { seedExercisesIfEmpty } from "@/lib/db/exercises";
 
 type Status =
   | { type: "idle" }
   | { type: "success"; message: string }
   | { type: "error"; message: string };
 
-// Supabaseのエラーはネイティブの Error ではなく、message プロパティを持つ
-// プレーンオブジェクト(PostgrestError等)で投げられることがある。
-// instanceof Error で弾いてString(error)にフォールバックすると
-// "[object Object]" になってしまうため、messageプロパティも見る。
 function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    typeof (error as { message: unknown }).message === "string"
-  ) {
-    return (error as { message: string }).message;
-  }
-  return String(error);
+  return error instanceof Error ? error.message : String(error);
 }
 
 export default function DataPage() {
@@ -44,6 +32,21 @@ export default function DataPage() {
       a.click();
       URL.revokeObjectURL(url);
       setStatus({ type: "success", message: "エクスポートが完了しました。" });
+    } catch (error) {
+      setStatus({ type: "error", message: getErrorMessage(error) });
+    }
+  }
+
+  async function handleSeedExercises() {
+    try {
+      const { inserted } = await seedExercisesIfEmpty();
+      setStatus({
+        type: "success",
+        message:
+          inserted > 0
+            ? `運動マスタの初期データを${inserted}件投入しました。`
+            : "運動マスタには既にデータがあるため、投入をスキップしました。",
+      });
     } catch (error) {
       setStatus({ type: "error", message: getErrorMessage(error) });
     }
@@ -82,6 +85,21 @@ export default function DataPage() {
           バックアップの保存や、万一のトラブル時に共有データベースの内容を丸ごと復元するために使います。
         </p>
       </div>
+
+      <section className="rounded-lg border border-gray-200 bg-white p-6">
+        <h2 className="font-semibold">運動マスタの初期データ投入</h2>
+        <p className="mt-1 text-sm text-gray-600">
+          「厚生労働省 健康づくりのための身体活動・運動ガイド2023」のメッツ表を運動マスタに投入します。
+          運動マスタが空の場合のみ実行され、既にデータがあれば何もしません(初回セットアップ用)。
+        </p>
+        <button
+          type="button"
+          onClick={handleSeedExercises}
+          className="mt-4 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+        >
+          運動マスタを投入
+        </button>
+      </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <h2 className="font-semibold">エクスポート</h2>

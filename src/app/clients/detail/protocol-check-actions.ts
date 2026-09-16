@@ -11,8 +11,8 @@ export async function addProtocolCheckAction(
   _prevState: AddProtocolCheckState,
   formData: FormData,
 ): Promise<AddProtocolCheckState> {
-  const clientId = Number(formData.get("client_id"));
-  if (!Number.isInteger(clientId) || clientId <= 0) {
+  const clientId = String(formData.get("client_id") ?? "");
+  if (!clientId) {
     return { error: "お客様が指定されていません。" };
   }
 
@@ -51,14 +51,9 @@ export async function addProtocolCheckAction(
 }
 
 export async function deleteProtocolCheckAction(formData: FormData) {
-  const id = Number(formData.get("id"));
-  const clientId = Number(formData.get("client_id"));
-  if (
-    Number.isInteger(id) &&
-    id > 0 &&
-    Number.isInteger(clientId) &&
-    clientId > 0
-  ) {
+  const id = String(formData.get("id") ?? "");
+  const clientId = String(formData.get("client_id") ?? "");
+  if (id && clientId) {
     await deleteProtocolCheck(clientId, id);
   }
 }

@@ -16,7 +16,7 @@ describe("validateMealLogInput", () => {
       data: {
         recordedAt: "2026-08-01",
         mealType: "lunch",
-        foodId: 3,
+        foodId: "3",
         quantity: 1,
         memo: null,
       },
@@ -41,12 +41,6 @@ describe("validateMealLogInput", () => {
       ok: false,
       error: "食品を選択してください。",
     });
-  });
-
-  it("rejects a non-integer food id", () => {
-    expect(
-      validateMealLogInput({ ...BASE_INPUT, foodIdRaw: "abc" }),
-    ).toEqual({ ok: false, error: "食品の指定が不正です。" });
   });
 
   it("accepts a custom quantity", () => {

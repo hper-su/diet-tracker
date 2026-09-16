@@ -8,7 +8,7 @@ import { addProtocolCheckAction } from "./protocol-check-actions";
 
 type StepStatus = "achieved" | "not_achieved" | undefined;
 
-export function ProtocolCheckForm({ clientId }: { clientId: number }) {
+export function ProtocolCheckForm({ clientId }: { clientId: string }) {
   const [state, formAction, pending] = useActionState(
     addProtocolCheckAction,
     undefined,

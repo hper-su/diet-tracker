@@ -5,20 +5,7 @@ import {
 } from "@/lib/db/measurements";
 import { validateMeasurementInput } from "@/lib/validation/measurement";
 
-// マイグレーション未適用でまだ存在しない列は、DB層が黙って除いて保存する
-// (runWithColumnFallback)。除かれた列があれば、お客様の入力が実は
-// 保存されていないことに気づけるよう、フォームに警告として表示する。
-const COLUMN_LABELS: Record<string, string> = {
-  bodyWaterPct: "体水分率",
-};
-
-function buildDroppedColumnsWarning(droppedColumns: string[]): string | undefined {
-  if (droppedColumns.length === 0) return undefined;
-  const labels = droppedColumns.map((column) => COLUMN_LABELS[column] ?? column);
-  return `${labels.join("・")}はデータベースの準備が完了していないため保存されませんでした(他の項目は保存済みです)。`;
-}
-
-export type AddMeasurementState = { error?: string; warning?: string } | undefined;
+export type AddMeasurementState = { error?: string } | undefined;
 
 function readMeasurementFormData(formData: FormData) {
   return validateMeasurementInput({
@@ -37,8 +24,8 @@ export async function addMeasurementAction(
   _prevState: AddMeasurementState,
   formData: FormData,
 ): Promise<AddMeasurementState> {
-  const clientId = Number(formData.get("client_id"));
-  if (!Number.isInteger(clientId) || clientId <= 0) {
+  const clientId = String(formData.get("client_id") ?? "");
+  if (!clientId) {
     return { error: "お客様が指定されていません。" };
   }
 
@@ -48,20 +35,19 @@ export async function addMeasurementAction(
     return { error: result.error };
   }
 
-  const { droppedColumns } = await insertMeasurement({ clientId, ...result.data });
-  const warning = buildDroppedColumnsWarning(droppedColumns);
-  return warning ? { warning } : undefined;
+  await insertMeasurement({ clientId, ...result.data });
+  return undefined;
 }
 
-export type UpdateMeasurementState = { error?: string; warning?: string } | undefined;
+export type UpdateMeasurementState = { error?: string } | undefined;
 
 export async function updateMeasurementAction(
   _prevState: UpdateMeasurementState,
   formData: FormData,
 ): Promise<UpdateMeasurementState> {
-  const id = Number(formData.get("id"));
-  const clientId = Number(formData.get("client_id"));
-  if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(clientId) || clientId <= 0) {
+  const id = String(formData.get("id") ?? "");
+  const clientId = String(formData.get("client_id") ?? "");
+  if (!id || !clientId) {
     return { error: "記録が指定されていません。" };
   }
 
@@ -70,15 +56,14 @@ export async function updateMeasurementAction(
     return { error: result.error };
   }
 
-  const { droppedColumns } = await updateMeasurement(clientId, id, result.data);
-  const warning = buildDroppedColumnsWarning(droppedColumns);
-  return warning ? { warning } : undefined;
+  await updateMeasurement(clientId, id, result.data);
+  return undefined;
 }
 
 export async function deleteMeasurementAction(formData: FormData) {
-  const id = Number(formData.get("id"));
-  const clientId = Number(formData.get("client_id"));
-  if (Number.isInteger(id) && id > 0 && Number.isInteger(clientId) && clientId > 0) {
+  const id = String(formData.get("id") ?? "");
+  const clientId = String(formData.get("client_id") ?? "");
+  if (id && clientId) {
     await deleteMeasurement(clientId, id);
   }
 }

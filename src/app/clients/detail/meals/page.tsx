@@ -4,11 +4,17 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLiveQuery } from "@/lib/db/use-live-query";
-import { getClient } from "@/lib/db/clients";
+import { getClient, subscribeToClients } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
-import { listFoods } from "@/lib/db/foods";
-import { listMealLogsByDate, listMealLogTotalsByDateRange } from "@/lib/db/meal-logs";
-import { listUsualMeals } from "@/lib/db/usual-meals";
+import { listFoods, subscribeToFoods } from "@/lib/db/foods";
+import {
+  listMealLogsByDate,
+  listMealLogTotalsByDateRange,
+  subscribeToMealLogs,
+} from "@/lib/db/meal-logs";
+import { listUsualMeals, subscribeToUsualMeals } from "@/lib/db/usual-meals";
+import { subscribeToMeasurements } from "@/lib/db/measurements";
+import { subscribeToUsualExercises } from "@/lib/db/usual-exercises";
 import { fillDailyMealTotals, sumMealLogAmounts } from "@/lib/health/meal-totals";
 import { calculateMacroRatioPercent } from "@/lib/health/pfc-balance";
 import { getCurrentDietPlan } from "@/lib/server/current-plan";
@@ -32,7 +38,7 @@ export default function ClientMealsPage() {
 
 function ClientMealsPageInner() {
   const searchParams = useSearchParams();
-  const clientId = Number(searchParams.get("id"));
+  const clientId = searchParams.get("id") ?? "";
   const date = searchParams.get("date") || todayISODate();
   const summaryRangeDays: SummaryRangeDays = searchParams.get("range") === "30" ? "30" : "7";
 
@@ -53,15 +59,15 @@ function ClientMealsPageInner() {
 
     return { client, foods, usualMeals, logs, planResult, rangeTotals };
   }, [clientId, date, summaryFromDate], [
-    "clients",
-    "foods",
-    "usualMeals",
-    "mealLogs",
-    "measurements",
-    "usualExercises",
+    subscribeToClients,
+    subscribeToFoods,
+    (cb) => subscribeToUsualMeals(clientId, cb),
+    (cb) => subscribeToMealLogs(clientId, cb),
+    (cb) => subscribeToMeasurements(clientId, cb),
+    (cb) => subscribeToUsualExercises(clientId, cb),
   ]);
 
-  if (!Number.isInteger(clientId) || clientId <= 0) {
+  if (!clientId) {
     return <NotFound />;
   }
 

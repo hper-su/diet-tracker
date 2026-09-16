@@ -1,8 +1,25 @@
-import { supabase, unwrap, run, runWithColumnFallback } from "./supabase";
-import { notifyChange } from "./realtime";
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  type Unsubscribe,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import { assertBelongsToClient } from "./firestore-helpers";
+
+const COLLECTION = "measurements";
 
 export type Measurement = {
-  id: number;
+  id: string;
   recordedAt: string;
   weightKg: number | null;
   bodyFatPct: number | null;
@@ -11,23 +28,42 @@ export type Measurement = {
   visceralFatLevel: number | null;
   bmrKcal: number | null;
   memo: string | null;
+};
+
+type MeasurementDoc = Omit<Measurement, "id"> & {
+  clientId: string;
+  createdAt?: Timestamp | null;
 };
 
 // 古い記録から新しい記録の順(グラフ描画・findLatestNonNullでの直近値探索に使う順)。
-export async function listMeasurements(clientId: number): Promise<Measurement[]> {
-  const rows = await unwrap<(Measurement & { clientId: number })[]>(
-    supabase
-      .from("measurements")
-      .select("*")
-      .eq("clientId", clientId)
-      .order("recordedAt", { ascending: true })
-      .order("id", { ascending: true }),
+export async function listMeasurements(clientId: string): Promise<Measurement[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTION),
+      where("clientId", "==", clientId),
+      orderBy("recordedAt", "asc"),
+      orderBy("createdAt", "asc"),
+    ),
   );
-  return rows.map(({ clientId: _clientId, ...rest }) => rest);
+  return snap.docs.map((d) => {
+    const { clientId: _clientId, createdAt: _createdAt, ...rest } =
+      d.data() as MeasurementDoc;
+    return { id: d.id, ...rest };
+  });
+}
+
+export function subscribeToMeasurements(
+  clientId: string,
+  callback: () => void,
+): Unsubscribe {
+  return onSnapshot(
+    query(collection(db, COLLECTION), where("clientId", "==", clientId)),
+    () => callback(),
+  );
 }
 
 export type InsertMeasurementInput = {
-  clientId: number;
+  clientId: string;
   recordedAt: string;
   weightKg: number | null;
   bodyFatPct: number | null;
@@ -38,14 +74,11 @@ export type InsertMeasurementInput = {
   memo: string | null;
 };
 
-export async function insertMeasurement(
-  input: InsertMeasurementInput,
-): Promise<{ droppedColumns: string[] }> {
-  const result = await runWithColumnFallback(input, (row) =>
-    supabase.from("measurements").insert(row),
-  );
-  notifyChange(["measurements"]);
-  return result;
+export async function insertMeasurement(input: InsertMeasurementInput): Promise<void> {
+  await addDoc(collection(db, COLLECTION), {
+    ...input,
+    createdAt: serverTimestamp(),
+  });
 }
 
 export type UpdateMeasurementInput = {
@@ -60,24 +93,15 @@ export type UpdateMeasurementInput = {
 };
 
 export async function updateMeasurement(
-  clientId: number,
-  id: number,
+  clientId: string,
+  id: string,
   input: UpdateMeasurementInput,
-): Promise<{ droppedColumns: string[] }> {
-  const result = await runWithColumnFallback(input, (row) =>
-    supabase
-      .from("measurements")
-      .update(row)
-      .eq("id", id)
-      .eq("clientId", clientId),
-  );
-  notifyChange(["measurements"]);
-  return result;
+): Promise<void> {
+  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  await updateDoc(doc(db, COLLECTION, id), { ...input });
 }
 
-export async function deleteMeasurement(clientId: number, id: number): Promise<void> {
-  await run(
-    supabase.from("measurements").delete().eq("id", id).eq("clientId", clientId),
-  );
-  notifyChange(["measurements"]);
+export async function deleteMeasurement(clientId: string, id: string): Promise<void> {
+  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  await deleteDoc(doc(db, COLLECTION, id));
 }

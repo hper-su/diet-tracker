@@ -9,7 +9,7 @@ export function MeasurementForm({
   clientId,
   heightCm,
 }: {
-  clientId: number;
+  clientId: string;
   heightCm: number | null;
 }) {
   const [state, formAction, pending] = useActionState(
@@ -135,9 +135,6 @@ export function MeasurementForm({
         </label>
       </div>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-      {state?.warning && (
-        <p className="text-sm text-amber-600">{state.warning}</p>
-      )}
       <button
         type="submit"
         disabled={pending}

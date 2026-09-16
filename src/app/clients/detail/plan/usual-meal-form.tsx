@@ -18,7 +18,7 @@ export function UsualMealForm({
   clientId,
   foods,
 }: {
-  clientId: number;
+  clientId: string;
   foods: Food[];
 }) {
   const [state, formAction, pending] = useActionState(

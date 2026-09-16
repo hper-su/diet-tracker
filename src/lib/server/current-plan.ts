@@ -29,7 +29,7 @@ export type MissingField = {
 };
 
 export type UsualExerciseWithKcal = {
-  id: number;
+  id: string;
   exerciseName: string;
   mets: number;
   durationMin: number;
@@ -67,7 +67,7 @@ export type CurrentPlanResult = {
 
 // お客様のプロフィールと測定値の最新値から、ダイエット/増量プランを算出する。
 // 概要・プラン・食事記録の各ページから使う共通ロジック。
-export async function getCurrentDietPlan(clientId: number): Promise<CurrentPlanResult> {
+export async function getCurrentDietPlan(clientId: string): Promise<CurrentPlanResult> {
   const [client, measurements, usualExercises] = await Promise.all([
     getClient(clientId),
     listMeasurements(clientId),

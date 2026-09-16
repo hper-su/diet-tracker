@@ -15,7 +15,7 @@ export type UsualExerciseInput = {
 };
 
 export type UsualExerciseData = {
-  exerciseId: number | null;
+  exerciseId: string | null;
   customName: string | null;
   customMets: number | null;
   durationMin: number;
@@ -29,7 +29,7 @@ export function validateUsualExerciseInput(
     return { ok: false, error: "運動の種目を選択してください。" };
   }
 
-  let exerciseId: number | null = null;
+  let exerciseId: string | null = null;
   let customName: string | null = null;
   let customMets: number | null = null;
 
@@ -48,10 +48,7 @@ export function validateUsualExerciseInput(
     }
     customMets = metsResult.data;
   } else {
-    exerciseId = Number(input.exerciseIdRaw);
-    if (!Number.isInteger(exerciseId) || exerciseId <= 0) {
-      return { ok: false, error: "運動の種目の指定が不正です。" };
-    }
+    exerciseId = input.exerciseIdRaw;
   }
 
   const durationResult = parsePositiveNumber(

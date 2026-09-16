@@ -1,27 +1,14 @@
 import { updateClientGoal } from "@/lib/db/clients";
 import { parsePositiveNumber } from "@/lib/validation/result";
 
-// マイグレーション未適用でまだ存在しない列は、DB層が黙って除いて保存する
-// (runWithColumnFallback)。除かれた列があれば、お客様の入力が実は
-// 保存されていないことに気づけるよう、フォームに警告として表示する。
-const COLUMN_LABELS: Record<string, string> = {
-  targetBodyFatPct: "目標体脂肪率",
-};
-
-function buildDroppedColumnsWarning(droppedColumns: string[]): string | undefined {
-  if (droppedColumns.length === 0) return undefined;
-  const labels = droppedColumns.map((column) => COLUMN_LABELS[column] ?? column);
-  return `${labels.join("・")}はデータベースの準備が完了していないため保存されませんでした(他の項目は保存済みです)。`;
-}
-
-export type UpdatePlanGoalState = { error?: string; warning?: string } | undefined;
+export type UpdatePlanGoalState = { error?: string } | undefined;
 
 export async function updatePlanGoal(
   _prevState: UpdatePlanGoalState,
   formData: FormData,
 ): Promise<UpdatePlanGoalState> {
-  const clientId = Number(formData.get("client_id"));
-  if (!Number.isInteger(clientId) || clientId <= 0) {
+  const clientId = String(formData.get("client_id") ?? "");
+  if (!clientId) {
     return { error: "お客様が指定されていません。" };
   }
 
@@ -68,7 +55,7 @@ export async function updatePlanGoal(
     targetBodyFatPct = result.data;
   }
 
-  const { droppedColumns } = await updateClientGoal(
+  await updateClientGoal(
     clientId,
     monthlyGoal,
     change,
@@ -77,5 +64,5 @@ export async function updatePlanGoal(
     targetBodyFatPct,
   );
 
-  return { warning: buildDroppedColumnsWarning(droppedColumns) };
+  return undefined;
 }

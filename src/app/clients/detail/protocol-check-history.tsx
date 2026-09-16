@@ -8,7 +8,7 @@ export function ProtocolCheckHistory({
   clientId,
   checks,
 }: {
-  clientId: number;
+  clientId: string;
   checks: ProtocolCheck[];
 }) {
   return (

@@ -16,8 +16,8 @@ export async function addUsualMealAction(
   _prevState: AddUsualMealState,
   formData: FormData,
 ): Promise<AddUsualMealState> {
-  const clientId = Number(formData.get("client_id"));
-  if (!Number.isInteger(clientId) || clientId <= 0) {
+  const clientId = String(formData.get("client_id") ?? "");
+  if (!clientId) {
     return { error: "お客様が指定されていません。" };
   }
 
@@ -78,9 +78,9 @@ export async function addUsualMealAction(
 }
 
 export async function deleteUsualMealAction(formData: FormData) {
-  const id = Number(formData.get("id"));
-  const clientId = Number(formData.get("client_id"));
-  if (Number.isInteger(id) && id > 0 && Number.isInteger(clientId) && clientId > 0) {
+  const id = String(formData.get("id") ?? "");
+  const clientId = String(formData.get("client_id") ?? "");
+  if (id && clientId) {
     await deleteUsualMeal(clientId, id);
   }
 }

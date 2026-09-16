@@ -37,8 +37,8 @@ export async function updateFoodAction(
   _prevState: UpdateFoodState,
   formData: FormData,
 ): Promise<UpdateFoodState> {
-  const id = Number(formData.get("id"));
-  if (!Number.isInteger(id) || id <= 0) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) {
     return { error: "食品が指定されていません。" };
   }
 
@@ -54,8 +54,8 @@ export async function updateFoodAction(
 }
 
 export async function deleteFoodAction(formData: FormData) {
-  const id = Number(formData.get("id"));
-  if (Number.isInteger(id) && id > 0) {
+  const id = String(formData.get("id") ?? "");
+  if (id) {
     await deleteFood(id);
   }
 }

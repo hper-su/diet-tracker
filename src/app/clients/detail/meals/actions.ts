@@ -18,8 +18,8 @@ export async function addMealLogAction(
   _prevState: AddMealLogState,
   formData: FormData,
 ): Promise<AddMealLogState> {
-  const clientId = Number(formData.get("client_id"));
-  if (!Number.isInteger(clientId) || clientId <= 0) {
+  const clientId = String(formData.get("client_id") ?? "");
+  if (!clientId) {
     return { error: "お客様が指定されていません。" };
   }
   const recordedAt = String(formData.get("recorded_at") ?? "");
@@ -87,9 +87,9 @@ export async function addMealLogAction(
 // 「プラン」タブに登録済みの普段の3食を、指定日の食事記録としてまとめて複製する。
 // 実際の食事が定型と違う場合は、複製後にその場で個別編集・削除すればよい。
 export async function addUsualMealsAsLogAction(formData: FormData) {
-  const clientId = Number(formData.get("client_id"));
+  const clientId = String(formData.get("client_id") ?? "");
   const recordedAt = String(formData.get("recorded_at") ?? "");
-  if (!Number.isInteger(clientId) || clientId <= 0 || !recordedAt) {
+  if (!clientId || !recordedAt) {
     return;
   }
 
@@ -117,9 +117,9 @@ export async function updateMealLogAction(
   _prevState: UpdateMealLogState,
   formData: FormData,
 ): Promise<UpdateMealLogState> {
-  const id = Number(formData.get("id"));
-  const clientId = Number(formData.get("client_id"));
-  if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(clientId) || clientId <= 0) {
+  const id = String(formData.get("id") ?? "");
+  const clientId = String(formData.get("client_id") ?? "");
+  if (!id || !clientId) {
     return { error: "記録が指定されていません。" };
   }
 
@@ -160,9 +160,9 @@ export async function updateMealLogAction(
 }
 
 export async function deleteMealLogAction(formData: FormData) {
-  const id = Number(formData.get("id"));
-  const clientId = Number(formData.get("client_id"));
-  if (Number.isInteger(id) && id > 0 && Number.isInteger(clientId) && clientId > 0) {
+  const id = String(formData.get("id") ?? "");
+  const clientId = String(formData.get("client_id") ?? "");
+  if (id && clientId) {
     await deleteMealLog(clientId, id);
   }
 }

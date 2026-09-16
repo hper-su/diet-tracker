@@ -6,7 +6,7 @@ export function ClientTabs({
   id,
   active,
 }: {
-  id: number;
+  id: string;
   active: "profile" | "plan" | "meals";
 }) {
   const tabs = [

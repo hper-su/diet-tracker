@@ -1,14 +1,31 @@
-import { supabase, unwrap, run } from "./supabase";
-import { notifyChange } from "./realtime";
+import {
+  collection,
+  doc,
+  writeBatch,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  type Unsubscribe,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import { assertBelongsToClient } from "./firestore-helpers";
 import type { DailyMealTotal } from "@/lib/health/meal-totals";
+
+const COLLECTION = "mealLogs";
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 export type MealLog = {
-  id: number;
+  id: string;
   recordedAt: string;
   mealType: MealType;
-  foodId: number | null;
+  foodId: string | null;
   foodName: string;
   quantity: number;
   kcal: number;
@@ -18,6 +35,11 @@ export type MealLog = {
   memo: string | null;
 };
 
+type MealLogDoc = Omit<MealLog, "id"> & {
+  clientId: string;
+  createdAt?: Timestamp | null;
+};
+
 const MEAL_TYPE_ORDER: Record<MealType, number> = {
   breakfast: 0,
   lunch: 1,
@@ -25,49 +47,54 @@ const MEAL_TYPE_ORDER: Record<MealType, number> = {
   snack: 3,
 };
 
-function stripClientId<T extends { clientId: number }>(row: T): Omit<T, "clientId"> {
-  const { clientId: _clientId, ...rest } = row;
-  return rest;
+function fromDoc(id: string, data: MealLogDoc): MealLog {
+  const { clientId: _clientId, createdAt: _createdAt, ...rest } = data;
+  return { id, ...rest };
 }
 
 export async function listMealLogsByDate(
-  clientId: number,
+  clientId: string,
   recordedAt: string,
 ): Promise<MealLog[]> {
-  const rows = await unwrap<(MealLog & { clientId: number })[]>(
-    supabase
-      .from("mealLogs")
-      .select("*")
-      .eq("clientId", clientId)
-      .eq("recordedAt", recordedAt)
-      .order("id", { ascending: true }),
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTION),
+      where("clientId", "==", clientId),
+      where("recordedAt", "==", recordedAt),
+      orderBy("createdAt", "asc"),
+    ),
   );
-
-  return rows
-    .map(stripClientId)
+  return snap.docs
+    .map((d) => fromDoc(d.id, d.data() as MealLogDoc))
     .sort((a, b) => MEAL_TYPE_ORDER[a.mealType] - MEAL_TYPE_ORDER[b.mealType]);
+}
+
+export function subscribeToMealLogs(clientId: string, callback: () => void): Unsubscribe {
+  return onSnapshot(
+    query(collection(db, COLLECTION), where("clientId", "==", clientId)),
+    () => callback(),
+  );
 }
 
 // 週次・月次サマリー用。日付ごとの合計を、記録がある日だけ返す
 // (記録がない日は呼び出し側で0埋めする)。
 export async function listMealLogTotalsByDateRange(
-  clientId: number,
+  clientId: string,
   fromDate: string,
   toDate: string,
 ): Promise<DailyMealTotal[]> {
-  const rows = await unwrap<
-    Pick<MealLog, "recordedAt" | "kcal" | "proteinG" | "fatG" | "carbG">[]
-  >(
-    supabase
-      .from("mealLogs")
-      .select("recordedAt, kcal, proteinG, fatG, carbG")
-      .eq("clientId", clientId)
-      .gte("recordedAt", fromDate)
-      .lte("recordedAt", toDate),
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTION),
+      where("clientId", "==", clientId),
+      where("recordedAt", ">=", fromDate),
+      where("recordedAt", "<=", toDate),
+    ),
   );
 
   const totalsByDate = new Map<string, DailyMealTotal>();
-  for (const row of rows) {
+  for (const d of snap.docs) {
+    const row = d.data() as MealLogDoc;
     const existing = totalsByDate.get(row.recordedAt);
     if (existing) {
       existing.kcal += row.kcal;
@@ -91,10 +118,10 @@ export async function listMealLogTotalsByDateRange(
 }
 
 export type InsertMealLogInput = {
-  clientId: number;
+  clientId: string;
   recordedAt: string;
   mealType: MealType;
-  foodId: number | null;
+  foodId: string | null;
   foodName: string;
   quantity: number;
   kcal: number;
@@ -105,15 +132,20 @@ export type InsertMealLogInput = {
 };
 
 // 複数件をまとめて登録する(食事記録フォームの複数行送信、「普段の3食から記録を作成」など)。
+// writeBatchで送るため、1件でも失敗した場合に一部だけ登録された状態が残ることはない。
 export async function insertMealLogs(inputs: InsertMealLogInput[]): Promise<void> {
-  await run(supabase.from("mealLogs").insert(inputs.map((input) => ({ ...input }))));
-  notifyChange(["mealLogs"]);
+  const batch = writeBatch(db);
+  for (const input of inputs) {
+    const ref = doc(collection(db, COLLECTION));
+    batch.set(ref, { ...input, createdAt: serverTimestamp() });
+  }
+  await batch.commit();
 }
 
 export type UpdateMealLogInput = {
   recordedAt: string;
   mealType: MealType;
-  foodId: number | null;
+  foodId: string | null;
   foodName: string;
   quantity: number;
   kcal: number;
@@ -124,19 +156,15 @@ export type UpdateMealLogInput = {
 };
 
 export async function updateMealLog(
-  clientId: number,
-  id: number,
+  clientId: string,
+  id: string,
   input: UpdateMealLogInput,
 ): Promise<void> {
-  await run(
-    supabase.from("mealLogs").update({ ...input }).eq("id", id).eq("clientId", clientId),
-  );
-  notifyChange(["mealLogs"]);
+  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  await updateDoc(doc(db, COLLECTION, id), { ...input });
 }
 
-export async function deleteMealLog(clientId: number, id: number): Promise<void> {
-  await run(
-    supabase.from("mealLogs").delete().eq("id", id).eq("clientId", clientId),
-  );
-  notifyChange(["mealLogs"]);
+export async function deleteMealLog(clientId: string, id: string): Promise<void> {
+  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  await deleteDoc(doc(db, COLLECTION, id));
 }

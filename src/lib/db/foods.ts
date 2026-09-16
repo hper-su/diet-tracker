@@ -1,8 +1,25 @@
-import { supabase, selectAllRows, unwrap, run } from "./supabase";
-import { notifyChange, subscribeToChanges } from "./realtime";
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  writeBatch,
+  query,
+  where,
+  getDocs,
+  getCountFromServer,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  type Unsubscribe,
+} from "firebase/firestore";
+import { db } from "./firebase";
+
+const COLLECTION = "foods";
 
 export type Food = {
-  id: number;
+  id: string;
   category: string;
   name: string;
   servingLabel: string;
@@ -12,33 +29,37 @@ export type Food = {
   carbG: number;
 };
 
-const UNIQUE_VIOLATION = "23505";
+type FoodDoc = Omit<Food, "id"> & { createdAt?: Timestamp | null };
+
+function fromDoc(id: string, data: FoodDoc): Food & { createdAt?: Timestamp | null } {
+  return { id, ...data };
+}
 
 // 食品マスタは3,000件超あり、全件取得だけで数百ms〜1秒程度かかる。プラン・
 // 食事記録タブはページを切り替えるたびにこれを取得し直していて体感速度を
 // 大きく落としていたため、アプリ内でメモリキャッシュして使い回す。他端末での
-// 編集も反映されるよう、Realtimeでfoodsテーブルの変更を検知した時だけ
-// キャッシュを破棄する(既存のsubscribeToChanges基盤に相乗りする)。
-let foodsCache: Promise<Food[]> | null = null;
+// 編集も反映されるよう、Firestoreのリアルタイム更新を検知した時だけ
+// キャッシュを破棄する。
+let foodsCache: Promise<(Food & { createdAt?: Timestamp | null })[]> | null = null;
 let foodsCacheInvalidationArmed = false;
 
 function armFoodsCacheInvalidation() {
   if (foodsCacheInvalidationArmed) return;
   foodsCacheInvalidationArmed = true;
-  subscribeToChanges(["foods"], () => {
+  onSnapshot(collection(db, COLLECTION), () => {
     foodsCache = null;
   });
 }
 
-// 食事記録の食品選択(コンボボックス)用。プレーンなデータとしてクライアントへ渡すだけなので、
-// 件数が多くても問題ない(お客様が使う分だけ都度検索できるようにするのはUI側の役割)。
-export async function listFoods(): Promise<Food[]> {
+async function listFoodsInternal(): Promise<(Food & { createdAt?: Timestamp | null })[]> {
   armFoodsCacheInvalidation();
   if (!foodsCache) {
-    foodsCache = selectAllRows<Food>("foods").then((rows) =>
-      [...rows].sort(
-        (a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
-      ),
+    foodsCache = getDocs(collection(db, COLLECTION)).then((snap) =>
+      snap.docs
+        .map((d) => fromDoc(d.id, d.data() as FoodDoc))
+        .sort(
+          (a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
+        ),
     );
     // 取得に失敗した場合はキャッシュに残さず、次回呼び出しで取得し直せるようにする。
     foodsCache.catch(() => {
@@ -46,6 +67,17 @@ export async function listFoods(): Promise<Food[]> {
     });
   }
   return foodsCache;
+}
+
+// 食事記録の食品選択(コンボボックス)用。プレーンなデータとしてクライアントへ渡すだけなので、
+// 件数が多くても問題ない(お客様が使う分だけ都度検索できるようにするのはUI側の役割)。
+export async function listFoods(): Promise<Food[]> {
+  const rows = await listFoodsInternal();
+  return rows.map(({ createdAt: _createdAt, ...food }) => food);
+}
+
+export function subscribeToFoods(callback: () => void): Unsubscribe {
+  return onSnapshot(collection(db, COLLECTION), () => callback());
 }
 
 // 指定した分類(category)のいずれかに一致する食品を全件取得する(コンビニ編・
@@ -61,15 +93,19 @@ export async function listFoodsByCategories(categories: string[]): Promise<Food[
 // 食品名の完全一致で1件取得する(献立例の代表食品取得など、名前で特定の食品を
 // 指し示したい用途で使う)。同じ名前が複数の分類にまたがって存在する場合に備え、
 // categoryを指定して絞り込める。category省略時にヒットが複数あるときは、
-// idが最も小さい(＝最初に登録された)行を返す。listFoods()のキャッシュから
+// 最も先に登録された(createdAtが最も古い)行を返す。listFoods()のキャッシュから
 // 絞り込むため、追加の通信は発生しない。
 export async function getFoodByName(name: string, category?: string): Promise<Food | null> {
-  const all = await listFoods();
+  const all = await listFoodsInternal();
   const matches = category
     ? all.filter((food) => food.category === category && food.name === name)
     : all.filter((food) => food.name === name);
   if (matches.length === 0) return null;
-  return matches.reduce((min, food) => (food.id < min.id ? food : min));
+  const earliest = matches.reduce((min, food) =>
+    (food.createdAt?.toMillis() ?? 0) < (min.createdAt?.toMillis() ?? 0) ? food : min,
+  );
+  const { createdAt: _createdAt, ...food } = earliest;
+  return food;
 }
 
 export const FOOD_MASTER_PAGE_SIZE = 50;
@@ -82,9 +118,8 @@ export type FoodsPage = {
 };
 
 // 食品マスタ管理画面用。数千件規模を一度に描画すると重いため、
-// 検索語(カテゴリ・品名のいずれかに部分一致)とページ番号で絞り込んで返す。
-// (検索語に含まれる記号がPostgRESTのフィルタ構文と衝突しないよう、絞り込み自体は
-// 全件取得した上でJS側で行う。旧Dexie版も同様に全件取得してJS側で絞り込んでいた)。
+// 検索語(カテゴリ・品名のいずれかに部分一致)とページ番号で絞り込んで返す
+// (全件取得した上でJS側で絞り込む。旧Dexie/Supabase版も同様の方式だった)。
 export async function listFoodsPage(query: string, page: number): Promise<FoodsPage> {
   const pageSize = FOOD_MASTER_PAGE_SIZE;
   const safePage = Math.max(1, Math.floor(page) || 1);
@@ -108,15 +143,13 @@ export async function listFoodsPage(query: string, page: number): Promise<FoodsP
 }
 
 export async function countFoods(): Promise<number> {
-  const { count, error } = await supabase
-    .from("foods")
-    .select("*", { count: "exact", head: true });
-  if (error) throw error;
-  return count ?? 0;
+  const snap = await getCountFromServer(collection(db, COLLECTION));
+  return snap.data().count;
 }
 
-export async function getFood(id: number): Promise<Food | null> {
-  return unwrap<Food | null>(supabase.from("foods").select("*").eq("id", id).maybeSingle());
+export async function getFood(id: string): Promise<Food | null> {
+  const all = await listFoods();
+  return all.find((food) => food.id === id) ?? null;
 }
 
 export type InsertFoodInput = {
@@ -133,15 +166,26 @@ export type InsertFoodResult =
   | { ok: true }
   | { ok: false; error: "duplicate_name" };
 
+async function findDuplicate(
+  category: string,
+  name: string,
+  excludeId?: string,
+): Promise<boolean> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTION),
+      where("category", "==", category),
+      where("name", "==", name),
+    ),
+  );
+  return snap.docs.some((d) => d.id !== excludeId);
+}
+
 export async function insertFood(input: InsertFoodInput): Promise<InsertFoodResult> {
-  const { error } = await supabase.from("foods").insert({ ...input });
-  if (error) {
-    if (error.code === UNIQUE_VIOLATION) {
-      return { ok: false, error: "duplicate_name" };
-    }
-    throw error;
+  if (await findDuplicate(input.category, input.name)) {
+    return { ok: false, error: "duplicate_name" };
   }
-  notifyChange(["foods"]);
+  await addDoc(collection(db, COLLECTION), { ...input, createdAt: serverTimestamp() });
   return { ok: true };
 }
 
@@ -151,24 +195,28 @@ export type UpdateFoodResult =
   | { ok: true }
   | { ok: false; error: "duplicate_name" };
 
-export async function updateFood(id: number, input: UpdateFoodInput): Promise<UpdateFoodResult> {
-  const { error } = await supabase.from("foods").update({ ...input }).eq("id", id);
-  if (error) {
-    if (error.code === UNIQUE_VIOLATION) {
-      return { ok: false, error: "duplicate_name" };
-    }
-    throw error;
+export async function updateFood(id: string, input: UpdateFoodInput): Promise<UpdateFoodResult> {
+  if (await findDuplicate(input.category, input.name, id)) {
+    return { ok: false, error: "duplicate_name" };
   }
-  notifyChange(["foods"]);
+  await updateDoc(doc(db, COLLECTION, id), { ...input });
   return { ok: true };
 }
 
-// mealLogs/usualMealsのfoodId(ON DELETE SET NULL)はDB側の外部キー制約が
-// 自動的にnullへ補正する(food_name/kcal等はスナップショットとして残っているので
-// 表示上の実害はない)。
-export async function deleteFood(id: number): Promise<void> {
-  await run(supabase.from("foods").delete().eq("id", id));
-  notifyChange(["foods"]);
+// mealLogs/usualMealsのfoodIdは、Postgres版ではON DELETE SET NULLで自動的に
+// nullへ補正されていたが、Firestoreに外部キー制約が無いためここで明示的に行う
+// (foodName/kcal等はスナップショットとして残っているので表示上の実害はない)。
+export async function deleteFood(id: string): Promise<void> {
+  for (const collectionName of ["mealLogs", "usualMeals"] as const) {
+    const referencing = await getDocs(
+      query(collection(db, collectionName), where("foodId", "==", id)),
+    );
+    if (referencing.empty) continue;
+    const batch = writeBatch(db);
+    referencing.docs.forEach((d) => batch.update(d.ref, { foodId: null }));
+    await batch.commit();
+  }
+  await deleteDoc(doc(db, COLLECTION, id));
 }
 
 // 食品登録フォームの分類入力に補完候補を出すため、既存の分類を重複なく返す。

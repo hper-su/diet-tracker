@@ -142,10 +142,7 @@ export function ProfileForm({ client }: { client: Client }) {
         </label>
       </div>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-      {state?.warning && (
-        <p className="text-sm text-amber-600">{state.warning}</p>
-      )}
-      {!pending && state?.success && !state?.warning && (
+      {!pending && state?.success && (
         <p className="text-sm text-green-600">保存しました。</p>
       )}
       <button

@@ -12,7 +12,7 @@ export function UsualExerciseForm({
   clientId,
   exercises,
 }: {
-  clientId: number;
+  clientId: string;
   exercises: Exercise[];
 }) {
   const [state, formAction, pending] = useActionState(

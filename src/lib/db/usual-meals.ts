@@ -1,13 +1,29 @@
-import { supabase, unwrap, run } from "./supabase";
-import { notifyChange } from "./realtime";
+import {
+  collection,
+  doc,
+  writeBatch,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  type Unsubscribe,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import { assertBelongsToClient } from "./firestore-helpers";
+
+const COLLECTION = "usualMeals";
 
 export type UsualMealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 export type UsualMeal = {
-  id: number;
-  clientId: number;
+  id: string;
+  clientId: string;
   mealType: UsualMealType;
-  foodId: number | null;
+  foodId: string | null;
   foodName: string;
   quantity: number;
   kcal: number;
@@ -15,6 +31,8 @@ export type UsualMeal = {
   fatG: number;
   carbG: number;
 };
+
+type UsualMealDoc = Omit<UsualMeal, "id"> & { createdAt?: Timestamp | null };
 
 const MEAL_TYPE_ORDER: Record<UsualMealType, number> = {
   breakfast: 0,
@@ -24,24 +42,35 @@ const MEAL_TYPE_ORDER: Record<UsualMealType, number> = {
 };
 
 // お客様が普段食べている食事(朝食・昼食・夕食・間食)の目安を、
-// 実際の日々の食事記録(meal_logs)とは別に管理する。
-export async function listUsualMeals(clientId: number): Promise<UsualMeal[]> {
-  const rows = await unwrap<UsualMeal[]>(
-    supabase
-      .from("usualMeals")
-      .select("*")
-      .eq("clientId", clientId)
-      .order("id", { ascending: true }),
+// 実際の日々の食事記録(mealLogs)とは別に管理する。
+export async function listUsualMeals(clientId: string): Promise<UsualMeal[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTION),
+      where("clientId", "==", clientId),
+      orderBy("createdAt", "asc"),
+    ),
   );
+  const rows = snap.docs.map((d) => {
+    const { createdAt: _createdAt, ...rest } = d.data() as UsualMealDoc;
+    return { id: d.id, ...rest };
+  });
   return rows.sort(
     (a, b) => MEAL_TYPE_ORDER[a.mealType] - MEAL_TYPE_ORDER[b.mealType],
   );
 }
 
+export function subscribeToUsualMeals(clientId: string, callback: () => void): Unsubscribe {
+  return onSnapshot(
+    query(collection(db, COLLECTION), where("clientId", "==", clientId)),
+    () => callback(),
+  );
+}
+
 export type InsertUsualMealInput = {
-  clientId: number;
+  clientId: string;
   mealType: UsualMealType;
-  foodId: number | null;
+  foodId: string | null;
   foodName: string;
   quantity: number;
   kcal: number;
@@ -51,16 +80,17 @@ export type InsertUsualMealInput = {
 };
 
 // 複数件をまとめて登録する(1回のフォーム送信で複数品目を追加する場合)。
-// 1回のINSERT文で送るため、1件でも失敗した場合に一部だけ登録された状態が
-// 残ることはない。
+// writeBatchで送るため、1件でも失敗した場合に一部だけ登録された状態が残ることはない。
 export async function insertUsualMeals(inputs: InsertUsualMealInput[]): Promise<void> {
-  await run(supabase.from("usualMeals").insert(inputs.map((input) => ({ ...input }))));
-  notifyChange(["usualMeals"]);
+  const batch = writeBatch(db);
+  for (const input of inputs) {
+    const ref = doc(collection(db, COLLECTION));
+    batch.set(ref, { ...input, createdAt: serverTimestamp() });
+  }
+  await batch.commit();
 }
 
-export async function deleteUsualMeal(clientId: number, id: number): Promise<void> {
-  await run(
-    supabase.from("usualMeals").delete().eq("id", id).eq("clientId", clientId),
-  );
-  notifyChange(["usualMeals"]);
+export async function deleteUsualMeal(clientId: string, id: string): Promise<void> {
+  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  await deleteDoc(doc(db, COLLECTION, id));
 }

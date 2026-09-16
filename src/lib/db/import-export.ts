@@ -1,4 +1,12 @@
-import { supabase, selectAllRows } from "./supabase";
+import {
+  collection,
+  doc,
+  getDocs,
+  writeBatch,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore";
+import { db } from "./firebase";
 import type {
   ClientRecord,
   MeasurementRecord,
@@ -25,43 +33,76 @@ export type ExportedData = {
   protocolChecks: ProtocolCheckRecord[];
 };
 
-// バックアップ・共有DBの障害時復旧用に、全テーブルの内容を1つのJSONにまとめる。
+const COLLECTIONS = [
+  "clients",
+  "measurements",
+  "foods",
+  "mealLogs",
+  "usualMeals",
+  "exercises",
+  "usualExercises",
+  "protocolChecks",
+] as const;
+
+// バックアップ・共有DBの障害時復旧用に、全コレクションの内容を1つのJSONにまとめる。
 export async function exportAllData(): Promise<ExportedData> {
   const [
-    clients,
-    measurements,
-    foods,
-    mealLogs,
-    usualMeals,
-    exercises,
-    usualExercises,
-    protocolChecks,
-  ] = await Promise.all([
-    selectAllRows<ClientRecord>("clients"),
-    selectAllRows<MeasurementRecord>("measurements"),
-    selectAllRows<Food>("foods"),
-    selectAllRows<MealLogRecord>("mealLogs"),
-    selectAllRows<UsualMeal>("usualMeals"),
-    selectAllRows<Exercise>("exercises"),
-    selectAllRows<UsualExercise>("usualExercises"),
-    selectAllRows<ProtocolCheckRecord>("protocolChecks"),
-  ]);
+    clientsSnap,
+    measurementsSnap,
+    foodsSnap,
+    mealLogsSnap,
+    usualMealsSnap,
+    exercisesSnap,
+    usualExercisesSnap,
+    protocolChecksSnap,
+  ] = await Promise.all(COLLECTIONS.map((name) => getDocs(collection(db, name))));
+
+  const clients: ClientRecord[] = clientsSnap.docs.map((d) => {
+    const { createdAt, ...rest } = d.data() as Record<string, unknown> & {
+      createdAt?: Timestamp;
+    };
+    return {
+      ...(rest as Omit<ClientRecord, "id" | "createdAt">),
+      id: d.id,
+      createdAt: createdAt ? createdAt.toDate().toISOString() : new Date(0).toISOString(),
+    };
+  });
+
+  // measurements/mealLogs/usualMeals/usualExercises/protocolChecksのcreatedAtは
+  // Firestore内部の並び順用フィールド(元のPostgres版のidの代わり)であり、
+  // エクスポート形式には含めない(インポート時にimportAllData側で作り直す)。
+  function stripCreatedAt<T extends { createdAt?: unknown }>(
+    data: T,
+  ): Omit<T, "createdAt"> {
+    const { createdAt: _createdAt, ...rest } = data;
+    return rest;
+  }
 
   return {
     version: EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
     clients,
-    measurements,
-    foods,
-    mealLogs,
-    usualMeals,
-    exercises,
-    usualExercises,
-    protocolChecks,
+    measurements: measurementsSnap.docs.map(
+      (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as MeasurementRecord,
+    ),
+    foods: foodsSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Food),
+    mealLogs: mealLogsSnap.docs.map(
+      (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as MealLogRecord,
+    ),
+    usualMeals: usualMealsSnap.docs.map(
+      (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as UsualMeal,
+    ),
+    exercises: exercisesSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Exercise),
+    usualExercises: usualExercisesSnap.docs.map(
+      (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as UsualExercise,
+    ),
+    protocolChecks: protocolChecksSnap.docs.map(
+      (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as ProtocolCheckRecord,
+    ),
   };
 }
 
-// exportしているのはテスト容易性のため(importAllDataはSupabaseへの通信を
+// exportしているのはテスト容易性のため(importAllDataはFirestoreへの通信を
 // 伴うため、その手前までの純粋なロジックを個別に検証できるようにする)。
 export function isExportedData(
   value: unknown,
@@ -97,10 +138,46 @@ export class ImportFormatError extends Error {
 
 const MEAL_TYPES = new Set(["breakfast", "lunch", "dinner", "snack"]);
 const EXERCISE_CATEGORIES = new Set(["生活活動", "運動"]);
-const UNIQUE_VIOLATION = "23505";
 
 function isFiniteNonNegative(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function isNonEmptyId(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+// 旧Supabase版のバックアップJSONは数値idのまま(id/clientId/foodId/exerciseId)
+// なので、Firestoreのドキュメントid(文字列)として扱えるよう先に文字列化する。
+// 新しいFirestore版のエクスポートは最初から文字列idなので、この変換は素通りする。
+export function normalizeLegacyIds(
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
+  function toIdString(value: unknown): unknown {
+    return value == null ? value : String(value);
+  }
+  function mapArray(value: unknown, keys: string[]): unknown {
+    if (!Array.isArray(value)) return value;
+    return value.map((row) => {
+      if (typeof row !== "object" || row === null) return row;
+      const next = { ...(row as Record<string, unknown>) };
+      for (const key of keys) {
+        if (key in next) next[key] = toIdString(next[key]);
+      }
+      return next;
+    });
+  }
+  return {
+    ...raw,
+    clients: mapArray(raw.clients, ["id"]),
+    measurements: mapArray(raw.measurements, ["id", "clientId"]),
+    foods: mapArray(raw.foods, ["id"]),
+    mealLogs: mapArray(raw.mealLogs, ["id", "clientId", "foodId"]),
+    usualMeals: mapArray(raw.usualMeals, ["id", "clientId", "foodId"]),
+    exercises: mapArray(raw.exercises, ["id"]),
+    usualExercises: mapArray(raw.usualExercises, ["id", "clientId", "exerciseId"]),
+    protocolChecks: mapArray(raw.protocolChecks, ["id", "clientId"]),
+  };
 }
 
 // isExportedDataは全体の形(配列かどうか)しか見ていないため、手編集・他端末での
@@ -127,15 +204,14 @@ export function validateAndSanitize(
   }
 
   for (const client of data.clients) {
-    if (!Number.isInteger(client.id) || client.id <= 0 || !client.name) {
+    if (!isNonEmptyId(client.id) || !client.name) {
       throw new ImportFormatError("お客様データの形式が正しくありません。");
     }
   }
 
   for (const food of data.foods) {
     if (
-      !Number.isInteger(food.id) ||
-      food.id <= 0 ||
+      !isNonEmptyId(food.id) ||
       !food.name ||
       !isFiniteNonNegative(food.kcal) ||
       !isFiniteNonNegative(food.proteinG) ||
@@ -148,8 +224,7 @@ export function validateAndSanitize(
 
   for (const exercise of data.exercises) {
     if (
-      !Number.isInteger(exercise.id) ||
-      exercise.id <= 0 ||
+      !isNonEmptyId(exercise.id) ||
       !EXERCISE_CATEGORIES.has(exercise.category) ||
       !exercise.name ||
       !(typeof exercise.mets === "number" && exercise.mets > 0)
@@ -211,24 +286,89 @@ export function validateAndSanitize(
   return { ...data, mealLogs, usualMeals, usualExercises, protocolChecks };
 }
 
+const BATCH_SIZE = 450;
+
+async function deleteAllDocs(collectionName: string): Promise<void> {
+  const snap = await getDocs(collection(db, collectionName));
+  for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    for (const d of snap.docs.slice(i, i + BATCH_SIZE)) {
+      batch.delete(d.ref);
+    }
+    await batch.commit();
+  }
+}
+
+// 同じ日付・同じお客様内での並び順を復元するためのcreatedAt代用値。
+// 旧Supabase版の連番id("42"など)は登録順を表していたため、その数値をそのまま
+// ミリ秒に変換して使うと元の順序を保てる。Firestore生まれのid(ランダムな
+// 英数字文字列)はNumber()がNaNになるため、その場合は現在時刻にフォールバックする。
+function orderingTimestamp(id: string): Timestamp {
+  const n = Number(id);
+  return Number.isFinite(n) ? Timestamp.fromMillis(n) : Timestamp.now();
+}
+
+// 各レコードのidをそのままFirestoreのドキュメントIDとして使う(addDocによる
+// 自動採番はしない)。これにより、クライアント側で持っているclientId/foodId/
+// exerciseIdの参照値をそのまま使い続けられ、旧→新idの付け替えが不要になる。
+async function setAllDocs<T extends { id: string }>(
+  collectionName: string,
+  rows: T[],
+  extra?: (row: T) => Record<string, unknown>,
+): Promise<void> {
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    for (const row of rows.slice(i, i + BATCH_SIZE)) {
+      const { id, ...rest } = row;
+      batch.set(doc(db, collectionName, id), { ...rest, ...extra?.(row) });
+    }
+    await batch.commit();
+  }
+}
+
 // インポートは既存データを全て置き換える(共有DBの内容を丸ごと差し替えるための
-// 機能のため、マージではなく上書きにする)。削除・再投入・シーケンス調整を
-// Postgres側のimport_all_data関数(supabase/schema.sql参照)にまとめて1回の
-// トランザクションで行うことで、途中の1テーブルだけ失敗して共有DBが
-// 中途半端な状態のまま残る事態を防ぐ(失敗時はDB側で自動的に全ロールバックされる)。
+// 機能のため、マージではなく上書きにする)。Firestoreには複数コレクションに
+// またがる一括トランザクションが無いため、コレクションごとに「全削除→
+// writeBatchで再投入」を順番に行う(Postgres版のような単一トランザクションでの
+// 完全な原子性ではなくなるが、この規模のデータ量では現実的な範囲)。
 export async function importAllData(raw: unknown): Promise<void> {
-  if (!isExportedData(raw)) {
+  if (typeof raw !== "object" || raw === null) {
     throw new ImportFormatError();
   }
-  const data = validateAndSanitize(raw);
-
-  const { error } = await supabase.rpc("import_all_data", { payload: data });
-  if (error) {
-    if (error.code === UNIQUE_VIOLATION) {
-      throw new ImportFormatError(
-        "食品マスタまたは運動マスタに、同じ分類・名前の重複データが含まれているためインポートできませんでした。",
-      );
-    }
-    throw error;
+  const normalized = normalizeLegacyIds(raw as Record<string, unknown>);
+  if (!isExportedData(normalized)) {
+    throw new ImportFormatError();
   }
+  const data = validateAndSanitize(normalized);
+
+  for (const name of COLLECTIONS) {
+    await deleteAllDocs(name);
+  }
+
+  const clientCreatedAt = new Map(
+    data.clients.map((c) => [c.id, c.createdAt] as const),
+  );
+
+  await setAllDocs("clients", data.clients, (client) => ({
+    createdAt: clientCreatedAt.get(client.id)
+      ? Timestamp.fromDate(new Date(clientCreatedAt.get(client.id)!))
+      : serverTimestamp(),
+  }));
+  await setAllDocs("foods", data.foods);
+  await setAllDocs("exercises", data.exercises);
+  await setAllDocs("measurements", data.measurements, (row) => ({
+    createdAt: orderingTimestamp(row.id),
+  }));
+  await setAllDocs("mealLogs", data.mealLogs, (row) => ({
+    createdAt: orderingTimestamp(row.id),
+  }));
+  await setAllDocs("usualMeals", data.usualMeals, (row) => ({
+    createdAt: orderingTimestamp(row.id),
+  }));
+  await setAllDocs("usualExercises", data.usualExercises, (row) => ({
+    createdAt: orderingTimestamp(row.id),
+  }));
+  await setAllDocs("protocolChecks", data.protocolChecks, (row) => ({
+    createdAt: orderingTimestamp(row.id),
+  }));
 }

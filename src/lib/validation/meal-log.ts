@@ -14,7 +14,7 @@ export type MealLogInput = {
 export type MealLogData = {
   recordedAt: string;
   mealType: MealType;
-  foodId: number;
+  foodId: string;
   quantity: number;
   memo: string | null;
 };
@@ -33,10 +33,7 @@ export function validateMealLogInput(
   if (!input.foodIdRaw) {
     return { ok: false, error: "食品を選択してください。" };
   }
-  const foodId = Number(input.foodIdRaw);
-  if (!Number.isInteger(foodId) || foodId <= 0) {
-    return { ok: false, error: "食品の指定が不正です。" };
-  }
+  const foodId = input.foodIdRaw;
 
   let quantity = 1;
   if (input.quantityRaw) {

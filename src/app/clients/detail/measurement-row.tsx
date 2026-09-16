@@ -14,7 +14,7 @@ export function MeasurementRow({
   heightCm,
 }: {
   measurement: Measurement;
-  clientId: number;
+  clientId: string;
   heightCm: number | null;
 }) {
   const [editing, setEditing] = useState(false);
@@ -33,7 +33,7 @@ export function MeasurementRow({
     setPrevPending(pending);
     if (pending) {
       setMessageDismissed(false);
-    } else if (!state?.error && !state?.warning) {
+    } else if (!state?.error) {
       setEditing(false);
     }
   }
@@ -165,9 +165,6 @@ export function MeasurementRow({
           <div className="flex items-end gap-2 sm:col-span-9">
             {state?.error && !messageDismissed && (
               <p className="text-xs text-red-600">{state.error}</p>
-            )}
-            {state?.warning && !messageDismissed && (
-              <p className="text-xs text-amber-600">{state.warning}</p>
             )}
             <button
               type="submit"

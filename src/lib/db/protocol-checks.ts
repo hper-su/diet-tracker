@@ -1,5 +1,21 @@
-import { supabase, unwrap, run } from "./supabase";
-import { notifyChange } from "./realtime";
+import {
+  collection,
+  doc,
+  addDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  type Unsubscribe,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import { assertBelongsToClient } from "./firestore-helpers";
+
+const COLLECTION = "protocolChecks";
 
 export type ProtocolCheckStepResult = {
   step: number; // conditions.tsのprotocolTable内でのインデックス(0始まり)
@@ -7,49 +23,58 @@ export type ProtocolCheckStepResult = {
 };
 
 export type ProtocolCheck = {
-  id: number;
+  id: string;
   recordedAt: string;
   conditionId: string; // lib/conditions.tsのCondition.id(お客様には症状名で表示)
   results: ProtocolCheckStepResult[];
   memo: string | null;
 };
 
+type ProtocolCheckDoc = Omit<ProtocolCheck, "id"> & {
+  clientId: string;
+  createdAt?: Timestamp | null;
+};
+
 // 古い記録から新しい記録の順(measurementsと同じ並び順の考え方)。
-export async function listProtocolChecks(
-  clientId: number,
-): Promise<ProtocolCheck[]> {
-  const rows = await unwrap<(ProtocolCheck & { clientId: number })[]>(
-    supabase
-      .from("protocolChecks")
-      .select("*")
-      .eq("clientId", clientId)
-      .order("recordedAt", { ascending: true })
-      .order("id", { ascending: true }),
+export async function listProtocolChecks(clientId: string): Promise<ProtocolCheck[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTION),
+      where("clientId", "==", clientId),
+      orderBy("recordedAt", "asc"),
+      orderBy("createdAt", "asc"),
+    ),
   );
-  return rows.map(({ clientId: _clientId, ...rest }) => rest);
+  return snap.docs.map((d) => {
+    const { clientId: _clientId, createdAt: _createdAt, ...rest } =
+      d.data() as ProtocolCheckDoc;
+    return { id: d.id, ...rest };
+  });
+}
+
+export function subscribeToProtocolChecks(
+  clientId: string,
+  callback: () => void,
+): Unsubscribe {
+  return onSnapshot(
+    query(collection(db, COLLECTION), where("clientId", "==", clientId)),
+    () => callback(),
+  );
 }
 
 export type InsertProtocolCheckInput = {
-  clientId: number;
+  clientId: string;
   recordedAt: string;
   conditionId: string;
   results: ProtocolCheckStepResult[];
   memo: string | null;
 };
 
-export async function insertProtocolCheck(
-  input: InsertProtocolCheckInput,
-): Promise<void> {
-  await run(supabase.from("protocolChecks").insert({ ...input }));
-  notifyChange(["protocolChecks"]);
+export async function insertProtocolCheck(input: InsertProtocolCheckInput): Promise<void> {
+  await addDoc(collection(db, COLLECTION), { ...input, createdAt: serverTimestamp() });
 }
 
-export async function deleteProtocolCheck(
-  clientId: number,
-  id: number,
-): Promise<void> {
-  await run(
-    supabase.from("protocolChecks").delete().eq("id", id).eq("clientId", clientId),
-  );
-  notifyChange(["protocolChecks"]);
+export async function deleteProtocolCheck(clientId: string, id: string): Promise<void> {
+  await assertBelongsToClient(db, COLLECTION, id, clientId);
+  await deleteDoc(doc(db, COLLECTION, id));
 }

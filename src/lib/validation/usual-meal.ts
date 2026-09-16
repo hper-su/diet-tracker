@@ -11,7 +11,7 @@ export type UsualMealInput = {
 
 export type UsualMealData = {
   mealType: UsualMealType;
-  foodId: number;
+  foodId: string;
   quantity: number;
 };
 
@@ -25,10 +25,7 @@ export function validateUsualMealInput(
   if (!input.foodIdRaw) {
     return { ok: false, error: "食品を選択してください。" };
   }
-  const foodId = Number(input.foodIdRaw);
-  if (!Number.isInteger(foodId) || foodId <= 0) {
-    return { ok: false, error: "食品の指定が不正です。" };
-  }
+  const foodId = input.foodIdRaw;
 
   let quantity = 1;
   if (input.quantityRaw) {

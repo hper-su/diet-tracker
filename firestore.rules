@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// diet-tracker: Firestoreセキュリティルール
+// Firebaseコンソールの Firestore Database → ルール タブに、この内容を
+// そのまま貼り付けて「公開」する。
+//
+// 匿名キー(apiKey)がアプリのビルド成果物に埋め込まれて公開されるため、
+// ログイン(Firebase Authentication)済みのユーザーのみ全操作可、というルールにする
+// (旧Supabase版のRLS「auth.role() = 'authenticated'」と同等)。
+// スタッフのログインアカウントの追加はFirebaseコンソールの
+// Authentication > Users から行う(このアプリにサインアップ画面は無い)。
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

@@ -19,7 +19,7 @@ export function MealLogForm({
   date,
   foods,
 }: {
-  clientId: number;
+  clientId: string;
   date: string;
   foods: Food[];
 }) {

@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./sw-register";
 import { AuthGate } from "./auth-gate";
-import { SignOutButton } from "./sign-out-button";
+import { SiteNav } from "./site-nav";
 import { BASE_PATH } from "@/lib/base-path";
 
 // next/metadataの manifest/icons は <Link> と違い basePath が自動で付与されない
@@ -26,20 +25,6 @@ export const viewport: Viewport = {
   themeColor: "#0f172a",
 };
 
-const NAV_LINKS = [
-  { href: "/clients", label: "お客様" },
-  { href: "/foods", label: "食品マスタ" },
-  { href: "/body-composition", label: "体組成ガイド" },
-  { href: "/anatomy", label: "筋肉・骨" },
-  { href: "/conditions", label: "疾患" },
-  { href: "/nutrition-guidance", label: "食事指導" },
-  { href: "/diet-plateau", label: "停滞期ガイド" },
-  { href: "/menstrual-cycle", label: "生理" },
-  { href: "/course-pricing", label: "料金" },
-  { href: "/vitamin-mineral-guide", label: "栄養素ガイド" },
-  { href: "/data", label: "データ管理" },
-];
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -51,25 +36,7 @@ export default function RootLayout({
         <ServiceWorkerRegister />
         <AuthGate>
           <div className="flex flex-1 flex-col">
-            <header className="border-b border-gray-200 bg-white">
-              <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-4">
-                <Link href="/" className="font-semibold">
-                  食事・体組成管理
-                </Link>
-                <nav className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
-                  {NAV_LINKS.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="hover:text-gray-900"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </nav>
-                <SignOutButton />
-              </div>
-            </header>
+            <SiteNav />
             <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
               {children}
             </main>

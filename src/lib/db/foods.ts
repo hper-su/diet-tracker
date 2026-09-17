@@ -30,41 +30,89 @@ export type Food = {
 };
 
 type FoodDoc = Omit<Food, "id"> & { createdAt?: Timestamp | null };
+type CachedFood = Food & { createdAtMillis: number | null };
 
-function fromDoc(id: string, data: FoodDoc): Food & { createdAt?: Timestamp | null } {
-  return { id, ...data };
+function fromDoc(id: string, data: FoodDoc): CachedFood {
+  return { id, ...data, createdAtMillis: data.createdAt?.toMillis() ?? null };
 }
 
-// 食品マスタは3,000件超あり、全件取得だけで数百ms〜1秒程度かかる。プラン・
-// 食事記録タブはページを切り替えるたびにこれを取得し直していて体感速度を
-// 大きく落としていたため、アプリ内でメモリキャッシュして使い回す。他端末での
-// 編集も反映されるよう、Firestoreのリアルタイム更新を検知した時だけ
-// キャッシュを破棄する。
-let foodsCache: Promise<(Food & { createdAt?: Timestamp | null })[]> | null = null;
+// 食品マスタは3,000件超あり、全件取得だけで数百ms〜1秒程度かかる(Firestore読み取りも
+// 件数分消費する)。プラン・食事記録タブはページを切り替えるたびにこれを取得し直して
+// いて体感速度を大きく落としていた上、ページ遷移のたびに全件読み取りが走るとクォータを
+// 消費しやすいため、メモリキャッシュに加えてlocalStorageにも一定時間キャッシュする。
+// 他端末での編集は、同じタブを開いている間はFirestoreのリアルタイム更新検知で即座に
+// キャッシュを破棄するが、別タブ・再読み込み後はこのTTLの間だけ反映が遅れる
+// (社内ツールなので許容範囲とする)。
+let foodsCache: Promise<CachedFood[]> | null = null;
 let foodsCacheInvalidationArmed = false;
+
+const LOCAL_CACHE_KEY = "diet-tracker:foods-cache:v1";
+const LOCAL_CACHE_TTL_MS = 10 * 60 * 1000; // 10分
+
+function readLocalCache(): CachedFood[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LOCAL_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { savedAt: number; foods: CachedFood[] };
+    if (Date.now() - parsed.savedAt > LOCAL_CACHE_TTL_MS) return null;
+    return parsed.foods;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalCache(foods: CachedFood[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      LOCAL_CACHE_KEY,
+      JSON.stringify({ savedAt: Date.now(), foods }),
+    );
+  } catch {
+    // 容量超過等は無視(メモリキャッシュだけで動作は継続できる)。
+  }
+}
+
+function clearLocalCache() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(LOCAL_CACHE_KEY);
+  } catch {
+    // no-op
+  }
+}
 
 function armFoodsCacheInvalidation() {
   if (foodsCacheInvalidationArmed) return;
   foodsCacheInvalidationArmed = true;
   onSnapshot(collection(db, COLLECTION), () => {
     foodsCache = null;
+    clearLocalCache();
   });
 }
 
-async function listFoodsInternal(): Promise<(Food & { createdAt?: Timestamp | null })[]> {
+async function listFoodsInternal(): Promise<CachedFood[]> {
   armFoodsCacheInvalidation();
   if (!foodsCache) {
-    foodsCache = getDocs(collection(db, COLLECTION)).then((snap) =>
-      snap.docs
-        .map((d) => fromDoc(d.id, d.data() as FoodDoc))
-        .sort(
-          (a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
-        ),
-    );
-    // 取得に失敗した場合はキャッシュに残さず、次回呼び出しで取得し直せるようにする。
-    foodsCache.catch(() => {
-      foodsCache = null;
-    });
+    const cachedFromDisk = readLocalCache();
+    if (cachedFromDisk) {
+      foodsCache = Promise.resolve(cachedFromDisk);
+    } else {
+      foodsCache = getDocs(collection(db, COLLECTION)).then((snap) => {
+        const foods = snap.docs
+          .map((d) => fromDoc(d.id, d.data() as FoodDoc))
+          .sort(
+            (a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
+          );
+        writeLocalCache(foods);
+        return foods;
+      });
+      // 取得に失敗した場合はキャッシュに残さず、次回呼び出しで取得し直せるようにする。
+      foodsCache.catch(() => {
+        foodsCache = null;
+      });
+    }
   }
   return foodsCache;
 }
@@ -73,7 +121,7 @@ async function listFoodsInternal(): Promise<(Food & { createdAt?: Timestamp | nu
 // 件数が多くても問題ない(お客様が使う分だけ都度検索できるようにするのはUI側の役割)。
 export async function listFoods(): Promise<Food[]> {
   const rows = await listFoodsInternal();
-  return rows.map(({ createdAt: _createdAt, ...food }) => food);
+  return rows.map(({ createdAtMillis: _createdAtMillis, ...food }) => food);
 }
 
 export function subscribeToFoods(callback: () => void): Unsubscribe {
@@ -102,9 +150,9 @@ export async function getFoodByName(name: string, category?: string): Promise<Fo
     : all.filter((food) => food.name === name);
   if (matches.length === 0) return null;
   const earliest = matches.reduce((min, food) =>
-    (food.createdAt?.toMillis() ?? 0) < (min.createdAt?.toMillis() ?? 0) ? food : min,
+    (food.createdAtMillis ?? 0) < (min.createdAtMillis ?? 0) ? food : min,
   );
-  const { createdAt: _createdAt, ...food } = earliest;
+  const { createdAtMillis: _createdAtMillis, ...food } = earliest;
   return food;
 }
 

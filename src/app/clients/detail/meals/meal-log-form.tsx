@@ -67,7 +67,17 @@ export function MealLogForm({
         品目ごとに区分を選び、まとめて登録できます。
       </p>
       <input type="hidden" name="client_id" value={clientId} />
-      <input type="hidden" name="recorded_at" value={date} />
+
+      <div>
+        <span className="mb-1 block text-xs text-gray-500">記録する日付</span>
+        <input
+          name="recorded_at"
+          type="date"
+          required
+          defaultValue={date}
+          className="rounded border border-gray-300 px-3 py-2 text-sm"
+        />
+      </div>
 
       <div className="space-y-2">
         {rows.map((row, index) => (

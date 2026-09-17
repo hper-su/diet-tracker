@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLiveQuery } from "@/lib/db/use-live-query";
 import { getClient, subscribeToClients } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
@@ -37,6 +37,7 @@ export default function ClientMealsPage() {
 }
 
 function ClientMealsPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get("id") ?? "";
   const date = searchParams.get("date") || todayISODate();
@@ -127,6 +128,17 @@ function ClientMealsPageInner() {
           >
             翌日 →
           </Link>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              router.push(
+                `/clients/detail/meals?id=${clientId}&date=${e.target.value}&range=${summaryRangeDays}`,
+              );
+            }}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          />
         </div>
       </div>
 

@@ -48,7 +48,7 @@ function QuoteBox({ text }: { text: string }) {
 function DataTable({ table }: { table: NutrientTable }) {
   return (
     <div className="mt-2 overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-max text-sm">
         <thead>
           <tr className="text-left text-gray-500">
             {table.columns.map((col) => (
@@ -181,7 +181,7 @@ export default function VitaminMineralGuidePage() {
           <h3 className="font-medium text-gray-900">{ROTATION_HEADING}</h3>
           <p className="mt-2 text-sm text-gray-700">{ROTATION_PARAGRAPH}</p>
           <div className="mt-2 overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-max text-sm">
               <thead>
                 <tr className="text-left text-gray-500">
                   <th className="px-3 py-2">調理法</th>

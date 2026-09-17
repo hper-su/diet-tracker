@@ -195,7 +195,7 @@ export default function NutritionGuidancePage() {
                   </p>
                 )}
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full min-w-max text-sm">
                     <thead>
                       <tr className="text-left text-gray-500">
                         <th className="px-3 py-2"></th>

@@ -263,7 +263,7 @@ export default function ConditionsPage() {
           各既往症の項目内に分散している服薬情報を、薬剤カテゴリ別に横断整理したもの。複数疾患を併発しているクライアントの服薬確認に活用する。
         </p>
         <div className="mt-3 overflow-x-auto rounded-lg border border-gray-100">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-max text-sm">
             <thead>
               <tr className="bg-gray-50 text-left text-gray-500">
                 <th className="px-3 py-2">薬剤分類</th>
@@ -332,7 +332,7 @@ export default function ConditionsPage() {
           各項目の「レッドフラグサイン」が出現した際に、施設全体で共通して踏む手順。
         </p>
         <div className="mt-3 overflow-x-auto rounded-lg border border-gray-100">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-max text-sm">
             <thead>
               <tr className="bg-gray-50 text-left text-gray-500">
                 <th className="px-3 py-2">手順</th>

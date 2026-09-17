@@ -140,7 +140,7 @@ function ClientDetailPageInner() {
       <section className="rounded-lg border border-gray-200 bg-white">
         <h2 className="border-b border-gray-200 p-4 font-medium">記録履歴</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-max text-sm">
             <thead>
               <tr className="text-left text-gray-500">
                 <th className="px-4 py-2">日付</th>

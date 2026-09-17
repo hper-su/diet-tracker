@@ -24,7 +24,7 @@ export default function CoursePricingPage() {
           >
             <h2 className="font-semibold text-gray-900">{plan.name}</h2>
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-max text-sm">
                 <thead>
                   <tr className="text-left text-gray-500">
                     <th className="px-3 py-2">期間</th>
@@ -59,7 +59,7 @@ export default function CoursePricingPage() {
       <section className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="font-semibold text-gray-900">追加セッション</h2>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-max text-sm">
             <thead>
               <tr className="text-left text-gray-500">
                 <th className="px-3 py-2">回数</th>

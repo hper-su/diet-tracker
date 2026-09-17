@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  writeBatch,
   updateDoc,
   deleteDoc,
   query,
@@ -9,12 +8,11 @@ import {
   orderBy,
   getDocs,
   onSnapshot,
-  serverTimestamp,
   Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { belongsToClient } from "./firestore-helpers";
+import { belongsToClient, chunkedBatchInsert } from "./firestore-helpers";
 import type { DailyMealTotal } from "@/lib/health/meal-totals";
 
 const COLLECTION = "mealLogs";
@@ -132,14 +130,8 @@ export type InsertMealLogInput = {
 };
 
 // 複数件をまとめて登録する(食事記録フォームの複数行送信、「普段の3食から記録を作成」など)。
-// writeBatchで送るため、1件でも失敗した場合に一部だけ登録された状態が残ることはない。
 export async function insertMealLogs(inputs: InsertMealLogInput[]): Promise<void> {
-  const batch = writeBatch(db);
-  for (const input of inputs) {
-    const ref = doc(collection(db, COLLECTION));
-    batch.set(ref, { ...input, createdAt: serverTimestamp() });
-  }
-  await batch.commit();
+  await chunkedBatchInsert(db, COLLECTION, inputs);
 }
 
 export type UpdateMealLogInput = {

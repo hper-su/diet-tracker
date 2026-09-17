@@ -58,6 +58,7 @@ export function MealLogForm({
 
   return (
     <form
+      key={date}
       ref={formRef}
       action={formAction}
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"

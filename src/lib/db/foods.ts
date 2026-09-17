@@ -85,7 +85,15 @@ function clearLocalCache() {
 function armFoodsCacheInvalidation() {
   if (foodsCacheInvalidationArmed) return;
   foodsCacheInvalidationArmed = true;
+  // onSnapshotは登録直後、実際の変更の有無にかかわらず必ず1回「現在の状態」で
+  // 発火する。これを変更通知として扱うと、直前に作ったばかりのキャッシュを
+  // 即座に破棄してしまい、キャッシュの意味が無くなるため、最初の1回は無視する。
+  let isFirstSnapshot = true;
   onSnapshot(collection(db, COLLECTION), () => {
+    if (isFirstSnapshot) {
+      isFirstSnapshot = false;
+      return;
+    }
     foodsCache = null;
     clearLocalCache();
   });

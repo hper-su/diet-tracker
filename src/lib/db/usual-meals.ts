@@ -1,19 +1,17 @@
 import {
   collection,
   doc,
-  writeBatch,
   deleteDoc,
   query,
   where,
   orderBy,
   getDocs,
   onSnapshot,
-  serverTimestamp,
   Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { belongsToClient } from "./firestore-helpers";
+import { belongsToClient, chunkedBatchInsert } from "./firestore-helpers";
 
 const COLLECTION = "usualMeals";
 
@@ -80,14 +78,8 @@ export type InsertUsualMealInput = {
 };
 
 // 複数件をまとめて登録する(1回のフォーム送信で複数品目を追加する場合)。
-// writeBatchで送るため、1件でも失敗した場合に一部だけ登録された状態が残ることはない。
 export async function insertUsualMeals(inputs: InsertUsualMealInput[]): Promise<void> {
-  const batch = writeBatch(db);
-  for (const input of inputs) {
-    const ref = doc(collection(db, COLLECTION));
-    batch.set(ref, { ...input, createdAt: serverTimestamp() });
-  }
-  await batch.commit();
+  await chunkedBatchInsert(db, COLLECTION, inputs);
 }
 
 export async function deleteUsualMeal(clientId: string, id: string): Promise<void> {

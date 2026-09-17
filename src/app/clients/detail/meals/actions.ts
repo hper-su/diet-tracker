@@ -6,7 +6,7 @@ import {
   type InsertMealLogInput,
 } from "@/lib/db/meal-logs";
 import { listUsualMeals } from "@/lib/db/usual-meals";
-import { validateMealLogInput } from "@/lib/validation/meal-log";
+import { validateMealLogInput, type MealLogData } from "@/lib/validation/meal-log";
 import { calculateMealLogAmounts } from "@/lib/health/meal-totals";
 
 export type AddMealLogState = { error?: string } | undefined;
@@ -42,8 +42,10 @@ export async function addMealLogAction(
     return { error: "食品を1件以上選択してください。" };
   }
 
-  const toInsert: InsertMealLogInput[] = [];
-
+  // 検証は1件ずつ順番に行い(不正な行があれば即座にエラーで返す)、
+  // 検証を通った行の食品取得だけまとめて並行に行う(getFoodはキャッシュ済みの
+  // 食品一覧から引くだけなので通信は増えないが、行数が多いときの遅延を減らせる)。
+  const validated: MealLogData[] = [];
   for (const entry of entries) {
     const result = validateMealLogInput({
       recordedAt,
@@ -55,29 +57,36 @@ export async function addMealLogAction(
     if (!result.ok) {
       return { error: result.error };
     }
+    validated.push(result.data);
+  }
 
-    const food = await getFood(result.data.foodId);
+  const foods = await Promise.all(validated.map((entry) => getFood(entry.foodId)));
+
+  const toInsert: InsertMealLogInput[] = [];
+  for (let i = 0; i < validated.length; i++) {
+    const entry = validated[i];
+    const food = foods[i];
     if (!food) {
       return { error: "指定された食品が見つかりません。" };
     }
 
     const amounts = calculateMealLogAmounts(
       { kcal: food.kcal, proteinG: food.proteinG, fatG: food.fatG, carbG: food.carbG },
-      result.data.quantity,
+      entry.quantity,
     );
 
     toInsert.push({
       clientId,
-      recordedAt: result.data.recordedAt,
-      mealType: result.data.mealType,
+      recordedAt: entry.recordedAt,
+      mealType: entry.mealType,
       foodId: food.id,
       foodName: food.name,
-      quantity: result.data.quantity,
+      quantity: entry.quantity,
       kcal: amounts.kcal,
       proteinG: amounts.proteinG,
       fatG: amounts.fatG,
       carbG: amounts.carbG,
-      memo: result.data.memo,
+      memo: entry.memo,
     });
   }
 

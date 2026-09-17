@@ -2,11 +2,11 @@ import {
   collection,
   doc,
   getDocs,
-  writeBatch,
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { runChunkedBatches } from "./firestore-helpers";
 import type {
   ClientRecord,
   MeasurementRecord,
@@ -17,6 +17,7 @@ import type { Food } from "./foods";
 import type { UsualMeal } from "./usual-meals";
 import type { Exercise } from "./exercises";
 import type { UsualExercise } from "./usual-exercises";
+import { isActivityLevel } from "@/lib/health/activity-level";
 
 export const EXPORT_FORMAT_VERSION = 1;
 
@@ -147,6 +148,25 @@ function isNonEmptyId(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 
+// 旧Postgres版はUNIQUE(category, name)制約で食品マスタ・運動マスタの重複登録を
+// 防いでいたが、Firestoreには同等の制約が無い。手編集・他端末とのマージ等で
+// 重複が紛れ込んだJSONをそのまま取り込むと、食品選択・種目選択のコンボボックスに
+// 同名の候補が並んでしまうため、インポート時にも同じ制約をここで再現する。
+function assertNoDuplicateKey<T>(
+  rows: T[],
+  keyOf: (row: T) => string,
+  message: string,
+): void {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const key = keyOf(row);
+    if (seen.has(key)) {
+      throw new ImportFormatError(message);
+    }
+    seen.add(key);
+  }
+}
+
 // 旧Supabase版のバックアップJSONは数値idのまま(id/clientId/foodId/exerciseId)
 // なので、Firestoreのドキュメントid(文字列)として扱えるよう先に文字列化する。
 // 新しいFirestore版のエクスポートは最初から文字列idなので、この変換は素通りする。
@@ -204,7 +224,11 @@ export function validateAndSanitize(
   }
 
   for (const client of data.clients) {
-    if (!isNonEmptyId(client.id) || !client.name) {
+    if (
+      !isNonEmptyId(client.id) ||
+      !client.name ||
+      !isActivityLevel(client.activityLevel)
+    ) {
       throw new ImportFormatError("お客様データの形式が正しくありません。");
     }
   }
@@ -221,6 +245,11 @@ export function validateAndSanitize(
       throw new ImportFormatError("食品マスタのデータ形式が正しくありません。");
     }
   }
+  assertNoDuplicateKey(
+    data.foods,
+    (food) => `${food.category} ${food.name}`,
+    "食品マスタに、分類・食品名が重複している行があります。",
+  );
 
   for (const exercise of data.exercises) {
     if (
@@ -232,6 +261,11 @@ export function validateAndSanitize(
       throw new ImportFormatError("運動マスタのデータ形式が正しくありません。");
     }
   }
+  assertNoDuplicateKey(
+    data.exercises,
+    (exercise) => `${exercise.category} ${exercise.name}`,
+    "運動マスタに、分類・種目名が重複している行があります。",
+  );
 
   for (const measurement of data.measurements) {
     if (!clientIds.has(measurement.clientId)) {
@@ -286,17 +320,10 @@ export function validateAndSanitize(
   return { ...data, mealLogs, usualMeals, usualExercises, protocolChecks };
 }
 
-const BATCH_SIZE = 450;
-
-async function deleteAllDocs(collectionName: string): Promise<void> {
-  const snap = await getDocs(collection(db, collectionName));
-  for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
-    const batch = writeBatch(db);
-    for (const d of snap.docs.slice(i, i + BATCH_SIZE)) {
-      batch.delete(d.ref);
-    }
-    await batch.commit();
-  }
+async function deleteDocsByIds(collectionName: string, ids: string[]): Promise<void> {
+  await runChunkedBatches(db, ids, (batch, id) => {
+    batch.delete(doc(db, collectionName, id));
+  });
 }
 
 // 同じ日付・同じお客様内での並び順を復元するためのcreatedAt代用値。
@@ -318,35 +345,35 @@ async function setAllDocs<T extends { id: string }>(
   rows: T[],
   extra?: (row: T, index: number) => Record<string, unknown>,
 ): Promise<void> {
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const batch = writeBatch(db);
-    rows.slice(i, i + BATCH_SIZE).forEach((row, offset) => {
-      const { id, ...rest } = row;
-      batch.set(doc(db, collectionName, id), { ...rest, ...extra?.(row, i + offset) });
-    });
-    await batch.commit();
-  }
+  await runChunkedBatches(db, rows, (batch, row, index) => {
+    const { id, ...rest } = row;
+    batch.set(doc(db, collectionName, id), { ...rest, ...extra?.(row, index) });
+  });
 }
 
-// 1コレクションぶんの「全削除→再投入」をまとめて行う。削除と再投入を
-// コレクションごとに直列で行うことで、途中のコレクションで失敗しても、
-// まだ手を付けていない後続のコレクションは削除前の(古いままの)データが
-// 残る(全コレクションを先に削除してから再投入する場合に比べ、失敗時に
-// 失われるデータの範囲を最小限にできる)。
+// 1コレクションぶんを「新データで上書き→新データに無い古い行だけ削除」の順で
+// 置き換える。先に全削除してから再投入する方式だと、再投入の途中で失敗した
+// 場合にそのコレクションのデータが失われてしまう。この順序なら、上書きの途中で
+// 失敗しても(そのコレクションが新旧混在になるだけで)何も失われず、削除の途中で
+// 失敗しても新データは既に反映済みなので、再インポートすれば復旧できる。
 async function replaceCollection<T extends { id: string }>(
   collectionName: string,
   rows: T[],
   extra?: (row: T, index: number) => Record<string, unknown>,
 ): Promise<void> {
-  await deleteAllDocs(collectionName);
+  const existingIds = (await getDocs(collection(db, collectionName))).docs.map((d) => d.id);
   await setAllDocs(collectionName, rows, extra);
+  const newIds = new Set(rows.map((row) => row.id));
+  const staleIds = existingIds.filter((id) => !newIds.has(id));
+  await deleteDocsByIds(collectionName, staleIds);
 }
 
 // インポートは既存データを全て置き換える(共有DBの内容を丸ごと差し替えるための
 // 機能のため、マージではなく上書きにする)。Firestoreには複数コレクションに
-// またがる一括トランザクションが無いため、コレクションごとに「全削除→
-// writeBatchで再投入」を順番に行う(Postgres版のような単一トランザクションでの
-// 完全な原子性ではなくなるが、この規模のデータ量では現実的な範囲)。
+// またがる一括トランザクションが無いため、コレクションごとに直列で
+// replaceCollection(上書き→古い行だけ削除)を行う(Postgres版のような
+// 単一トランザクションでの完全な原子性ではないが、上記の順序により
+// 「失敗時に何かが失われる」ケースを避けている)。
 export async function importAllData(raw: unknown): Promise<void> {
   if (typeof raw !== "object" || raw === null) {
     throw new ImportFormatError();

@@ -22,3 +22,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* overflow-x-autoでラップしたテーブルは、幅の下限が無いと狭い画面で列が
+   潰れて読めなくなる(横スクロールが効く前に文字が1文字ずつ縦に折り返される)。
+   各テーブルにmin-w-maxを付ける運用に加えて、付け忘れても崩れないよう
+   ここでも保険として効かせておく。 */
+.overflow-x-auto > table {
+  min-width: max-content;
+}

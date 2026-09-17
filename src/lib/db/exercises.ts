@@ -1,5 +1,6 @@
-import { collection, doc, getDoc, getDocs, onSnapshot, writeBatch, type Unsubscribe } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, writeBatch, type Unsubscribe } from "firebase/firestore";
 import { db } from "./firebase";
+import { subscribeToCollection } from "./firestore-helpers";
 
 const COLLECTION = "exercises";
 
@@ -97,5 +98,5 @@ export async function getExercise(id: string): Promise<Exercise | null> {
 }
 
 export function subscribeToExercises(callback: () => void): Unsubscribe {
-  return onSnapshot(collection(db, COLLECTION), () => callback());
+  return subscribeToCollection(db, COLLECTION, callback);
 }

@@ -7,12 +7,15 @@ import {
   where,
   orderBy,
   getDocs,
-  onSnapshot,
   Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { belongsToClient, chunkedBatchInsert } from "./firestore-helpers";
+import {
+  belongsToClient,
+  chunkedBatchInsert,
+  subscribeToCollectionByClient,
+} from "./firestore-helpers";
 import type { DailyMealTotal } from "@/lib/health/meal-totals";
 
 const COLLECTION = "mealLogs";
@@ -68,10 +71,7 @@ export async function listMealLogsByDate(
 }
 
 export function subscribeToMealLogs(clientId: string, callback: () => void): Unsubscribe {
-  return onSnapshot(
-    query(collection(db, COLLECTION), where("clientId", "==", clientId)),
-    () => callback(),
-  );
+  return subscribeToCollectionByClient(db, COLLECTION, clientId, callback);
 }
 
 // 週次・月次サマリー用。日付ごとの合計を、記録がある日だけ返す

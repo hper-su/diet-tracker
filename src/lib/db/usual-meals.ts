@@ -6,12 +6,15 @@ import {
   where,
   orderBy,
   getDocs,
-  onSnapshot,
   Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { belongsToClient, chunkedBatchInsert } from "./firestore-helpers";
+import {
+  belongsToClient,
+  chunkedBatchInsert,
+  subscribeToCollectionByClient,
+} from "./firestore-helpers";
 
 const COLLECTION = "usualMeals";
 
@@ -59,10 +62,7 @@ export async function listUsualMeals(clientId: string): Promise<UsualMeal[]> {
 }
 
 export function subscribeToUsualMeals(clientId: string, callback: () => void): Unsubscribe {
-  return onSnapshot(
-    query(collection(db, COLLECTION), where("clientId", "==", clientId)),
-    () => callback(),
-  );
+  return subscribeToCollectionByClient(db, COLLECTION, clientId, callback);
 }
 
 export type InsertUsualMealInput = {

@@ -7,12 +7,12 @@ import {
   updateDoc,
   query,
   orderBy,
-  onSnapshot,
   serverTimestamp,
   Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { subscribeToCollection } from "./firestore-helpers";
 import type { Gender } from "@/lib/health/bmr";
 import {
   DEFAULT_ACTIVITY_LEVEL,
@@ -69,7 +69,7 @@ export async function getClient(id: string): Promise<Client | null> {
 }
 
 export function subscribeToClients(callback: () => void): Unsubscribe {
-  return onSnapshot(collection(db, COLLECTION), () => callback());
+  return subscribeToCollection(db, COLLECTION, callback);
 }
 
 export type InsertClientInput = {

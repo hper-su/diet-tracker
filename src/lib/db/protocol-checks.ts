@@ -7,13 +7,12 @@ import {
   where,
   orderBy,
   getDocs,
-  onSnapshot,
   serverTimestamp,
   Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { belongsToClient } from "./firestore-helpers";
+import { belongsToClient, subscribeToCollectionByClient } from "./firestore-helpers";
 
 const COLLECTION = "protocolChecks";
 
@@ -56,10 +55,7 @@ export function subscribeToProtocolChecks(
   clientId: string,
   callback: () => void,
 ): Unsubscribe {
-  return onSnapshot(
-    query(collection(db, COLLECTION), where("clientId", "==", clientId)),
-    () => callback(),
-  );
+  return subscribeToCollectionByClient(db, COLLECTION, clientId, callback);
 }
 
 export type InsertProtocolCheckInput = {

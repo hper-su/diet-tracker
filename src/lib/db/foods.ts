@@ -8,7 +8,6 @@ import {
   query,
   where,
   getDocs,
-  getCountFromServer,
   onSnapshot,
   serverTimestamp,
   Timestamp,
@@ -190,9 +189,11 @@ export async function listFoodsPage(query: string, page: number): Promise<FoodsP
   };
 }
 
+// 食品マスタ画面の「全X件」表示用。listFoods()は既にキャッシュ済みのため、
+// 別途Firestoreへ集計クエリを投げる(getCountFromServer)必要はない。
 export async function countFoods(): Promise<number> {
-  const snap = await getCountFromServer(collection(db, COLLECTION));
-  return snap.data().count;
+  const all = await listFoods();
+  return all.length;
 }
 
 export async function getFood(id: string): Promise<Food | null> {

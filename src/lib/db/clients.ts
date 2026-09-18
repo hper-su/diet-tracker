@@ -13,6 +13,8 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { subscribeToCollection } from "./firestore-helpers";
+import { MEAL_LOGS_COLLECTION } from "./meal-logs";
+import { MEASUREMENTS_COLLECTION } from "./measurements";
 import type { Gender } from "@/lib/health/bmr";
 import {
   DEFAULT_ACTIVITY_LEVEL,
@@ -70,6 +72,56 @@ export async function getClient(id: string): Promise<Client | null> {
 
 export function subscribeToClients(callback: () => void): Unsubscribe {
   return subscribeToCollection(db, COLLECTION, callback);
+}
+
+// お客様ごとの最終記録日(食事・体重ログの recordedAt の最大値)。ログが1件も
+// 無いお客様はマップに含まれない(呼び出し側は「記録なし」として扱う)。
+async function getLastActivityDates(): Promise<Map<string, string>> {
+  const [mealLogsSnap, measurementsSnap] = await Promise.all([
+    getDocs(collection(db, MEAL_LOGS_COLLECTION)),
+    getDocs(collection(db, MEASUREMENTS_COLLECTION)),
+  ]);
+  const lastActivity = new Map<string, string>();
+  const consider = (clientId: string, recordedAt: string) => {
+    const current = lastActivity.get(clientId);
+    if (!current || recordedAt > current) lastActivity.set(clientId, recordedAt);
+  };
+  for (const d of mealLogsSnap.docs) {
+    const data = d.data() as { clientId: string; recordedAt: string };
+    consider(data.clientId, data.recordedAt);
+  }
+  for (const d of measurementsSnap.docs) {
+    const data = d.data() as { clientId: string; recordedAt: string };
+    consider(data.clientId, data.recordedAt);
+  }
+  return lastActivity;
+}
+
+// 食事・体重の記録日が新しい順。記録が1件も無いお客様は末尾に回り、その中では
+// 登録日が新しい順(listClientsの並び)を保つ。
+export async function listClientsByRecentActivity(): Promise<Client[]> {
+  const [clients, lastActivity] = await Promise.all([
+    listClients(),
+    getLastActivityDates(),
+  ]);
+  return [...clients].sort((a, b) => {
+    const aDate = lastActivity.get(a.id) ?? "";
+    const bDate = lastActivity.get(b.id) ?? "";
+    return bDate.localeCompare(aDate);
+  });
+}
+
+export function subscribeToClientActivity(callback: () => void): Unsubscribe {
+  const unsubscribeMealLogs = subscribeToCollection(db, MEAL_LOGS_COLLECTION, callback);
+  const unsubscribeMeasurements = subscribeToCollection(
+    db,
+    MEASUREMENTS_COLLECTION,
+    callback,
+  );
+  return () => {
+    unsubscribeMealLogs();
+    unsubscribeMeasurements();
+  };
 }
 
 export type InsertClientInput = {

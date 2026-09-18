@@ -18,7 +18,8 @@ import {
 } from "./firestore-helpers";
 import type { DailyMealTotal } from "@/lib/health/meal-totals";
 
-const COLLECTION = "mealLogs";
+export const MEAL_LOGS_COLLECTION = "mealLogs";
+const COLLECTION = MEAL_LOGS_COLLECTION;
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 

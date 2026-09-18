@@ -15,7 +15,8 @@ import {
 import { db } from "./firebase";
 import { belongsToClient, subscribeToCollectionByClient } from "./firestore-helpers";
 
-const COLLECTION = "measurements";
+export const MEASUREMENTS_COLLECTION = "measurements";
+const COLLECTION = MEASUREMENTS_COLLECTION;
 
 export type Measurement = {
   id: string;

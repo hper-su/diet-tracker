@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useLiveQuery } from "@/lib/db/use-live-query";
-import { listClients, subscribeToClients } from "@/lib/db/clients";
+import {
+  listClientsByRecentActivity,
+  subscribeToClientActivity,
+  subscribeToClients,
+} from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
 import { isBirthdayToday } from "@/lib/health/age";
 import { NewClientForm } from "./new-client-form";
@@ -14,7 +18,11 @@ const GENDER_LABELS: Record<string, string> = {
 };
 
 export default function ClientsPage() {
-  const clients = useLiveQuery(() => listClients(), [], [subscribeToClients]);
+  const clients = useLiveQuery(
+    () => listClientsByRecentActivity(),
+    [],
+    [subscribeToClients, subscribeToClientActivity],
+  );
 
   return (
     <div className="space-y-6">

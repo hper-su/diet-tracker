@@ -106,7 +106,10 @@ export function MealLogRow({
   return (
     <tr className="border-t border-gray-100 bg-gray-50">
       <td colSpan={7} className="px-4 py-3">
-        <form action={formAction} className="grid gap-2 sm:grid-cols-10">
+        <form
+          action={formAction}
+          className="sticky left-0 grid w-[min(52rem,calc(100vw-4rem))] gap-2 sm:grid-cols-10"
+        >
           <input type="hidden" name="id" value={log.id} />
           <input type="hidden" name="client_id" value={clientId} />
           <label className="block text-xs sm:col-span-2">

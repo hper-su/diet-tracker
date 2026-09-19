@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLiveQuery } from "@/lib/db/use-live-query";
@@ -25,6 +25,10 @@ import { MealLogRow } from "./meal-log-row";
 import { MealSummaryChart, PFCTrendChart } from "./meal-summary-chart";
 import { addUsualMealsAsLogAction } from "./actions";
 
+const HISTORY_STEP_DAYS = 90;
+const HISTORY_MAX_DAYS = 730;
+// 未来日付の記録も履歴に出すための、実質上限なしの終端日。
+const HISTORY_END_DATE = "9999-12-31";
 const SUMMARY_RANGES = { "7": "週次(7日)", "30": "月次(30日)" } as const;
 type SummaryRangeDays = keyof typeof SUMMARY_RANGES;
 
@@ -45,21 +49,25 @@ function ClientMealsPageInner() {
 
   const summaryFromDate = addDaysISODate(date, -(Number(summaryRangeDays) - 1));
   const summaryDates = listISODateRange(summaryFromDate, date);
+  const today = todayISODate();
+  const [historyDays, setHistoryDays] = useState(HISTORY_STEP_DAYS);
+  const historyFromDate = addDaysISODate(today, -(historyDays - 1));
 
   const data = useLiveQuery(async () => {
     const client = await getClient(clientId);
     if (!client) return { client: null };
 
-    const [foods, usualMeals, logs, planResult, rangeTotals] = await Promise.all([
+    const [foods, usualMeals, logs, planResult, rangeTotals, historyTotals] = await Promise.all([
       listFoods(),
       listUsualMeals(clientId),
       listMealLogsByDate(clientId, date),
       getCurrentDietPlan(clientId),
       listMealLogTotalsByDateRange(clientId, summaryFromDate, date),
+      listMealLogTotalsByDateRange(clientId, historyFromDate, HISTORY_END_DATE),
     ]);
 
-    return { client, foods, usualMeals, logs, planResult, rangeTotals };
-  }, [clientId, date, summaryFromDate], [
+    return { client, foods, usualMeals, logs, planResult, rangeTotals, historyTotals };
+  }, [clientId, date, summaryFromDate, historyFromDate, today], [
     subscribeToClients,
     subscribeToFoods,
     (cb) => subscribeToUsualMeals(clientId, cb),
@@ -80,7 +88,7 @@ function ClientMealsPageInner() {
     return <NotFound />;
   }
 
-  const { client, foods, usualMeals, logs, planResult, rangeTotals } = data;
+  const { client, foods, usualMeals, logs, planResult, rangeTotals, historyTotals } = data;
   const { plan, pfc } = planResult;
 
   const totals = sumMealLogAmounts(
@@ -321,6 +329,59 @@ function ClientMealsPageInner() {
       <MealLogForm clientId={clientId} date={date} foods={foods} />
 
       <section className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex items-center justify-between border-b border-gray-200 p-4">
+          <h2 className="font-medium">過去の記録(直近{historyDays}日〜)</h2>
+          {date !== today && (
+            <Link
+              href={`/clients/detail/meals?id=${clientId}&range=${summaryRangeDays}`}
+              className="rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-50"
+            >
+              今日に戻る
+            </Link>
+          )}
+        </div>
+        {historyTotals.length === 0 ? (
+          <p className="p-4 text-sm text-gray-500">記録のある日はまだありません。</p>
+        ) : (
+          <ul className="max-h-72 divide-y divide-gray-100 overflow-y-auto text-sm">
+            {[...historyTotals].reverse().map((day) => (
+              <li key={day.recordedAt}>
+                <Link
+                  href={`/clients/detail/meals?id=${clientId}&date=${day.recordedAt}&range=${summaryRangeDays}`}
+                  className={`flex flex-wrap items-center justify-between gap-2 px-4 py-2 hover:bg-gray-50 ${
+                    day.recordedAt === date ? "bg-gray-100 font-medium" : ""
+                  }`}
+                >
+                  <span>
+                    {day.recordedAt}({formatWeekday(day.recordedAt)})
+                  </span>
+                  <span className="text-gray-600">
+                    {day.kcal.toFixed(0)} kcal
+                    <span className="ml-3 text-xs text-gray-400">
+                      P{day.proteinG.toFixed(0)} / F{day.fatG.toFixed(0)} / C{day.carbG.toFixed(0)}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        {historyDays < HISTORY_MAX_DAYS && (
+          <div className="border-t border-gray-100 p-2 text-center">
+            <button
+              type="button"
+              onClick={() =>
+                setHistoryDays((d) => Math.min(d + HISTORY_STEP_DAYS, HISTORY_MAX_DAYS))
+              }
+              className="rounded px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+            >
+              さらに{HISTORY_STEP_DAYS}日前まで表示
+            </button>
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-lg border border-gray-200 bg-white">
         <h2 className="border-b border-gray-200 p-4 font-medium">
           {date} の記録
         </h2>
@@ -334,7 +395,9 @@ function ClientMealsPageInner() {
                 <th className="px-4 py-2">kcal</th>
                 <th className="px-4 py-2">P/F/C(g)</th>
                 <th className="px-4 py-2">メモ</th>
-                <th className="sticky right-0 bg-white px-4 py-2" />
+                <th className="sticky right-0 bg-white px-4 py-2 text-right text-xs font-normal text-gray-400">
+                  行クリックで編集
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -354,6 +417,11 @@ function ClientMealsPageInner() {
       </section>
     </div>
   );
+}
+
+function formatWeekday(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return "日月火水木金土"[new Date(y, m - 1, d).getDay()];
 }
 
 function WeeklyStat({

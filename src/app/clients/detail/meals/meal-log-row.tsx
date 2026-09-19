@@ -50,7 +50,22 @@ export function MealLogRow({
 
   if (!editing) {
     return (
-      <tr className="border-t border-gray-100">
+      <tr
+        className="cursor-pointer border-t border-gray-100 hover:bg-gray-50 focus-visible:bg-gray-50"
+        tabIndex={0}
+        aria-label={`${log.foodName}を編集`}
+        onClick={() => {
+          // 文字を選択してコピーしようとしただけのときは編集を開かない。
+          if (window.getSelection()?.toString()) return;
+          setEditing(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            setEditing(true);
+          }
+        }}
+      >
         <td className="px-4 py-2">{MEAL_TYPE_LABELS[log.mealType]}</td>
         <td className="px-4 py-2">{log.foodName}</td>
         <td className="px-4 py-2">{log.quantity}</td>
@@ -59,7 +74,10 @@ export function MealLogRow({
           {log.proteinG.toFixed(1)}/{log.fatG.toFixed(1)}/{log.carbG.toFixed(1)}
         </td>
         <td className="px-4 py-2 text-gray-500">{log.memo ?? ""}</td>
-        <td className="sticky right-0 bg-white px-4 py-2 text-right whitespace-nowrap">
+        <td
+          className="sticky right-0 bg-white px-4 py-2 text-right whitespace-nowrap"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             type="button"
             onClick={() => setEditing(true)}
@@ -88,10 +106,19 @@ export function MealLogRow({
   return (
     <tr className="border-t border-gray-100 bg-gray-50">
       <td colSpan={7} className="px-4 py-3">
-        <form action={formAction} className="grid gap-2 sm:grid-cols-8">
+        <form action={formAction} className="grid gap-2 sm:grid-cols-10">
           <input type="hidden" name="id" value={log.id} />
           <input type="hidden" name="client_id" value={clientId} />
-          <input type="hidden" name="recorded_at" value={log.recordedAt} />
+          <label className="block text-xs sm:col-span-2">
+            <span className="mb-1 block text-gray-500">日付</span>
+            <input
+              name="recorded_at"
+              type="date"
+              required
+              defaultValue={log.recordedAt}
+              className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+            />
+          </label>
           <label className="block text-xs">
             <span className="mb-1 block text-gray-500">区分</span>
             <select
@@ -130,7 +157,7 @@ export function MealLogRow({
               className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />
           </label>
-          <div className="flex items-end gap-2 sm:col-span-8">
+          <div className="flex items-end gap-2 sm:col-span-10">
             {state?.error && !errorDismissed && (
               <p className="text-xs text-red-600">{state.error}</p>
             )}

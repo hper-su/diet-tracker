@@ -1,2 +1,2 @@
-:HL["/diet-tracker/_next/static/chunks/2ym36-z2i2z_8.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"vitamin-mineral-guide","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"VzM73_zG41BMGEH-eMuF6"}
+:HL["/diet-tracker/_next/static/chunks/3r6tq6srix75t.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"vitamin-mineral-guide","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"zU0MKz2nau7fpbxdR9Itb"}

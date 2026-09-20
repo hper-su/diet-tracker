@@ -144,6 +144,10 @@ function isFiniteNonNegative(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
 function isNonEmptyId(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
@@ -281,7 +285,17 @@ export function validateAndSanitize(
         "食事記録に、存在しないお客様を参照している行があります。",
       );
     }
-    if (!MEAL_TYPES.has(log.mealType) || !(log.quantity > 0)) {
+    // 「1日の合計の手入力修正」の調整行は差分を保存するため、栄養値は負数も許可する。
+    if (
+      !MEAL_TYPES.has(log.mealType) ||
+      !(log.quantity > 0) ||
+      typeof log.recordedAt !== "string" ||
+      !log.recordedAt ||
+      !isFiniteNumber(log.kcal) ||
+      !isFiniteNumber(log.proteinG) ||
+      !isFiniteNumber(log.fatG) ||
+      !isFiniteNumber(log.carbG)
+    ) {
       throw new ImportFormatError("食事記録のデータ形式が正しくありません。");
     }
     return log.foodId != null && !foodIds.has(log.foodId)
@@ -295,7 +309,14 @@ export function validateAndSanitize(
         "普段の食事に、存在しないお客様を参照している行があります。",
       );
     }
-    if (!MEAL_TYPES.has(meal.mealType) || !(meal.quantity > 0)) {
+    if (
+      !MEAL_TYPES.has(meal.mealType) ||
+      !(meal.quantity > 0) ||
+      !isFiniteNonNegative(meal.kcal) ||
+      !isFiniteNonNegative(meal.proteinG) ||
+      !isFiniteNonNegative(meal.fatG) ||
+      !isFiniteNonNegative(meal.carbG)
+    ) {
       throw new ImportFormatError("普段の食事のデータ形式が正しくありません。");
     }
     return meal.foodId != null && !foodIds.has(meal.foodId)

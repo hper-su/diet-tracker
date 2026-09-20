@@ -8,6 +8,7 @@ import { getClient, subscribeToClients } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
 import { listFoods, subscribeToFoods } from "@/lib/db/foods";
 import {
+  isAdjustmentLog,
   listMealLogsByDate,
   listMealLogTotalsByDateRange,
   subscribeToMealLogs,
@@ -22,6 +23,7 @@ import { addDaysISODate, listISODateRange, todayISODate } from "@/lib/date";
 import { ClientTabs } from "../client-tabs";
 import { MealLogForm } from "./meal-log-form";
 import { MealLogRow } from "./meal-log-row";
+import { DailyAdjustmentForm } from "./daily-adjustment-form";
 import { MealSummaryChart, PFCTrendChart } from "./meal-summary-chart";
 import { addUsualMealsAsLogAction } from "./actions";
 
@@ -99,6 +101,8 @@ function ClientMealsPageInner() {
       carbG: l.carbG,
     })),
   );
+  const adjustmentLogs = logs.filter(isAdjustmentLog);
+  const adjustment = adjustmentLogs.length > 0 ? sumMealLogAmounts(adjustmentLogs) : null;
   const totalsRatio = calculateMacroRatioPercent(totals);
   // プランタブの「PFCバランス(1日の目安)」と同じ目標値。実際の記録と見比べられるよう、
   // このページでも目標のg・%(カロリーベース、実際の記録と同じ算出方法)を表示する。
@@ -218,6 +222,13 @@ function ClientMealsPageInner() {
           )}
         </div>
       </section>
+
+      <DailyAdjustmentForm
+        clientId={clientId}
+        date={date}
+        totals={totals}
+        adjustment={adjustment}
+      />
 
       {plan ? (
         <section

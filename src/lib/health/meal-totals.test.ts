@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateDailyAdjustment,
   calculateMealLogAmounts,
   fillDailyMealTotals,
   sumMealLogAmounts,
@@ -63,5 +64,30 @@ describe("fillDailyMealTotals", () => {
       { recordedAt: "2026-07-10", kcal: 0, proteinG: 0, fatG: 0, carbG: 0 },
       { recordedAt: "2026-07-11", kcal: 0, proteinG: 0, fatG: 0, carbG: 0 },
     ]);
+  });
+});
+
+describe("calculateDailyAdjustment", () => {
+  const base = { kcal: 1500, proteinG: 80, fatG: 50, carbG: 180 };
+
+  it("total mode: returns the diff from item totals, negative allowed", () => {
+    const r = calculateDailyAdjustment(
+      base,
+      base,
+      { kcal: 1400, proteinG: 90, fatG: null, carbG: 180 },
+      "total",
+    );
+    expect(r).toEqual({ kcal: -100, proteinG: 10, fatG: 0, carbG: 0 });
+  });
+
+  it("delta mode: adds to the current total including the existing adjustment", () => {
+    const current = { kcal: 1600, proteinG: 80, fatG: 50, carbG: 180 };
+    const r = calculateDailyAdjustment(
+      base,
+      current,
+      { kcal: -50, proteinG: null, fatG: null, carbG: null },
+      "delta",
+    );
+    expect(r).toEqual({ kcal: 50, proteinG: 0, fatG: 0, carbG: 0 });
   });
 });

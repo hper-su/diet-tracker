@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import type { MealLog } from "@/lib/db/meal-logs";
+import { isAdjustmentLog, type MealLog } from "@/lib/db/meal-logs";
 import type { Food } from "@/lib/db/foods";
 import { FoodPicker } from "../food-picker";
 import { updateMealLogAction, deleteMealLogAction } from "./actions";
@@ -46,6 +46,35 @@ export function MealLogRow({
     } else if (!state?.error) {
       setEditing(false);
     }
+  }
+
+  // 手入力調整行は食品を持たないため、この行では編集せず、上部の
+  // 「1日の合計を手入力で修正」から直す(ここでは解除=削除のみ)。
+  if (isAdjustmentLog(log)) {
+    return (
+      <tr className="border-t border-gray-100 bg-amber-50">
+        <td className="px-4 py-2">調整</td>
+        <td className="px-4 py-2">{log.foodName}</td>
+        <td className="px-4 py-2">-</td>
+        <td className="px-4 py-2">{log.kcal.toFixed(0)}</td>
+        <td className="px-4 py-2 text-gray-500">
+          {log.proteinG.toFixed(1)}/{log.fatG.toFixed(1)}/{log.carbG.toFixed(1)}
+        </td>
+        <td className="px-4 py-2 text-gray-500"></td>
+        <td className="sticky right-0 bg-amber-50 px-4 py-2 text-right whitespace-nowrap">
+          <form action={deleteMealLogAction} className="inline">
+            <input type="hidden" name="id" value={log.id} />
+            <input type="hidden" name="client_id" value={clientId} />
+            <button
+              type="submit"
+              className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
+            >
+              解除
+            </button>
+          </form>
+        </td>
+      </tr>
+    );
   }
 
   if (!editing) {

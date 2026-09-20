@@ -161,3 +161,45 @@ export async function deleteMealLog(clientId: string, id: string): Promise<void>
   if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await deleteDoc(doc(db, COLLECTION, id));
 }
+
+// 1日の合計を手入力で直すための「調整行」。品目とは別に1日1件だけ持ち、
+// 品目合計との差分(負数可)を保存する。集計は他の記録と同じく単純に足し算される。
+export const ADJUSTMENT_FOOD_NAME = "手入力調整";
+
+export function isAdjustmentLog(log: Pick<MealLog, "foodId" | "foodName">): boolean {
+  return log.foodId === null && log.foodName === ADJUSTMENT_FOOD_NAME;
+}
+
+// その日の調整行を差分amountsで置き換える(既存があれば更新、全て0なら削除)。
+// dayLogsはその日の記録(呼び出し側が取得済みのもの。二重取得を避けるため受け取る)。
+export async function setDailyAdjustment(
+  clientId: string,
+  recordedAt: string,
+  dayLogs: MealLog[],
+  amounts: { kcal: number; proteinG: number; fatG: number; carbG: number },
+): Promise<void> {
+  const [existing, ...extras] = dayLogs.filter(isAdjustmentLog);
+  await Promise.all(extras.map((extra) => deleteMealLog(clientId, extra.id)));
+
+  const isZero =
+    amounts.kcal === 0 && amounts.proteinG === 0 && amounts.fatG === 0 && amounts.carbG === 0;
+  if (isZero) {
+    if (existing) await deleteMealLog(clientId, existing.id);
+    return;
+  }
+
+  const fields = {
+    recordedAt,
+    mealType: "snack" as const,
+    foodId: null,
+    foodName: ADJUSTMENT_FOOD_NAME,
+    quantity: 1,
+    ...amounts,
+    memo: null,
+  };
+  if (existing) {
+    await updateMealLog(clientId, existing.id, fields);
+  } else {
+    await insertMealLogs([{ clientId, ...fields }]);
+  }
+}

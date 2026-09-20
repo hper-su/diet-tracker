@@ -39,7 +39,7 @@ yarn-error.log*
 # vercel
 .vercel
 
-# Supabase接続情報(URL・anonキー)。README参照の上、各自 .env.local に設定する。
+# Firebase接続情報(NEXT_PUBLIC_FIREBASE_*)。README参照の上、各自 .env.local に設定する。
 .env*.local
 
 # typescript

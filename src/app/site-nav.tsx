@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "./sign-out-button";
@@ -23,9 +23,13 @@ export function SiteNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => {
+  // 画面遷移したらモバイルメニューを閉じる(effect内のsetStateを避け、
+  // 描画中にpathnameの変化を検知して閉じる)。
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   return (
     <header className="border-b border-gray-200 bg-white">

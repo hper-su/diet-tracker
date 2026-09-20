@@ -3,11 +3,19 @@ import {
   insertMealLogs,
   updateMealLog,
   deleteMealLog,
+  isAdjustmentLog,
+  listMealLogsByDate,
+  setDailyAdjustment,
   type InsertMealLogInput,
 } from "@/lib/db/meal-logs";
 import { listUsualMeals } from "@/lib/db/usual-meals";
 import { validateMealLogInput, type MealLogData } from "@/lib/validation/meal-log";
-import { calculateMealLogAmounts } from "@/lib/health/meal-totals";
+import {
+  calculateDailyAdjustment,
+  calculateMealLogAmounts,
+  sumMealLogAmounts,
+  type AdjustmentMode,
+} from "@/lib/health/meal-totals";
 
 export type AddMealLogState = { error?: string } | undefined;
 
@@ -174,4 +182,56 @@ export async function deleteMealLogAction(formData: FormData) {
   if (id && clientId) {
     await deleteMealLog(clientId, id);
   }
+}
+
+export type DailyAdjustmentState = { error?: string } | undefined;
+
+// 1日の合計(kcal・P・F・C)を手入力で修正する。品目はそのままに、差分だけを
+// 「手入力調整」行として保存する。負数も入力可。
+export async function setDailyAdjustmentAction(
+  _prevState: DailyAdjustmentState,
+  formData: FormData,
+): Promise<DailyAdjustmentState> {
+  const clientId = String(formData.get("client_id") ?? "");
+  const recordedAt = String(formData.get("recorded_at") ?? "");
+  if (!clientId || !recordedAt) {
+    return { error: "お客様または日付が指定されていません。" };
+  }
+
+  const logs = await listMealLogsByDate(clientId, recordedAt);
+
+  if (formData.get("intent") === "clear") {
+    await setDailyAdjustment(clientId, recordedAt, logs, {
+      kcal: 0,
+      proteinG: 0,
+      fatG: 0,
+      carbG: 0,
+    });
+    return;
+  }
+
+  const mode: AdjustmentMode = formData.get("mode") === "delta" ? "delta" : "total";
+  const parse = (name: string): number | null | undefined => {
+    const raw = String(formData.get(name) ?? "").trim();
+    if (raw === "") return null;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : undefined;
+  };
+  const kcal = parse("kcal");
+  const proteinG = parse("protein_g");
+  const fatG = parse("fat_g");
+  const carbG = parse("carb_g");
+  if (kcal === undefined || proteinG === undefined || fatG === undefined || carbG === undefined) {
+    return { error: "数値で入力してください。" };
+  }
+
+  const base =sumMealLogAmounts(logs.filter((l) => !isAdjustmentLog(l)));
+  const current = sumMealLogAmounts(logs);
+  const amounts = calculateDailyAdjustment(
+    base,
+    current,
+    { kcal, proteinG, fatG, carbG },
+    mode,
+  );
+  await setDailyAdjustment(clientId, recordedAt, logs, amounts);
 }

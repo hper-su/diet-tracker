@@ -51,3 +51,32 @@ export function fillDailyMealTotals(
       },
   );
 }
+
+export type AdjustmentMode = "total" | "delta";
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+// 1日の合計を手入力で直すための「調整行」の量を算出する。
+// baseは調整行を除いた品目の合計、currentは調整行を含む現在の合計。
+// mode="total": inputsは修正後の1日の合計(空欄=品目合計のまま=調整なし)。
+// mode="delta": inputsは現在の合計からの増減(負数可、空欄=現在のまま)。
+// 戻り値は「品目合計に足すと狙いの合計になる差分」(負数になりうる)。
+export function calculateDailyAdjustment(
+  base: MacroAmounts,
+  current: MacroAmounts,
+  inputs: Record<keyof MacroAmounts, number | null>,
+  mode: AdjustmentMode,
+): MacroAmounts {
+  const keys = ["kcal", "proteinG", "fatG", "carbG"] as const;
+  const result = { kcal: 0, proteinG: 0, fatG: 0, carbG: 0 };
+  for (const key of keys) {
+    const input = inputs[key];
+    if (input === null) {
+      result[key] = mode === "total" ? 0 : round1(current[key] - base[key]);
+      continue;
+    }
+    const target = mode === "total" ? input : current[key] + input;
+    result[key] = round1(target - base[key]);
+  }
+  return result;
+}

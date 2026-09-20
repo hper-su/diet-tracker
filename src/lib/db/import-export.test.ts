@@ -182,6 +182,44 @@ describe("validateAndSanitize", () => {
     expect(() => validateAndSanitize(data)).toThrow(ImportFormatError);
   });
 
+  it("throws when a mealLog has a non-numeric nutrient value", () => {
+    const data = baseData();
+    data.mealLogs.push({
+      id: "1",
+      clientId: "1",
+      recordedAt: "2026-09-09",
+      mealType: "lunch",
+      foodId: null,
+      foodName: "白米",
+      quantity: 1,
+      kcal: "abc" as unknown as number,
+      proteinG: 1,
+      fatG: 1,
+      carbG: 1,
+      memo: null,
+    });
+    expect(() => validateAndSanitize(data)).toThrow(ImportFormatError);
+  });
+
+  it("accepts negative nutrient values on a mealLog (manual daily adjustment row)", () => {
+    const data = baseData();
+    data.mealLogs.push({
+      id: "1",
+      clientId: "1",
+      recordedAt: "2026-09-09",
+      mealType: "snack",
+      foodId: null,
+      foodName: "手入力調整",
+      quantity: 1,
+      kcal: -120,
+      proteinG: -5,
+      fatG: 0,
+      carbG: -10,
+      memo: null,
+    });
+    expect(validateAndSanitize(data).mealLogs[0].kcal).toBe(-120);
+  });
+
   it("nulls out a usualExercise's exerciseId when the referenced exercise no longer exists", () => {
     const data = baseData();
     data.usualExercises.push({

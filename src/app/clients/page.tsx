@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useLiveQuery } from "@/lib/db/use-live-query";
 import {
   listClientsByRecentActivity,
-  subscribeToClientActivity,
   subscribeToClients,
 } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
@@ -21,7 +20,7 @@ export default function ClientsPage() {
   const clients = useLiveQuery(
     () => listClientsByRecentActivity(),
     [],
-    [subscribeToClients, subscribeToClientActivity],
+    [subscribeToClients],
   );
 
   return (

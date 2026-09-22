@@ -159,7 +159,7 @@ function assertNoDuplicateKey<T>(
 // 旧Supabase版のバックアップJSONは数値idのまま(id/clientId/foodId)
 // なので、Firestoreのドキュメントid(文字列)として扱えるよう先に文字列化する。
 // 新しいFirestore版のエクスポートは最初から文字列idなので、この変換は素通りする。
-export function normalizeLegacyIds(
+function normalizeLegacyIds(
   raw: Record<string, unknown>,
 ): Record<string, unknown> {
   function toIdString(value: unknown): unknown {

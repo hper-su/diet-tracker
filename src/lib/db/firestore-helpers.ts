@@ -29,7 +29,7 @@ export async function belongsToClient(
 }
 
 // Firestoreの1バッチあたりの書き込み上限(500件)を踏まえた安全マージン。
-export const FIRESTORE_BATCH_CHUNK_SIZE = 450;
+const FIRESTORE_BATCH_CHUNK_SIZE = 450;
 
 // 件数がバッチ上限を超えても安全なよう、itemsをチャンクに分けてwriteBatchで
 // 送る共通ループ。各項目に対して何をするか(set/update/delete)はapplyToBatchが

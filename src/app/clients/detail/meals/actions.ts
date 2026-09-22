@@ -17,7 +17,7 @@ import {
   type AdjustmentMode,
 } from "@/lib/health/meal-totals";
 
-export type AddMealLogState = { error?: string } | undefined;
+type AddMealLogState = { error?: string } | undefined;
 
 // 1回の送信で複数の品目(meal_type[]・food_id[]・quantity[]・memo[])をまとめて登録できるようにする。
 // 行ごとに区分を選べるため、朝食・昼食などを混在させて一括登録できる。
@@ -128,7 +128,7 @@ export async function addUsualMealsAsLogAction(formData: FormData) {
   );
 }
 
-export type UpdateMealLogState = { error?: string } | undefined;
+type UpdateMealLogState = { error?: string } | undefined;
 
 export async function updateMealLogAction(
   _prevState: UpdateMealLogState,

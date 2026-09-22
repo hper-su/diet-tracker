@@ -5,7 +5,7 @@ import {
   type ProtocolCheckStepResult,
 } from "@/lib/db/protocol-checks";
 
-export type AddProtocolCheckState = { error?: string } | undefined;
+type AddProtocolCheckState = { error?: string } | undefined;
 
 export async function addProtocolCheckAction(
   _prevState: AddProtocolCheckState,

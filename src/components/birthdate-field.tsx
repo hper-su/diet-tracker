@@ -1,8 +1,8 @@
 // 生年月日入力欄。"YYYY-MM-DD" と、区切りなしの "YYYYMMDD" の両方を受け付ける。
 // サーバー側のフォーマット検証(src/lib/validation/client.ts)と条件を合わせておくこと。
 export const BIRTHDATE_PATTERN = "\\d{4}-\\d{2}-\\d{2}|\\d{8}";
-export const BIRTHDATE_PLACEHOLDER = "例: 19880320";
-export const BIRTHDATE_TITLE =
+const BIRTHDATE_PLACEHOLDER = "例: 19880320";
+const BIRTHDATE_TITLE =
   "YYYY-MM-DD、または区切りなしのYYYYMMDD形式で入力してください(例: 1988-03-20 / 19880320)";
 
 export function BirthdateField({

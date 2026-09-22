@@ -1,7 +1,7 @@
 import { insertFood, updateFood, deleteFood } from "@/lib/db/foods";
 import { validateFoodInput } from "@/lib/validation/food";
 
-export type AddFoodState = { error?: string } | undefined;
+type AddFoodState = { error?: string } | undefined;
 
 function readFoodFormData(formData: FormData) {
   return validateFoodInput({
@@ -31,7 +31,7 @@ export async function addFoodAction(
   }
 }
 
-export type UpdateFoodState = { error?: string } | undefined;
+type UpdateFoodState = { error?: string } | undefined;
 
 export async function updateFoodAction(
   _prevState: UpdateFoodState,

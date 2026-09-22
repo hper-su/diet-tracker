@@ -229,7 +229,7 @@ export async function deleteMealLog(clientId: string, id: string): Promise<void>
 
 // 1日の合計を手入力で直すための「調整行」。品目とは別に1日1件だけ持ち、
 // 品目合計との差分(負数可)を保存する。集計は他の記録と同じく単純に足し算される。
-export const ADJUSTMENT_FOOD_NAME = "手入力調整";
+const ADJUSTMENT_FOOD_NAME = "手入力調整";
 
 export function isAdjustmentLog(log: Pick<MealLog, "foodId" | "foodName">): boolean {
   return log.foodId === null && log.foodName === ADJUSTMENT_FOOD_NAME;

@@ -16,9 +16,9 @@ export function calculateBMI({ weightKg, heightCm }: BMIInput): number | null {
 }
 
 // 「普通体重」の目安としてよく使われるBMIの範囲(18〜25)。
-export const NORMAL_BMI_MIN = 18;
-export const NORMAL_BMI_MAX = 25;
-export const NORMAL_BMI_MID = (NORMAL_BMI_MIN + NORMAL_BMI_MAX) / 2;
+const NORMAL_BMI_MIN = 18;
+const NORMAL_BMI_MAX = 25;
+const NORMAL_BMI_MID = (NORMAL_BMI_MIN + NORMAL_BMI_MAX) / 2;
 
 export type NormalWeightRange = {
   minKg: number;

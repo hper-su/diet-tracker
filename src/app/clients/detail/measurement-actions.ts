@@ -5,7 +5,7 @@ import {
 } from "@/lib/db/measurements";
 import { validateMeasurementInput } from "@/lib/validation/measurement";
 
-export type AddMeasurementState = { error?: string } | undefined;
+type AddMeasurementState = { error?: string } | undefined;
 
 function readMeasurementFormData(formData: FormData) {
   return validateMeasurementInput({
@@ -39,7 +39,7 @@ export async function addMeasurementAction(
   return undefined;
 }
 
-export type UpdateMeasurementState = { error?: string } | undefined;
+type UpdateMeasurementState = { error?: string } | undefined;
 
 export async function updateMeasurementAction(
   _prevState: UpdateMeasurementState,

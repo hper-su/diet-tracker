@@ -1,7 +1,7 @@
 import { updateClientProfile } from "@/lib/db/clients";
 import { validateClientInput } from "@/lib/validation/client";
 
-export type UpdateClientProfileState =
+type UpdateClientProfileState =
   | { error?: string; success?: boolean }
   | undefined;
 

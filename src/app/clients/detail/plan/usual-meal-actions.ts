@@ -7,7 +7,7 @@ import {
 import { validateUsualMealInput } from "@/lib/validation/usual-meal";
 import { calculateMealLogAmounts } from "@/lib/health/meal-totals";
 
-export type AddUsualMealState = { error?: string } | undefined;
+type AddUsualMealState = { error?: string } | undefined;
 
 // 1回の送信で複数の品目(meal_type[]・food_id[]・quantity[])をまとめて登録できるようにする。
 // 行ごとに区分を選べるため、朝食・昼食などを混在させて一括登録できる。

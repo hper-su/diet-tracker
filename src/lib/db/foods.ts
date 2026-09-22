@@ -163,7 +163,7 @@ export async function getFoodByName(name: string, category?: string): Promise<Fo
   return food;
 }
 
-export const FOOD_MASTER_PAGE_SIZE = 50;
+const FOOD_MASTER_PAGE_SIZE = 50;
 
 export type FoodsPage = {
   foods: Food[];

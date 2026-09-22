@@ -1,7 +1,7 @@
 import { updateClientGoal } from "@/lib/db/clients";
 import { parsePositiveNumber } from "@/lib/validation/result";
 
-export type UpdatePlanGoalState = { error?: string } | undefined;
+type UpdatePlanGoalState = { error?: string } | undefined;
 
 export async function updatePlanGoal(
   _prevState: UpdatePlanGoalState,

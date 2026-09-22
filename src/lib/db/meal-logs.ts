@@ -75,45 +75,125 @@ export function subscribeToMealLogs(clientId: string, callback: () => void): Uns
   return subscribeToCollectionByClient(db, COLLECTION, clientId, callback);
 }
 
-// 週次・月次サマリー用。日付ごとの合計を、記録がある日だけ返す
+// listMealLogTotalsByDateRangeは食事記録タブを開くたびに(サマリー範囲+
+// 履歴一覧の最大730日分の)2回、過去分もまるごと読み直していた。過去分は
+// その日の記録をその場で編集しない限り書き換わらないため、食品マスタ
+// (foods.ts)と同様にクライアント単位で「日付ごとの合計」全体をキャッシュし、
+// 呼び出し側が指定する範囲はそのキャッシュから絞り込むだけにする
+// (その日の記録一覧・編集(listMealLogsByDate)は即座に反映する必要がある
+// ためキャッシュしない)。
+const dailyTotalsCache = new Map<string, Promise<DailyMealTotal[]>>();
+const dailyTotalsCacheArmed = new Set<string>();
+
+const LOCAL_TOTALS_CACHE_PREFIX = "diet-tracker:meal-log-totals-cache:v1:";
+const LOCAL_TOTALS_CACHE_TTL_MS = 10 * 60 * 1000; // 10分
+
+function readLocalTotalsCache(clientId: string): DailyMealTotal[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LOCAL_TOTALS_CACHE_PREFIX + clientId);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { savedAt: number; totals: DailyMealTotal[] };
+    if (Date.now() - parsed.savedAt > LOCAL_TOTALS_CACHE_TTL_MS) return null;
+    return parsed.totals;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalTotalsCache(clientId: string, totals: DailyMealTotal[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      LOCAL_TOTALS_CACHE_PREFIX + clientId,
+      JSON.stringify({ savedAt: Date.now(), totals }),
+    );
+  } catch {
+    // 容量超過等は無視(メモリキャッシュだけで動作は継続できる)。
+  }
+}
+
+function clearLocalTotalsCache(clientId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(LOCAL_TOTALS_CACHE_PREFIX + clientId);
+  } catch {
+    // no-op
+  }
+}
+
+function armDailyTotalsCacheInvalidation(clientId: string) {
+  if (dailyTotalsCacheArmed.has(clientId)) return;
+  dailyTotalsCacheArmed.add(clientId);
+  // onSnapshotは登録直後、実際の変更の有無にかかわらず必ず1回「現在の状態」で
+  // 発火する。これを変更通知として扱うと、直前に作ったばかりのキャッシュを
+  // 即座に破棄してしまい、キャッシュの意味が無くなるため、最初の1回は無視する。
+  let isFirstSnapshot = true;
+  subscribeToCollectionByClient(db, COLLECTION, clientId, () => {
+    if (isFirstSnapshot) {
+      isFirstSnapshot = false;
+      return;
+    }
+    dailyTotalsCache.delete(clientId);
+    clearLocalTotalsCache(clientId);
+  });
+}
+
+async function listAllDailyTotals(clientId: string): Promise<DailyMealTotal[]> {
+  armDailyTotalsCacheInvalidation(clientId);
+  let cached = dailyTotalsCache.get(clientId);
+  if (!cached) {
+    const fromDisk = readLocalTotalsCache(clientId);
+    if (fromDisk) {
+      cached = Promise.resolve(fromDisk);
+    } else {
+      cached = getDocs(
+        query(collection(db, COLLECTION), where("clientId", "==", clientId)),
+      ).then((snap) => {
+        const totalsByDate = new Map<string, DailyMealTotal>();
+        for (const d of snap.docs) {
+          const row = d.data() as MealLogDoc;
+          const existing = totalsByDate.get(row.recordedAt);
+          if (existing) {
+            existing.kcal += row.kcal;
+            existing.proteinG += row.proteinG;
+            existing.fatG += row.fatG;
+            existing.carbG += row.carbG;
+          } else {
+            totalsByDate.set(row.recordedAt, {
+              recordedAt: row.recordedAt,
+              kcal: row.kcal,
+              proteinG: row.proteinG,
+              fatG: row.fatG,
+              carbG: row.carbG,
+            });
+          }
+        }
+        const totals = Array.from(totalsByDate.values()).sort((a, b) =>
+          a.recordedAt.localeCompare(b.recordedAt),
+        );
+        writeLocalTotalsCache(clientId, totals);
+        return totals;
+      });
+      // 取得に失敗した場合はキャッシュに残さず、次回呼び出しで取得し直せるようにする。
+      cached.catch(() => {
+        dailyTotalsCache.delete(clientId);
+      });
+    }
+    dailyTotalsCache.set(clientId, cached);
+  }
+  return cached;
+}
+
+// 週次・月次サマリー・履歴一覧用。日付ごとの合計を、記録がある日だけ返す
 // (記録がない日は呼び出し側で0埋めする)。
 export async function listMealLogTotalsByDateRange(
   clientId: string,
   fromDate: string,
   toDate: string,
 ): Promise<DailyMealTotal[]> {
-  const snap = await getDocs(
-    query(
-      collection(db, COLLECTION),
-      where("clientId", "==", clientId),
-      where("recordedAt", ">=", fromDate),
-      where("recordedAt", "<=", toDate),
-    ),
-  );
-
-  const totalsByDate = new Map<string, DailyMealTotal>();
-  for (const d of snap.docs) {
-    const row = d.data() as MealLogDoc;
-    const existing = totalsByDate.get(row.recordedAt);
-    if (existing) {
-      existing.kcal += row.kcal;
-      existing.proteinG += row.proteinG;
-      existing.fatG += row.fatG;
-      existing.carbG += row.carbG;
-    } else {
-      totalsByDate.set(row.recordedAt, {
-        recordedAt: row.recordedAt,
-        kcal: row.kcal,
-        proteinG: row.proteinG,
-        fatG: row.fatG,
-        carbG: row.carbG,
-      });
-    }
-  }
-
-  return Array.from(totalsByDate.values()).sort((a, b) =>
-    a.recordedAt.localeCompare(b.recordedAt),
-  );
+  const all = await listAllDailyTotals(clientId);
+  return all.filter((row) => row.recordedAt >= fromDate && row.recordedAt <= toDate);
 }
 
 export type InsertMealLogInput = {

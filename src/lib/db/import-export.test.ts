@@ -49,7 +49,6 @@ function baseData(): ExportedData {
     exercises: [
       { id: "1", category: "運動", name: "ウォーキング", mets: 3.5 },
     ],
-    usualExercises: [],
     protocolChecks: [
       {
         id: "1",
@@ -218,20 +217,5 @@ describe("validateAndSanitize", () => {
       memo: null,
     });
     expect(validateAndSanitize(data).mealLogs[0].kcal).toBe(-120);
-  });
-
-  it("nulls out a usualExercise's exerciseId when the referenced exercise no longer exists", () => {
-    const data = baseData();
-    data.usualExercises.push({
-      id: "1",
-      clientId: "1",
-      exerciseId: "999",
-      exerciseName: "存在しない運動",
-      mets: 3,
-      durationMin: 30,
-      frequencyPerWeek: 2,
-    });
-    const result = validateAndSanitize(data);
-    expect(result.usualExercises[0].exerciseId).toBeNull();
   });
 });

@@ -16,7 +16,6 @@ import type {
 import type { Food } from "./foods";
 import type { UsualMeal } from "./usual-meals";
 import type { Exercise } from "./exercises";
-import type { UsualExercise } from "./usual-exercises";
 import { isActivityLevel } from "@/lib/health/activity-level";
 
 export const EXPORT_FORMAT_VERSION = 1;
@@ -30,7 +29,6 @@ export type ExportedData = {
   mealLogs: MealLogRecord[];
   usualMeals: UsualMeal[];
   exercises: Exercise[];
-  usualExercises: UsualExercise[];
   protocolChecks: ProtocolCheckRecord[];
 };
 
@@ -41,7 +39,6 @@ const COLLECTIONS = [
   "mealLogs",
   "usualMeals",
   "exercises",
-  "usualExercises",
   "protocolChecks",
 ] as const;
 
@@ -54,7 +51,6 @@ export async function exportAllData(): Promise<ExportedData> {
     mealLogsSnap,
     usualMealsSnap,
     exercisesSnap,
-    usualExercisesSnap,
     protocolChecksSnap,
   ] = await Promise.all(COLLECTIONS.map((name) => getDocs(collection(db, name))));
 
@@ -69,7 +65,7 @@ export async function exportAllData(): Promise<ExportedData> {
     };
   });
 
-  // measurements/mealLogs/usualMeals/usualExercises/protocolChecksのcreatedAtは
+  // measurements/mealLogs/usualMeals/protocolChecksのcreatedAtは
   // Firestore内部の並び順用フィールド(元のPostgres版のidの代わり)であり、
   // エクスポート形式には含めない(インポート時にimportAllData側で作り直す)。
   function stripCreatedAt<T extends { createdAt?: unknown }>(
@@ -94,9 +90,6 @@ export async function exportAllData(): Promise<ExportedData> {
       (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as UsualMeal,
     ),
     exercises: exercisesSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Exercise),
-    usualExercises: usualExercisesSnap.docs.map(
-      (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as UsualExercise,
-    ),
     protocolChecks: protocolChecksSnap.docs.map(
       (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as ProtocolCheckRecord,
     ),
@@ -120,7 +113,6 @@ export function isExportedData(
     Array.isArray(data.mealLogs) &&
     Array.isArray(data.usualMeals) &&
     Array.isArray(data.exercises) &&
-    Array.isArray(data.usualExercises) &&
     // protocolChecksはこの機能追加より前のエクスポートJSONには存在しないため、
     // 無ければ空配列として扱えるよう任意項目にする(フォーマットversionは1のまま)。
     (data.protocolChecks === undefined || Array.isArray(data.protocolChecks))
@@ -199,7 +191,6 @@ export function normalizeLegacyIds(
     mealLogs: mapArray(raw.mealLogs, ["id", "clientId", "foodId"]),
     usualMeals: mapArray(raw.usualMeals, ["id", "clientId", "foodId"]),
     exercises: mapArray(raw.exercises, ["id"]),
-    usualExercises: mapArray(raw.usualExercises, ["id", "clientId", "exerciseId"]),
     protocolChecks: mapArray(raw.protocolChecks, ["id", "clientId"]),
   };
 }
@@ -216,7 +207,6 @@ export function validateAndSanitize(
 ): ExportedData {
   const clientIds = new Set(data.clients.map((c) => c.id));
   const foodIds = new Set(data.foods.map((f) => f.id));
-  const exerciseIds = new Set(data.exercises.map((e) => e.id));
   const protocolChecks = data.protocolChecks ?? [];
 
   for (const check of protocolChecks) {
@@ -324,21 +314,7 @@ export function validateAndSanitize(
       : meal;
   });
 
-  const usualExercises = data.usualExercises.map((habit) => {
-    if (!clientIds.has(habit.clientId)) {
-      throw new ImportFormatError(
-        "普段の運動習慣に、存在しないお客様を参照している行があります。",
-      );
-    }
-    if (!(habit.durationMin > 0) || !(habit.frequencyPerWeek > 0) || !(habit.mets > 0)) {
-      throw new ImportFormatError("普段の運動習慣のデータ形式が正しくありません。");
-    }
-    return habit.exerciseId != null && !exerciseIds.has(habit.exerciseId)
-      ? { ...habit, exerciseId: null }
-      : habit;
-  });
-
-  return { ...data, mealLogs, usualMeals, usualExercises, protocolChecks };
+  return { ...data, mealLogs, usualMeals, protocolChecks };
 }
 
 async function deleteDocsByIds(collectionName: string, ids: string[]): Promise<void> {
@@ -423,9 +399,6 @@ export async function importAllData(raw: unknown): Promise<void> {
     createdAt: orderingTimestamp(row.id, index),
   }));
   await replaceCollection("usualMeals", data.usualMeals, (row, index) => ({
-    createdAt: orderingTimestamp(row.id, index),
-  }));
-  await replaceCollection("usualExercises", data.usualExercises, (row, index) => ({
     createdAt: orderingTimestamp(row.id, index),
   }));
   await replaceCollection("protocolChecks", data.protocolChecks, (row, index) => ({

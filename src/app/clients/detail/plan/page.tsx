@@ -6,11 +6,9 @@ import { useSearchParams } from "next/navigation";
 import { useLiveQuery } from "@/lib/db/use-live-query";
 import { getClient, subscribeToClients } from "@/lib/db/clients";
 import { subscribeToMeasurements } from "@/lib/db/measurements";
-import { subscribeToUsualExercises } from "@/lib/db/usual-exercises";
 import { formatClientName } from "@/lib/format/client-name";
 import { formatNumberJa } from "@/lib/format/number";
 import { listFoods, subscribeToFoods } from "@/lib/db/foods";
-import { listExercises, subscribeToExercises } from "@/lib/db/exercises";
 import { listUsualMeals, subscribeToUsualMeals, type UsualMealType } from "@/lib/db/usual-meals";
 import { getCurrentDietPlan } from "@/lib/server/current-plan";
 import { buildDietPlanFormulas } from "@/lib/health/diet-plan";
@@ -23,8 +21,6 @@ import { ClientTabs } from "../client-tabs";
 import { PlanGoalForm } from "./plan-goal-form";
 import { UsualMealForm } from "./usual-meal-form";
 import { deleteUsualMealAction } from "./usual-meal-actions";
-import { UsualExerciseForm } from "./usual-exercise-form";
-import { deleteUsualExerciseAction } from "./usual-exercise-actions";
 
 const USUAL_MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 
@@ -87,20 +83,17 @@ function ClientPlanPageInner() {
     const client = await getClient(clientId);
     if (!client) return { client: null };
 
-    const [planResult, foods, exercises, usualMeals] = await Promise.all([
+    const [planResult, foods, usualMeals] = await Promise.all([
       getCurrentDietPlan(clientId),
       listFoods(),
-      listExercises(),
       listUsualMeals(clientId),
     ]);
 
-    return { client, planResult, foods, exercises, usualMeals };
+    return { client, planResult, foods, usualMeals };
   }, [clientId], [
     subscribeToClients,
     (cb) => subscribeToMeasurements(clientId, cb),
-    (cb) => subscribeToUsualExercises(clientId, cb),
     subscribeToFoods,
-    subscribeToExercises,
     (cb) => subscribeToUsualMeals(clientId, cb),
   ]);
 
@@ -116,7 +109,7 @@ function ClientPlanPageInner() {
     return <NotFound />;
   }
 
-  const { client, planResult, foods, exercises, usualMeals } = data;
+  const { client, planResult, foods, usualMeals } = data;
   const {
     plan,
     pfc,
@@ -127,8 +120,6 @@ function ClientPlanPageInner() {
     mealCombosError,
     missingFields,
     planInputs,
-    usualExercises,
-    avgDailyExerciseKcalTotal,
   } = planResult;
   const pfcPresetInfo = PFC_PRESETS[pfcPreset];
   const formulas = plan && planInputs ? buildDietPlanFormulas(planInputs, plan) : null;
@@ -157,67 +148,6 @@ function ClientPlanPageInner() {
         currentTargetWeightKg={client.targetWeightKg}
         currentTargetBodyFatPct={client.targetBodyFatPct}
       />
-
-      <section className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-medium text-gray-900">普段の運動習慣</h2>
-          <p className="text-sm text-gray-500">
-            平均{" "}
-            <span className="text-lg font-semibold text-gray-900">
-              {avgDailyExerciseKcalTotal.toFixed(0)}
-            </span>{" "}
-            kcal/日
-          </p>
-        </div>
-        <p className="text-xs text-gray-400">
-          出典: 厚生労働省「健康づくりのための身体活動・運動ガイド2023」のメッツ表。
-          メッツ×体重×時間×1.05で算出し、週の頻度から1日あたりの平均消費カロリーとして表示しています(参考値。下のメンテナンスカロリーには加算していません)。
-        </p>
-        <ul className="space-y-1">
-          {usualExercises.map((habit) => (
-            <li
-              key={habit.id}
-              className="flex items-center justify-between gap-2 text-sm text-gray-700"
-            >
-              <span className="truncate">
-                {habit.exerciseName}({habit.mets}メッツ) × {habit.durationMin}分
-              </span>
-              <span className="flex shrink-0 items-center gap-3">
-                <span className="text-right">
-                  {habit.kcalPerSession != null ? (
-                    <>
-                      <span className="font-medium text-gray-900">
-                        {habit.kcalPerSession.toFixed(0)}kcal
-                      </span>
-                      <span className="text-gray-500">(1回あたり)</span>
-                      <span className="block text-xs text-gray-400">
-                        週{habit.frequencyPerWeek}回のペース → 平均
-                        {habit.avgDailyKcal!.toFixed(0)}kcal/日(参考値)
-                      </span>
-                    </>
-                  ) : (
-                    "体重の記録が必要です"
-                  )}
-                </span>
-                <form action={deleteUsualExerciseAction}>
-                  <input type="hidden" name="id" value={habit.id} />
-                  <input type="hidden" name="client_id" value={client.id} />
-                  <button
-                    type="submit"
-                    className="text-gray-400 hover:text-red-600"
-                  >
-                    削除
-                  </button>
-                </form>
-              </span>
-            </li>
-          ))}
-          {usualExercises.length === 0 && (
-            <li className="text-xs text-gray-400">まだ記録がありません。</li>
-          )}
-        </ul>
-        <UsualExerciseForm clientId={client.id} exercises={exercises} />
-      </section>
 
       {!plan ? (
         <section className="space-y-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">

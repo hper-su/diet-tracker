@@ -106,7 +106,7 @@ node scripts/export-sqlite-to-json.cjs
 - `firestore.rules` : Firebaseコンソールの Firestore Database → ルール タブに貼り付ける
   アクセス制御(ログイン済みユーザーのみ全操作可)
 - `firestore.indexes.json` : `clientId`絞り込み+日付順ソートを行うクエリ(measurements/
-  mealLogs/usualMeals/usualExercises/protocolChecks)に必要な複合インデックスの定義。
+  mealLogs/usualMeals/protocolChecks)に必要な複合インデックスの定義。
   Firebase CLIが無い場合はコンソールから手動で同じ内容を作成する(セットアップ手順参照)
 - `supabase/schema.sql` : (過去のSupabase版、参考用)当時のテーブル定義・RLS・
   運動マスタ初期データのSQL。現在のバックエンドはFirestoreのため実運用では使わない

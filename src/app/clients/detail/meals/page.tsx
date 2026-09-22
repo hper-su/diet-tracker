@@ -15,7 +15,6 @@ import {
 } from "@/lib/db/meal-logs";
 import { listUsualMeals, subscribeToUsualMeals } from "@/lib/db/usual-meals";
 import { subscribeToMeasurements } from "@/lib/db/measurements";
-import { subscribeToUsualExercises } from "@/lib/db/usual-exercises";
 import { fillDailyMealTotals, sumMealLogAmounts } from "@/lib/health/meal-totals";
 import { calculateMacroRatioPercent } from "@/lib/health/pfc-balance";
 import { getCurrentDietPlan } from "@/lib/server/current-plan";
@@ -75,7 +74,6 @@ function ClientMealsPageInner() {
     (cb) => subscribeToUsualMeals(clientId, cb),
     (cb) => subscribeToMealLogs(clientId, cb),
     (cb) => subscribeToMeasurements(clientId, cb),
-    (cb) => subscribeToUsualExercises(clientId, cb),
   ]);
 
   if (!clientId) {

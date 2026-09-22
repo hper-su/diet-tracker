@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-// FoodPicker/ExercisePickerで共通の「入力しながら候補を絞り込むコンボボックス」の
+// FoodPickerで使う「入力しながら候補を絞り込むコンボボックス」の
 // 開閉状態・ハイライト位置・blur遅延(候補クリックがblurより先に発火するようにする)を
 // まとめたフック。候補の絞り込みロジックや見た目は呼び出し側に任せる。
 export function useSearchCombobox() {

@@ -27,14 +27,6 @@
       ]
     },
     {
-      "collectionGroup": "usualExercises",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "clientId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "mealLogs",
       "queryScope": "COLLECTION",
       "fields": [

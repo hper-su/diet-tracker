@@ -1,9 +1,7 @@
 import { getClient } from "@/lib/db/clients";
 import { listMeasurements } from "@/lib/db/measurements";
-import { listUsualExercises } from "@/lib/db/usual-exercises";
 import { findLatestNonNull } from "@/lib/health/measurements";
 import { calculateAge } from "@/lib/health/age";
-import { calculateExerciseKcal } from "@/lib/health/exercise-kcal";
 import {
   buildDietPlan,
   type DietPlan,
@@ -28,18 +26,6 @@ export type MissingField = {
   hint: string;
 };
 
-export type UsualExerciseWithKcal = {
-  id: string;
-  exerciseName: string;
-  mets: number;
-  durationMin: number;
-  frequencyPerWeek: number;
-  // 最新の体重に基づく、1回あたり・1日あたり(週の頻度で平均)の消費カロリー。
-  // 体重の記録がない場合は算出できないためnull。
-  kcalPerSession: number | null;
-  avgDailyKcal: number | null;
-};
-
 export type CurrentPlanResult = {
   plan: DietPlan | null;
   pfc: PFCBalance | null;
@@ -59,19 +45,14 @@ export type CurrentPlanResult = {
   latestWeightKg: number | null;
   // plan算出に使った入力値。計算式を画面に表示する際に使う。
   planInputs: DietPlanInput | null;
-  // 「普段の運動習慣」の一覧(消費カロリー算出済み)。プランタブの一覧表示用。
-  usualExercises: UsualExerciseWithKcal[];
-  // usualExercisesのavgDailyKcalの合計。プランタブの見出し表示用。
-  avgDailyExerciseKcalTotal: number;
 };
 
 // お客様のプロフィールと測定値の最新値から、ダイエット/増量プランを算出する。
 // 概要・プラン・食事記録の各ページから使う共通ロジック。
 export async function getCurrentDietPlan(clientId: string): Promise<CurrentPlanResult> {
-  const [client, measurements, usualExercises] = await Promise.all([
+  const [client, measurements] = await Promise.all([
     getClient(clientId),
     listMeasurements(clientId),
-    listUsualExercises(clientId),
   ]);
 
   const latestWeight = findLatestNonNull(measurements, "weightKg");
@@ -123,39 +104,6 @@ export async function getCurrentDietPlan(clientId: string): Promise<CurrentPlanR
     client?.gender != null &&
     latestWeight?.weightKg != null &&
     client?.targetMonthlyWeightChangeKg != null;
-
-  const weightForExerciseKcal =
-    latestWeight?.weightKg != null ? Number(latestWeight.weightKg) : null;
-
-  const usualExercisesWithKcal: UsualExerciseWithKcal[] = usualExercises.map(
-    (habit) => {
-      const kcalPerSession =
-        weightForExerciseKcal != null
-          ? calculateExerciseKcal({
-              mets: habit.mets,
-              weightKg: weightForExerciseKcal,
-              durationMin: habit.durationMin,
-            })
-          : null;
-      return {
-        id: habit.id,
-        exerciseName: habit.exerciseName,
-        mets: habit.mets,
-        durationMin: habit.durationMin,
-        frequencyPerWeek: habit.frequencyPerWeek,
-        kcalPerSession,
-        avgDailyKcal:
-          kcalPerSession != null
-            ? (kcalPerSession * habit.frequencyPerWeek) / 7
-            : null,
-      };
-    },
-  );
-
-  const avgDailyExerciseKcal = usualExercisesWithKcal.reduce(
-    (sum, habit) => sum + (habit.avgDailyKcal ?? 0),
-    0,
-  );
 
   const planInputs: DietPlanInput | null = canBuildPlan
     ? {
@@ -239,7 +187,5 @@ export async function getCurrentDietPlan(clientId: string): Promise<CurrentPlanR
     missingFields,
     latestWeightKg: latestWeight?.weightKg ?? null,
     planInputs,
-    usualExercises: usualExercisesWithKcal,
-    avgDailyExerciseKcalTotal: avgDailyExerciseKcal,
   };
 }

@@ -110,6 +110,40 @@ JSONまとめ登録・`--list-clients`によるお客様名/ID確認・`--dry-ru
 登録される行は「食品マスタに無い手入力の食事記録」(`foodId: null`)として
 扱われ、既存の食事記録一覧・集計にそのまま合算される。
 
+### PC不要で実行する(GitHub Actions経由・推奨)
+
+上記のCLIをこのPC(開発機)で直接実行する代わりに、GitHub Actions上で
+実行することもできる(`.github/workflows/add-meal-log.yml`)。この方法なら
+このPCが起動していなくても、携帯側からいつでも登録できる。
+
+セットアップ(初回のみ):
+
+1. Firebaseコンソールで登録専用アカウントを作成する(上記の手順1と同じ)
+2. GitHubリポジトリの Settings > Secrets and variables > Actions で、
+   以下4件のRepository secretsを登録する(値は`.env.local`・
+   `.env.automation.local`と同じ)
+   - `MEAL_LOG_BOT_EMAIL` / `MEAL_LOG_BOT_PASSWORD`
+   - `FIREBASE_API_KEY`(`.env.local`の`NEXT_PUBLIC_FIREBASE_API_KEY`)
+   - `FIREBASE_PROJECT_ID`(`.env.local`の`NEXT_PUBLIC_FIREBASE_PROJECT_ID`)
+
+実行方法(例、`gh` CLIが使える環境から):
+
+```bash
+gh workflow run add-meal-log.yml -f json='[{"client":"穴見孝和","date":"2026-09-22","meal":"lunch","food":"鶏胸肉のグリル 200g","kcal":330,"protein":62,"fat":7,"carb":0}]'
+```
+
+`gh` CLIが使えない環境からは、GitHubの
+[REST API](https://docs.github.com/ja/rest/actions/workflows#create-a-workflow-dispatch-event)
+(`POST /repos/{owner}/{repo}/actions/workflows/add-meal-log.yml/dispatches`)を
+リポジトリへのwrite権限を持つトークンで直接呼び出してもよい。どちらの方法でも、
+呼び出し側が持つ権限は「このワークフローを起動できる」だけで、Firestoreの
+認証情報そのものは呼び出し側(携帯側)には一切渡らない
+(GitHub Actions Secretsからワークフロー内でのみ読まれる)。
+
+動作確認は、Actionsタブの「Add meal log entries」→「Run workflow」から
+手動実行でき、`dry_run`にチェックを入れると実際の登録を行わずに内容確認だけ
+できる。
+
 ## 使い方の流れ
 
 1. 「お客様」でお客様を新規登録する(名前は必須、生年月日・性別・身長・メモは任意)
@@ -128,6 +162,8 @@ JSONまとめ登録・`--list-clients`によるお客様名/ID確認・`--dry-ru
 - `src/app/clients/detail/meals` : 日付ごとの食事記録(過去の日ごとの履歴一覧・行クリックでの編集・日付変更)、その日の合計と目標摂取カロリーとの差分
 - `src/app/foods` : 食品マスタの検索・登録・削除(全お客様共通)
 - `src/app/data` : 全データのエクスポート/インポート(バックアップ・復元)
+- `.github/workflows/add-meal-log.yml` : `scripts/add-meal-log.mjs`をGitHub Actions上で
+  実行するワークフロー(このPCに依存せず外部から食事記録を登録するため)
 - `firestore.rules` : Firebaseコンソールの Firestore Database → ルール タブに貼り付ける
   アクセス制御(ログイン済みユーザーのみ全操作可)
 - `firestore.indexes.json` : `clientId`絞り込み+日付順ソートを行うクエリ(measurements/

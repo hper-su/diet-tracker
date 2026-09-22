@@ -169,8 +169,6 @@ gh workflow run add-meal-log.yml -f json='[{"client":"穴見孝和","date":"2026
 - `firestore.indexes.json` : `clientId`絞り込み+日付順ソートを行うクエリ(measurements/
   mealLogs/usualMeals/protocolChecks)に必要な複合インデックスの定義。
   Firebase CLIが無い場合はコンソールから手動で同じ内容を作成する(セットアップ手順参照)
-- `supabase/schema.sql` : (過去のSupabase版、参考用)当時のテーブル定義・RLS・
-  運動マスタ初期データのSQL。現在のバックエンドはFirestoreのため実運用では使わない
 - `scripts/extract-mext-foods.cjs` / `extract-pfc-balance-table.cjs` : 文部科学省の公式Excel等から
   `src/lib/db/data/*.json` を再生成するスクリプト(食品マスタの一括シードは現在無効化中のため未使用)
 - `scripts/export-sqlite-to-json.cjs` : 旧SQLite版のデータをJSONに変換する一度きりの移行スクリプト

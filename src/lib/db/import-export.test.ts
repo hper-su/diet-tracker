@@ -46,9 +46,6 @@ function baseData(): ExportedData {
     ],
     mealLogs: [],
     usualMeals: [],
-    exercises: [
-      { id: "1", category: "運動", name: "ウォーキング", mets: 3.5 },
-    ],
     protocolChecks: [
       {
         id: "1",

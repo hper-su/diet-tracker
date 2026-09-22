@@ -15,7 +15,6 @@ import type {
 } from "./client";
 import type { Food } from "./foods";
 import type { UsualMeal } from "./usual-meals";
-import type { Exercise } from "./exercises";
 import { isActivityLevel } from "@/lib/health/activity-level";
 
 export const EXPORT_FORMAT_VERSION = 1;
@@ -28,7 +27,6 @@ export type ExportedData = {
   foods: Food[];
   mealLogs: MealLogRecord[];
   usualMeals: UsualMeal[];
-  exercises: Exercise[];
   protocolChecks: ProtocolCheckRecord[];
 };
 
@@ -38,7 +36,6 @@ const COLLECTIONS = [
   "foods",
   "mealLogs",
   "usualMeals",
-  "exercises",
   "protocolChecks",
 ] as const;
 
@@ -50,7 +47,6 @@ export async function exportAllData(): Promise<ExportedData> {
     foodsSnap,
     mealLogsSnap,
     usualMealsSnap,
-    exercisesSnap,
     protocolChecksSnap,
   ] = await Promise.all(COLLECTIONS.map((name) => getDocs(collection(db, name))));
 
@@ -89,7 +85,6 @@ export async function exportAllData(): Promise<ExportedData> {
     usualMeals: usualMealsSnap.docs.map(
       (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as UsualMeal,
     ),
-    exercises: exercisesSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Exercise),
     protocolChecks: protocolChecksSnap.docs.map(
       (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as ProtocolCheckRecord,
     ),
@@ -112,7 +107,6 @@ export function isExportedData(
     Array.isArray(data.foods) &&
     Array.isArray(data.mealLogs) &&
     Array.isArray(data.usualMeals) &&
-    Array.isArray(data.exercises) &&
     // protocolChecksはこの機能追加より前のエクスポートJSONには存在しないため、
     // 無ければ空配列として扱えるよう任意項目にする(フォーマットversionは1のまま)。
     (data.protocolChecks === undefined || Array.isArray(data.protocolChecks))
@@ -130,7 +124,6 @@ export class ImportFormatError extends Error {
 }
 
 const MEAL_TYPES = new Set(["breakfast", "lunch", "dinner", "snack"]);
-const EXERCISE_CATEGORIES = new Set(["生活活動", "運動"]);
 
 function isFiniteNonNegative(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
@@ -144,9 +137,9 @@ function isNonEmptyId(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 
-// 旧Postgres版はUNIQUE(category, name)制約で食品マスタ・運動マスタの重複登録を
+// 旧Postgres版はUNIQUE(category, name)制約で食品マスタの重複登録を
 // 防いでいたが、Firestoreには同等の制約が無い。手編集・他端末とのマージ等で
-// 重複が紛れ込んだJSONをそのまま取り込むと、食品選択・種目選択のコンボボックスに
+// 重複が紛れ込んだJSONをそのまま取り込むと、食品選択のコンボボックスに
 // 同名の候補が並んでしまうため、インポート時にも同じ制約をここで再現する。
 function assertNoDuplicateKey<T>(
   rows: T[],
@@ -163,7 +156,7 @@ function assertNoDuplicateKey<T>(
   }
 }
 
-// 旧Supabase版のバックアップJSONは数値idのまま(id/clientId/foodId/exerciseId)
+// 旧Supabase版のバックアップJSONは数値idのまま(id/clientId/foodId)
 // なので、Firestoreのドキュメントid(文字列)として扱えるよう先に文字列化する。
 // 新しいFirestore版のエクスポートは最初から文字列idなので、この変換は素通りする。
 export function normalizeLegacyIds(
@@ -190,14 +183,13 @@ export function normalizeLegacyIds(
     foods: mapArray(raw.foods, ["id"]),
     mealLogs: mapArray(raw.mealLogs, ["id", "clientId", "foodId"]),
     usualMeals: mapArray(raw.usualMeals, ["id", "clientId", "foodId"]),
-    exercises: mapArray(raw.exercises, ["id"]),
     protocolChecks: mapArray(raw.protocolChecks, ["id", "clientId"]),
   };
 }
 
 // isExportedDataは全体の形(配列かどうか)しか見ていないため、手編集・他端末での
 // マージ・旧バージョンのエクスポート等で個々のレコードの内容がおかしい場合を
-// ここで弾く。参照先が無いfoodId/exerciseIdは(既存の「食品削除時にnullにする」
+// ここで弾く。参照先が無いfoodIdは(既存の「食品削除時にnullにする」
 // 挙動と同じ扱いで)nullに補正し、参照先の無いclientIdなど補正できないものは
 // エラーにする。
 export function validateAndSanitize(
@@ -241,24 +233,8 @@ export function validateAndSanitize(
   }
   assertNoDuplicateKey(
     data.foods,
-    (food) => `${food.category} ${food.name}`,
+    (food) => `${food.category} ${food.name}`,
     "食品マスタに、分類・食品名が重複している行があります。",
-  );
-
-  for (const exercise of data.exercises) {
-    if (
-      !isNonEmptyId(exercise.id) ||
-      !EXERCISE_CATEGORIES.has(exercise.category) ||
-      !exercise.name ||
-      !(typeof exercise.mets === "number" && exercise.mets > 0)
-    ) {
-      throw new ImportFormatError("運動マスタのデータ形式が正しくありません。");
-    }
-  }
-  assertNoDuplicateKey(
-    data.exercises,
-    (exercise) => `${exercise.category} ${exercise.name}`,
-    "運動マスタに、分類・種目名が重複している行があります。",
   );
 
   for (const measurement of data.measurements) {
@@ -335,8 +311,8 @@ function orderingTimestamp(id: string, index: number): Timestamp {
 }
 
 // 各レコードのidをそのままFirestoreのドキュメントIDとして使う(addDocによる
-// 自動採番はしない)。これにより、クライアント側で持っているclientId/foodId/
-// exerciseIdの参照値をそのまま使い続けられ、旧→新idの付け替えが不要になる。
+// 自動採番はしない)。これにより、クライアント側で持っているclientId/foodIdの
+// 参照値をそのまま使い続けられ、旧→新idの付け替えが不要になる。
 async function setAllDocs<T extends { id: string }>(
   collectionName: string,
   rows: T[],
@@ -391,7 +367,6 @@ export async function importAllData(raw: unknown): Promise<void> {
       : serverTimestamp(),
   }));
   await replaceCollection("foods", data.foods);
-  await replaceCollection("exercises", data.exercises);
   await replaceCollection("measurements", data.measurements, (row, index) => ({
     createdAt: orderingTimestamp(row.id, index),
   }));

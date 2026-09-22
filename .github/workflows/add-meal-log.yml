@@ -1,0 +1,52 @@
+name: Add meal log entries
+
+# 携帯のClaude Code等、このPC(開発機)に依存しない環境から食事記録を登録する
+# ための手動トリガーワークフロー。scripts/add-meal-log.mjsをGitHub Actionsの
+# ランナー上で実行する(このPCが起動していなくても動く)。
+#
+# 実行方法:
+#   gh workflow run add-meal-log.yml -f json='[{"client":"望月","date":"2026-09-22","meal":"lunch","food":"...","kcal":300,"protein":20,"fat":5,"carb":40}]'
+#   (または GitHubの Actions タブから手動実行、もしくは REST API 経由)
+#
+# 必要なリポジトリシークレット(Settings > Secrets and variables > Actions):
+#   MEAL_LOG_BOT_EMAIL / MEAL_LOG_BOT_PASSWORD / FIREBASE_API_KEY / FIREBASE_PROJECT_ID
+
+on:
+  workflow_dispatch:
+    inputs:
+      json:
+        description: "食事記録のJSON配列(scripts/add-meal-log.mjsの--json引数と同じ形式)"
+        required: true
+      dry_run:
+        description: "true にすると実際の登録は行わず、内容確認のみ行う"
+        required: false
+        default: "false"
+        type: boolean
+
+jobs:
+  add-meal-log:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run add-meal-log.mjs
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          MEAL_LOG_BOT_EMAIL: ${{ secrets.MEAL_LOG_BOT_EMAIL }}
+          MEAL_LOG_BOT_PASSWORD: ${{ secrets.MEAL_LOG_BOT_PASSWORD }}
+          MEAL_JSON: ${{ github.event.inputs.json }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            node scripts/add-meal-log.mjs --json "$MEAL_JSON" --dry-run
+          else
+            node scripts/add-meal-log.mjs --json "$MEAL_JSON"
+          fi

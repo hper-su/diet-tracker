@@ -48,6 +48,7 @@ import {
   writeBatch,
   doc,
   serverTimestamp,
+  terminate,
 } from "firebase/firestore";
 
 const MEAL_TYPE_ALIASES = {
@@ -210,75 +211,61 @@ async function main() {
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  await signInWithEmailAndPassword(auth, botEmail, botPassword);
+  // FirestoreはgetDocs等の単発操作の後も接続を保持し続けるため、
+  // 呼び出し後にterminate(db)で明示的に閉じないとNodeプロセスがハングする。
+  // (成功・失敗どちらの経路でも必ず閉じるようtry/finallyでくくる)
+  try {
+    await signInWithEmailAndPassword(auth, botEmail, botPassword);
 
-  const clientsSnap = await getDocs(collection(db, "clients"));
+    const clientsSnap = await getDocs(collection(db, "clients"));
 
-  if (args["list-clients"]) {
-    for (const d of clientsSnap.docs) {
-      console.log(`${d.data().name}\t${d.id}`);
+    if (args["list-clients"]) {
+      for (const d of clientsSnap.docs) {
+        console.log(`${d.data().name}\t${d.id}`);
+      }
+      return;
     }
-    return;
-  }
 
-  const resolved = entries.map((entry, index) => {
-    const label = `${index + 1}件目(${entry.clientQuery})`;
-    const candidates = clientsSnap.docs.filter(
-      (d) => d.id === entry.clientQuery || String(d.data().name ?? "").includes(entry.clientQuery),
-    );
-    if (candidates.length === 0) {
-      fail(`${label}: お客様が見つかりません。--list-clients で名前を確認してください。`);
-    }
-    if (candidates.length > 1) {
-      fail(
-        `${label}: お客様名が複数件ヒットしました。IDで指定し直してください: ` +
-          candidates.map((d) => `${d.data().name}(${d.id})`).join(", "),
+    const resolved = entries.map((entry, index) => {
+      const label = `${index + 1}件目(${entry.clientQuery})`;
+      const candidates = clientsSnap.docs.filter(
+        (d) => d.id === entry.clientQuery || String(d.data().name ?? "").includes(entry.clientQuery),
+      );
+      if (candidates.length === 0) {
+        fail(`${label}: お客様が見つかりません。--list-clients で名前を確認してください。`);
+      }
+      if (candidates.length > 1) {
+        fail(
+          `${label}: お客様名が複数件ヒットしました。IDで指定し直してください: ` +
+            candidates.map((d) => `${d.data().name}(${d.id})`).join(", "),
+        );
+      }
+      const client = candidates[0];
+      return { entry, clientId: client.id, clientName: client.data().name };
+    });
+
+    console.log(`登録内容(${resolved.length}件):`);
+    for (const { entry, clientName } of resolved) {
+      console.log(
+        `  [${entry.recordedAt} ${entry.mealType}] ${clientName}: ${entry.foodName} ×${entry.quantity}` +
+          ` (${entry.kcal}kcal, P${entry.proteinG}/F${entry.fatG}/C${entry.carbG})` +
+          (entry.memo ? ` memo="${entry.memo}"` : ""),
       );
     }
-    const client = candidates[0];
-    return { entry, clientId: client.id, clientName: client.data().name };
-  });
 
-  console.log(`登録内容(${resolved.length}件):`);
-  for (const { entry, clientName } of resolved) {
-    console.log(
-      `  [${entry.recordedAt} ${entry.mealType}] ${clientName}: ${entry.foodName} ×${entry.quantity}` +
-        ` (${entry.kcal}kcal, P${entry.proteinG}/F${entry.fatG}/C${entry.carbG})` +
-        (entry.memo ? ` memo="${entry.memo}"` : ""),
-    );
-  }
+    if (args["dry-run"]) {
+      console.log("(--dry-run のため実際の登録は行いません)");
+      return;
+    }
 
-  if (args["dry-run"]) {
-    console.log("(--dry-run のため実際の登録は行いません)");
-    return;
-  }
-
-  // 500件/バッチのFirestore上限を踏まえ、既存のchunkedBatchInsertと同じ
-  // 450件区切りでバッチ登録する(通常の利用件数では1バッチで収まる想定)。
-  const CHUNK_SIZE = 450;
-  for (let i = 0; i < resolved.length; i += CHUNK_SIZE) {
-    const chunk = resolved.slice(i, i + CHUNK_SIZE);
-    if (chunk.length === 1) {
-      const { entry, clientId } = chunk[0];
-      await addDoc(collection(db, "mealLogs"), {
-        clientId,
-        recordedAt: entry.recordedAt,
-        mealType: entry.mealType,
-        foodId: null,
-        foodName: entry.foodName,
-        quantity: entry.quantity,
-        kcal: entry.kcal,
-        proteinG: entry.proteinG,
-        fatG: entry.fatG,
-        carbG: entry.carbG,
-        memo: entry.memo,
-        createdAt: serverTimestamp(),
-      });
-    } else {
-      const batch = writeBatch(db);
-      for (const { entry, clientId } of chunk) {
-        const ref = doc(collection(db, "mealLogs"));
-        batch.set(ref, {
+    // 500件/バッチのFirestore上限を踏まえ、既存のchunkedBatchInsertと同じ
+    // 450件区切りでバッチ登録する(通常の利用件数では1バッチで収まる想定)。
+    const CHUNK_SIZE = 450;
+    for (let i = 0; i < resolved.length; i += CHUNK_SIZE) {
+      const chunk = resolved.slice(i, i + CHUNK_SIZE);
+      if (chunk.length === 1) {
+        const { entry, clientId } = chunk[0];
+        await addDoc(collection(db, "mealLogs"), {
           clientId,
           recordedAt: entry.recordedAt,
           mealType: entry.mealType,
@@ -292,12 +279,33 @@ async function main() {
           memo: entry.memo,
           createdAt: serverTimestamp(),
         });
+      } else {
+        const batch = writeBatch(db);
+        for (const { entry, clientId } of chunk) {
+          const ref = doc(collection(db, "mealLogs"));
+          batch.set(ref, {
+            clientId,
+            recordedAt: entry.recordedAt,
+            mealType: entry.mealType,
+            foodId: null,
+            foodName: entry.foodName,
+            quantity: entry.quantity,
+            kcal: entry.kcal,
+            proteinG: entry.proteinG,
+            fatG: entry.fatG,
+            carbG: entry.carbG,
+            memo: entry.memo,
+            createdAt: serverTimestamp(),
+          });
+        }
+        await batch.commit();
       }
-      await batch.commit();
     }
-  }
 
-  console.log("登録しました。");
+    console.log("登録しました。");
+  } finally {
+    await terminate(db);
+  }
 }
 
 main().catch((error) => {

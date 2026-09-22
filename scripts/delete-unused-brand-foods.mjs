@@ -30,12 +30,24 @@ const DELETE_CATEGORIES = new Set([
   "テーブルマーク", "エースコック", "片岡物産", "味の素", "コカ・コーラ",
 ]);
 
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    console.error(
+      `エラー: 環境変数 ${name} が設定されていません。--env-file=.env.local ` +
+        `--env-file=.env.automation.local を付けて実行しているか確認してください。`,
+    );
+    process.exit(1);
+  }
+  return value;
+}
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  apiKey: requireEnv("NEXT_PUBLIC_FIREBASE_API_KEY"),
+  projectId: requireEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID"),
 };
-const botEmail = process.env.MEAL_LOG_BOT_EMAIL;
-const botPassword = process.env.MEAL_LOG_BOT_PASSWORD;
+const botEmail = requireEnv("MEAL_LOG_BOT_EMAIL");
+const botPassword = requireEnv("MEAL_LOG_BOT_PASSWORD");
 const dryRun = process.argv.includes("--dry-run");
 
 const app = initializeApp(firebaseConfig);

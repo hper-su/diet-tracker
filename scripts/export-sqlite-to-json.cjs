@@ -116,25 +116,11 @@ const usualMeals = all(
   carbG: row.carb_g,
 }));
 
-const exercises = all(`select id, category, name, mets from exercises`).map((row) => ({
-  id: row.id,
-  category: row.category,
-  name: row.name,
-  mets: row.mets,
-}));
-
-const usualExercises = all(
-  `select id, client_id, exercise_id, exercise_name, mets, duration_min, frequency_per_week
-   from usual_exercises`,
-).map((row) => ({
-  id: row.id,
-  clientId: row.client_id,
-  exerciseId: row.exercise_id,
-  exerciseName: row.exercise_name,
-  mets: row.mets,
-  durationMin: row.duration_min,
-  frequencyPerWeek: row.frequency_per_week,
-}));
+// 運動マスタ・普段の運動習慣機能は廃止済み(2026-09-22)で、
+// import-export.tsのimportAllDataはexercises/usualExercisesを読まなくなった
+// ため、SQLiteに残っていてもエクスポートJSONには含めない(含めても
+// インポート時に無視されるだけだが、書き出し完了メッセージが「保存された」
+// ように見えてしまうのを避ける)。
 
 const exportedData = {
   version: 1,
@@ -144,8 +130,6 @@ const exportedData = {
   foods,
   mealLogs,
   usualMeals,
-  exercises,
-  usualExercises,
 };
 
 fs.writeFileSync(OUT_PATH, JSON.stringify(exportedData, null, 2), "utf-8");
@@ -154,8 +138,8 @@ console.log(`書き出し完了: ${OUT_PATH}`);
 console.log(
   `  お客様 ${clients.length}件 / 測定記録 ${measurements.length}件 / ` +
     `食品マスタ ${foods.length}件 / 食事記録 ${mealLogs.length}件 / ` +
-    `普段の食事 ${usualMeals.length}件 / 運動マスタ ${exercises.length}件 / ` +
-    `普段の運動 ${usualExercises.length}件`,
+    `普段の食事 ${usualMeals.length}件` +
+    `(運動マスタ・普段の運動習慣機能は廃止済みのため書き出し対象外)`,
 );
 
 if (orphanedMeasurementsCount > 0 || orphanedMealLogsCount > 0) {

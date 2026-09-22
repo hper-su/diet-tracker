@@ -77,109 +77,94 @@ export function subscribeToMealLogs(clientId: string, callback: () => void): Uns
 
 // listMealLogTotalsByDateRangeは食事記録タブを開くたびに(サマリー範囲+
 // 履歴一覧の最大730日分の)2回、過去分もまるごと読み直していた。過去分は
-// その日の記録をその場で編集しない限り書き換わらないため、食品マスタ
-// (foods.ts)と同様にクライアント単位で「日付ごとの合計」全体をキャッシュし、
-// 呼び出し側が指定する範囲はそのキャッシュから絞り込むだけにする
-// (その日の記録一覧・編集(listMealLogsByDate)は即座に反映する必要がある
-// ためキャッシュしない)。
+// その日の記録をその場で編集しない限り書き換わらないため、クライアント単位で
+// 「日付ごとの合計」全体をメモリ上にキャッシュし、呼び出し側が指定する範囲は
+// そのキャッシュから絞り込むだけにする(その日の記録一覧・編集
+// (listMealLogsByDate)は即座に反映する必要があるためキャッシュしない)。
+//
+// foods.ts(食品マスタ)と異なりlocalStorageへは永続化しない。food.ts側はほぼ
+// 全お客様共通で編集頻度が低い1つのコレクションだが、こちらはクライアントごとに
+// 分かれ、かつ案A(携帯Claude Code等からの直接登録)のように別プロセスから
+// 頻繁に書き込まれる可能性がある。ページ再読み込み後も古いディスクキャッシュを
+// 使い回してしまうと、再読み込み直後に登録直後のonSnapshotの初回発火
+// (下記の理由で無視する)と重なり、新しい記録が最大10分反映されなくなる
+// おそれがあるため、タブを開いている間のメモリキャッシュのみに留める。
 const dailyTotalsCache = new Map<string, Promise<DailyMealTotal[]>>();
-const dailyTotalsCacheArmed = new Set<string>();
-
-const LOCAL_TOTALS_CACHE_PREFIX = "diet-tracker:meal-log-totals-cache:v1:";
-const LOCAL_TOTALS_CACHE_TTL_MS = 10 * 60 * 1000; // 10分
-
-function readLocalTotalsCache(clientId: string): DailyMealTotal[] | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(LOCAL_TOTALS_CACHE_PREFIX + clientId);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { savedAt: number; totals: DailyMealTotal[] };
-    if (Date.now() - parsed.savedAt > LOCAL_TOTALS_CACHE_TTL_MS) return null;
-    return parsed.totals;
-  } catch {
-    return null;
-  }
-}
-
-function writeLocalTotalsCache(clientId: string, totals: DailyMealTotal[]) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(
-      LOCAL_TOTALS_CACHE_PREFIX + clientId,
-      JSON.stringify({ savedAt: Date.now(), totals }),
-    );
-  } catch {
-    // 容量超過等は無視(メモリキャッシュだけで動作は継続できる)。
-  }
-}
-
-function clearLocalTotalsCache(clientId: string) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(LOCAL_TOTALS_CACHE_PREFIX + clientId);
-  } catch {
-    // no-op
-  }
-}
+// 一度開いたクライアントのリアルタイム購読を張りっぱなしにすると、1つの
+// タブで多数のお客様ページを渡り歩いた場合にFirestoreの購読が際限なく
+// 増え続けてしまうため、直近アクセスしたクライアントだけ購読を保持する
+// LRU(Map挿入順を利用)で上限を設ける。
+const MAX_ARMED_CLIENTS = 20;
+const dailyTotalsUnsubscribes = new Map<string, Unsubscribe>();
 
 function armDailyTotalsCacheInvalidation(clientId: string) {
-  if (dailyTotalsCacheArmed.has(clientId)) return;
-  dailyTotalsCacheArmed.add(clientId);
+  const existing = dailyTotalsUnsubscribes.get(clientId);
+  if (existing) {
+    // LRU: 最近使ったものとして挿入順の末尾に移動する。
+    dailyTotalsUnsubscribes.delete(clientId);
+    dailyTotalsUnsubscribes.set(clientId, existing);
+    return;
+  }
   // onSnapshotは登録直後、実際の変更の有無にかかわらず必ず1回「現在の状態」で
   // 発火する。これを変更通知として扱うと、直前に作ったばかりのキャッシュを
-  // 即座に破棄してしまい、キャッシュの意味が無くなるため、最初の1回は無視する。
+  // 即座に破棄してしまい、キャッシュの意味が無くなるため、最初の1回は無視する
+  // (このキャッシュはディスクに永続化しないため、armDailyTotalsCacheInvalidation
+  // と同じlistAllDailyTotals呼び出しの中で必ず最新データを取得し直しており、
+  // 直後の初回発火は常にその取得結果と同じはずである)。
   let isFirstSnapshot = true;
-  subscribeToCollectionByClient(db, COLLECTION, clientId, () => {
+  const unsubscribe = subscribeToCollectionByClient(db, COLLECTION, clientId, () => {
     if (isFirstSnapshot) {
       isFirstSnapshot = false;
       return;
     }
     dailyTotalsCache.delete(clientId);
-    clearLocalTotalsCache(clientId);
   });
+  dailyTotalsUnsubscribes.set(clientId, unsubscribe);
+
+  if (dailyTotalsUnsubscribes.size > MAX_ARMED_CLIENTS) {
+    const oldestClientId = dailyTotalsUnsubscribes.keys().next().value;
+    if (oldestClientId !== undefined) {
+      dailyTotalsUnsubscribes.get(oldestClientId)?.();
+      dailyTotalsUnsubscribes.delete(oldestClientId);
+      dailyTotalsCache.delete(oldestClientId);
+    }
+  }
 }
 
 async function listAllDailyTotals(clientId: string): Promise<DailyMealTotal[]> {
   armDailyTotalsCacheInvalidation(clientId);
   let cached = dailyTotalsCache.get(clientId);
   if (!cached) {
-    const fromDisk = readLocalTotalsCache(clientId);
-    if (fromDisk) {
-      cached = Promise.resolve(fromDisk);
-    } else {
-      cached = getDocs(
-        query(collection(db, COLLECTION), where("clientId", "==", clientId)),
-      ).then((snap) => {
-        const totalsByDate = new Map<string, DailyMealTotal>();
-        for (const d of snap.docs) {
-          const row = d.data() as MealLogDoc;
-          const existing = totalsByDate.get(row.recordedAt);
-          if (existing) {
-            existing.kcal += row.kcal;
-            existing.proteinG += row.proteinG;
-            existing.fatG += row.fatG;
-            existing.carbG += row.carbG;
-          } else {
-            totalsByDate.set(row.recordedAt, {
-              recordedAt: row.recordedAt,
-              kcal: row.kcal,
-              proteinG: row.proteinG,
-              fatG: row.fatG,
-              carbG: row.carbG,
-            });
-          }
+    cached = getDocs(
+      query(collection(db, COLLECTION), where("clientId", "==", clientId)),
+    ).then((snap) => {
+      const totalsByDate = new Map<string, DailyMealTotal>();
+      for (const d of snap.docs) {
+        const row = d.data() as MealLogDoc;
+        const existing = totalsByDate.get(row.recordedAt);
+        if (existing) {
+          existing.kcal += row.kcal;
+          existing.proteinG += row.proteinG;
+          existing.fatG += row.fatG;
+          existing.carbG += row.carbG;
+        } else {
+          totalsByDate.set(row.recordedAt, {
+            recordedAt: row.recordedAt,
+            kcal: row.kcal,
+            proteinG: row.proteinG,
+            fatG: row.fatG,
+            carbG: row.carbG,
+          });
         }
-        const totals = Array.from(totalsByDate.values()).sort((a, b) =>
-          a.recordedAt.localeCompare(b.recordedAt),
-        );
-        writeLocalTotalsCache(clientId, totals);
-        return totals;
-      });
-      // 取得に失敗した場合はキャッシュに残さず、次回呼び出しで取得し直せるようにする。
-      cached.catch(() => {
-        dailyTotalsCache.delete(clientId);
-      });
-    }
+      }
+      return Array.from(totalsByDate.values()).sort((a, b) =>
+        a.recordedAt.localeCompare(b.recordedAt),
+      );
+    });
+    // 取得に失敗した場合はキャッシュに残さず、次回呼び出しで取得し直せるようにする。
+    cached.catch(() => {
+      dailyTotalsCache.delete(clientId);
+    });
     dailyTotalsCache.set(clientId, cached);
   }
   return cached;

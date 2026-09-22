@@ -116,15 +116,25 @@ function normalizeEntry(raw, index) {
   }
   if (!foodName) fail(`${label}: food(品目名)を指定してください。`);
 
-  const quantity = raw.qty !== undefined ? Number(raw.qty) : 1;
-  if (!Number.isFinite(quantity) || quantity <= 0) {
-    fail(`${label}: qty は正の数で指定してください。`);
+  // qty省略時は1がデフォルト値だが、「--qty」だけを付けて値を書き忘れた場合は
+  // (parseArgsがtrueを渡してくる)デフォルト値へ静かに落とさず、他の必須項目と
+  // 同様にエラーにする。
+  let quantity = 1;
+  if (raw.qty !== undefined) {
+    const n = Number(raw.qty);
+    if (raw.qty === true || !Number.isFinite(n) || n <= 0) {
+      fail(`${label}: qty は正の数で指定してください。`);
+    }
+    quantity = n;
   }
 
+  // kcal/PFCは、AI解析側の誤り(パース漏れ等)をそのまま記録してしまわないよう、
+  // アプリ本体のバリデーション(isFiniteNonNegative、負数は不可・0は可。
+  // 例: ブラックコーヒー0kcal)と同じ基準にする。
   const toNumber = (value, fieldName) => {
     const n = Number(value);
-    if (value === undefined || value === true || !Number.isFinite(n)) {
-      fail(`${label}: ${fieldName} を数値で指定してください。`);
+    if (value === undefined || value === true || !Number.isFinite(n) || n < 0) {
+      fail(`${label}: ${fieldName} は0以上の数値で指定してください。`);
     }
     return n;
   };

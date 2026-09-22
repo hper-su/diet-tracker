@@ -85,6 +85,31 @@ node scripts/export-sqlite-to-json.cjs
 
 (`diet-tracker-export.json` という名前でリポジトリ直下に書き出される)
 
+## 外部(携帯のClaude Code等)からの食事記録の登録
+
+食品マスタから選ぶ代わりに、写真やメモから解析した食事内容(品目名・kcal・
+たんぱく質/脂質/炭水化物)を、アプリを開かずに直接Firestoreへ登録できる
+CLIツールを用意している(`scripts/add-meal-log.mjs`)。
+
+セットアップ(初回のみ):
+
+1. Firebaseコンソール Authentication > Users で、この登録専用の
+   メール/パスワードアカウントを1件作成する(スタッフのログインアカウントとは
+   別にすることを推奨。権限の範囲は同じだが、あとから無効化・パスワード変更が
+   独立して行える)
+2. リポジトリ直下に `.env.automation.local` を作成し、以下を設定する
+   (`.env*.local` は`.gitignore`対象なのでコミットされない)
+
+   ```
+   MEAL_LOG_BOT_EMAIL=automation@example.com
+   MEAL_LOG_BOT_PASSWORD=xxxxxxxx
+   ```
+
+使い方は `scripts/add-meal-log.mjs` の冒頭コメントを参照(1件登録・複数件の
+JSONまとめ登録・`--list-clients`によるお客様名/ID確認・`--dry-run`に対応)。
+登録される行は「食品マスタに無い手入力の食事記録」(`foodId: null`)として
+扱われ、既存の食事記録一覧・集計にそのまま合算される。
+
 ## 使い方の流れ
 
 1. 「お客様」でお客様を新規登録する(名前は必須、生年月日・性別・身長・メモは任意)

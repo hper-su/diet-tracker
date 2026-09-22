@@ -6,7 +6,9 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    // scripts/lib/**/*.test.mjs: add-meal-log.mjs等のCLIツールから
+    // 切り出した、Firestore通信を伴わない純粋な検証ロジックのテスト。
+    include: ["src/**/*.test.ts", "scripts/**/*.test.mjs"],
     env: {
       // import-export.test.ts はFirestoreへの通信を伴わない純粋関数だけを
       // テストするが、モジュール読み込み時にFirebaseアプリを初期化する

@@ -50,17 +50,7 @@ import {
   serverTimestamp,
   terminate,
 } from "firebase/firestore";
-
-const MEAL_TYPE_ALIASES = {
-  breakfast: "breakfast",
-  lunch: "lunch",
-  dinner: "dinner",
-  snack: "snack",
-  朝食: "breakfast",
-  昼食: "lunch",
-  夕食: "dinner",
-  間食: "snack",
-};
+import { parseArgs, normalizeEntry } from "./lib/meal-log-entry.mjs";
 
 // Firebase SDKが開いたままのハンドル(keepalive接続等)がある状態で
 // process.exit()を呼ぶと、Node(Windows)がハンドルの強制クローズ中に
@@ -79,78 +69,6 @@ function requireEnv(name) {
     );
   }
   return value;
-}
-
-function parseArgs(argv) {
-  const args = {};
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (!a.startsWith("--")) continue;
-    const key = a.slice(2);
-    const next = argv[i + 1];
-    if (next === undefined || next.startsWith("--")) {
-      args[key] = true;
-    } else {
-      args[key] = next;
-      i++;
-    }
-  }
-  return args;
-}
-
-// 1件分の生入力(文字列ベース)を、Firestoreに書き込める形へ検証・変換する。
-function normalizeEntry(raw, index) {
-  const label = `${index + 1}件目`;
-  const clientQuery = raw.client;
-  const date = raw.date;
-  const mealTypeRaw = raw.meal;
-  const foodName = raw.food;
-
-  if (!clientQuery) fail(`${label}: client(お客様名またはID)を指定してください。`);
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
-    fail(`${label}: date はYYYY-MM-DD形式で指定してください。`);
-  }
-  const mealType = MEAL_TYPE_ALIASES[mealTypeRaw];
-  if (!mealType) {
-    fail(`${label}: meal の値が不正です(breakfast/lunch/dinner/snack): ${mealTypeRaw}`);
-  }
-  if (!foodName) fail(`${label}: food(品目名)を指定してください。`);
-
-  // qty省略時は1がデフォルト値だが、「--qty」だけを付けて値を書き忘れた場合は
-  // (parseArgsがtrueを渡してくる)デフォルト値へ静かに落とさず、他の必須項目と
-  // 同様にエラーにする。
-  let quantity = 1;
-  if (raw.qty !== undefined) {
-    const n = Number(raw.qty);
-    if (raw.qty === true || !Number.isFinite(n) || n <= 0) {
-      fail(`${label}: qty は正の数で指定してください。`);
-    }
-    quantity = n;
-  }
-
-  // kcal/PFCは、AI解析側の誤り(パース漏れ等)をそのまま記録してしまわないよう、
-  // アプリ本体のバリデーション(isFiniteNonNegative、負数は不可・0は可。
-  // 例: ブラックコーヒー0kcal)と同じ基準にする。
-  const toNumber = (value, fieldName) => {
-    const n = Number(value);
-    if (value === undefined || value === true || !Number.isFinite(n) || n < 0) {
-      fail(`${label}: ${fieldName} は0以上の数値で指定してください。`);
-    }
-    return n;
-  };
-
-  return {
-    clientQuery: String(clientQuery),
-    recordedAt: String(date),
-    mealType,
-    foodName: String(foodName),
-    quantity,
-    kcal: toNumber(raw.kcal, "kcal"),
-    proteinG: toNumber(raw.protein, "protein"),
-    fatG: toNumber(raw.fat, "fat"),
-    carbG: toNumber(raw.carb, "carb"),
-    memo: typeof raw.memo === "string" && raw.memo.length > 0 ? raw.memo : null,
-  };
 }
 
 function entriesFromArgs(args) {

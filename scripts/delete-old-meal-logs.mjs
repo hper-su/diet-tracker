@@ -26,6 +26,7 @@ import {
   doc,
   terminate,
 } from "firebase/firestore";
+import { isLegacyNumericId } from "./lib/legacy-id.mjs";
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -38,8 +39,6 @@ function requireEnv(name) {
   }
   return value;
 }
-
-const LEGACY_NUMERIC_ID = /^\d+$/;
 
 const firebaseConfig = {
   apiKey: requireEnv("NEXT_PUBLIC_FIREBASE_API_KEY"),
@@ -91,7 +90,7 @@ try {
     const legacyIdDocs = [];
     const toDelete = [];
     for (const d of snap.docs) {
-      if (LEGACY_NUMERIC_ID.test(d.id)) {
+      if (isLegacyNumericId(d.id)) {
         legacyIdDocs.push(d);
         continue;
       }

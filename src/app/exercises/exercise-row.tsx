@@ -1,23 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
 import type { Exercise } from "@/lib/db/exercises";
+import { useEditableRow } from "@/components/use-editable-row";
 import { updateExerciseAction, deleteExerciseAction } from "./actions";
 
 export function ExerciseRow({ exercise }: { exercise: Exercise }) {
-  const [editing, setEditing] = useState(false);
-  const [state, formAction, pending] = useActionState(
+  const { editing, setEditing, formAction, pending, error, cancel } = useEditableRow(
     updateExerciseAction,
     undefined,
   );
-
-  const [prevPending, setPrevPending] = useState(pending);
-  if (pending !== prevPending) {
-    setPrevPending(pending);
-    if (!pending && !state?.error) {
-      setEditing(false);
-    }
-  }
 
   if (!editing) {
     return (
@@ -71,7 +62,7 @@ export function ExerciseRow({ exercise }: { exercise: Exercise }) {
             />
           </label>
           <div className="flex items-end gap-2 sm:col-span-6">
-            {state?.error && <p className="text-xs text-red-600">{state.error}</p>}
+            {error && <p className="text-xs text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={pending}
@@ -81,7 +72,7 @@ export function ExerciseRow({ exercise }: { exercise: Exercise }) {
             </button>
             <button
               type="button"
-              onClick={() => setEditing(false)}
+              onClick={cancel}
               className="rounded border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50"
             >
               キャンセル

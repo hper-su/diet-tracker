@@ -1,26 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
 import type { Food } from "@/lib/db/foods";
+import { useEditableRow } from "@/components/use-editable-row";
 import { updateFoodAction, deleteFoodAction } from "./actions";
 
 export function FoodRow({ food }: { food: Food }) {
-  const [editing, setEditing] = useState(false);
-  const [state, formAction, pending] = useActionState(
+  const { editing, setEditing, formAction, pending, error, cancel } = useEditableRow(
     updateFoodAction,
     undefined,
   );
-
-  // 保存が成功したら(pendingがtrue->falseに変わり、エラーが無ければ)編集欄を閉じる。
-  // レンダー中にpendingの変化を検知して同期的に状態を調整する(Reactが推奨する
-  // 「レンダー中の状態調整」パターン)ことで、useEffectでのcascading re-renderを避ける。
-  const [prevPending, setPrevPending] = useState(pending);
-  if (pending !== prevPending) {
-    setPrevPending(pending);
-    if (!pending && !state?.error) {
-      setEditing(false);
-    }
-  }
 
   if (!editing) {
     return (
@@ -131,9 +119,7 @@ export function FoodRow({ food }: { food: Food }) {
             />
           </label>
           <div className="flex items-end gap-2 sm:col-span-8">
-            {state?.error && (
-              <p className="text-xs text-red-600">{state.error}</p>
-            )}
+            {error && <p className="text-xs text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={pending}
@@ -143,7 +129,7 @@ export function FoodRow({ food }: { food: Food }) {
             </button>
             <button
               type="button"
-              onClick={() => setEditing(false)}
+              onClick={cancel}
               className="rounded border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50"
             >
               キャンセル

@@ -31,6 +31,11 @@ export function MealLogForm({
   const nextKey = useRef(1);
   const [rows, setRows] = useState<Row[]>([{ key: 0 }]);
   const foodPickerRefs = useRef(new Map<number, FoodPickerHandle | null>());
+  // メモに入力がある行だけ、食品の選択を必須にする(何も入力していない行は無視して
+  // よいが、メモを書いたのに食品の選択を忘れた行を無言で捨ててしまうと、せっかく
+  // 入力したメモが失われてしまうため)。数量は未入力行でも常に"1"が入っている
+  // (defaultValue)ため、「行に触れたかどうか」の判定には使えない。
+  const [rowRequired, setRowRequired] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (!pending && !state?.error) {
@@ -39,12 +44,27 @@ export function MealLogForm({
     }
   }, [pending, state]);
 
+  // rowRequiredのリセットはReact状態の更新なので、effect内ではなくレンダー中に
+  // pendingの変化を検知して行う(useEffect内でのsetStateはcascading renderを
+  // 招くため避ける。use-editable-row.tsと同じ考え方)。
+  const [prevPending, setPrevPending] = useState(pending);
+  if (pending !== prevPending) {
+    setPrevPending(pending);
+    if (!pending && !state?.error) {
+      setRowRequired({});
+    }
+  }
+
   function addRow() {
     setRows((prev) => [...prev, { key: nextKey.current++ }]);
   }
 
   function removeRow(key: number) {
     foodPickerRefs.current.delete(key);
+    setRowRequired((prev) => {
+      const { [key]: _removed, ...rest } = prev;
+      return rest;
+    });
     setRows((prev) => (prev.length > 1 ? prev.filter((row) => row.key !== key) : prev));
   }
 
@@ -110,6 +130,7 @@ export function MealLogForm({
                 }}
                 foods={foods}
                 name="food_id"
+                required={rowRequired[row.key] ?? false}
               />
             </div>
             <div className="sm:col-span-1">
@@ -137,6 +158,9 @@ export function MealLogForm({
               <input
                 name="memo"
                 placeholder="メモ(任意)"
+                onChange={(e) =>
+                  setRowRequired((prev) => ({ ...prev, [row.key]: e.target.value.trim() !== "" }))
+                }
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               />
             </div>

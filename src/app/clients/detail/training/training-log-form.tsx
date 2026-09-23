@@ -24,6 +24,11 @@ export function TrainingLogForm({
   const nextKey = useRef(1);
   const [rows, setRows] = useState<Row[]>([{ key: 0 }]);
   const exercisePickerRefs = useRef(new Map<number, ExercisePickerHandle | null>());
+  const rowRefs = useRef(new Map<number, HTMLDivElement | null>());
+  // 重さ・回数・セット数・メモのいずれかに入力がある行だけ、種目の選択を必須にする
+  // (何も入力していない行は無視してよいが、他の項目を入力したのに種目の選択を
+  // 忘れた行を無言で捨ててしまうと、せっかく入力したデータが失われてしまうため)。
+  const [rowRequired, setRowRequired] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (!pending && !state?.error) {
@@ -32,12 +37,38 @@ export function TrainingLogForm({
     }
   }, [pending, state]);
 
+  // rowRequiredのリセットはReact状態の更新なので、effect内ではなくレンダー中に
+  // pendingの変化を検知して行う(useEffect内でのsetStateはcascading renderを
+  // 招くため避ける。use-editable-row.tsと同じ考え方)。
+  const [prevPending, setPrevPending] = useState(pending);
+  if (pending !== prevPending) {
+    setPrevPending(pending);
+    if (!pending && !state?.error) {
+      setRowRequired({});
+    }
+  }
+
+  function handleRowFieldChange(key: number) {
+    const rowEl = rowRefs.current.get(key);
+    if (!rowEl) return;
+    const inputs = rowEl.querySelectorAll<HTMLInputElement>(
+      'input[name="weight"], input[name="reps"], input[name="sets"], input[name="memo"]',
+    );
+    const hasData = Array.from(inputs).some((input) => input.value.trim() !== "");
+    setRowRequired((prev) => ({ ...prev, [key]: hasData }));
+  }
+
   function addRow() {
     setRows((prev) => [...prev, { key: nextKey.current++ }]);
   }
 
   function removeRow(key: number) {
     exercisePickerRefs.current.delete(key);
+    rowRefs.current.delete(key);
+    setRowRequired((prev) => {
+      const { [key]: _removed, ...rest } = prev;
+      return rest;
+    });
     setRows((prev) => (prev.length > 1 ? prev.filter((row) => row.key !== key) : prev));
   }
 
@@ -75,7 +106,13 @@ export function TrainingLogForm({
 
       <div className="space-y-2">
         {rows.map((row, index) => (
-          <div key={row.key} className="grid items-start gap-2 sm:grid-cols-12">
+          <div
+            key={row.key}
+            ref={(el) => {
+              rowRefs.current.set(row.key, el);
+            }}
+            className="grid items-start gap-2 sm:grid-cols-12"
+          >
             <div className="sm:col-span-4">
               {index === 0 && (
                 <span className="mb-1 block text-xs text-gray-500">種目</span>
@@ -86,6 +123,7 @@ export function TrainingLogForm({
                 }}
                 exercises={exercises}
                 name="exercise_id"
+                required={rowRequired[row.key] ?? false}
               />
             </div>
             <div className="sm:col-span-2">
@@ -95,6 +133,7 @@ export function TrainingLogForm({
               <input
                 name="weight"
                 placeholder="例: 60、25,20"
+                onChange={() => handleRowFieldChange(row.key)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
@@ -107,6 +146,7 @@ export function TrainingLogForm({
               <input
                 name="reps"
                 placeholder="例: 15、10-8-6"
+                onChange={() => handleRowFieldChange(row.key)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
@@ -117,6 +157,7 @@ export function TrainingLogForm({
               <input
                 name="sets"
                 placeholder="例: 3"
+                onChange={() => handleRowFieldChange(row.key)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
@@ -129,6 +170,7 @@ export function TrainingLogForm({
               <input
                 name="memo"
                 placeholder="メモ(任意)"
+                onChange={() => handleRowFieldChange(row.key)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               />
             </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
 import type { TrainingLog } from "@/lib/db/training-logs";
 import type { Exercise } from "@/lib/db/exercises";
+import { useEditableRow } from "@/components/use-editable-row";
 import { ExercisePicker } from "../exercise-picker";
 import { updateTrainingLogAction, deleteTrainingLogAction } from "./actions";
 
@@ -15,24 +15,10 @@ export function TrainingLogRow({
   clientId: string;
   exercises: Exercise[];
 }) {
-  const [editing, setEditing] = useState(false);
-  const [state, formAction, pending] = useActionState(
+  const { editing, setEditing, formAction, pending, error, cancel } = useEditableRow(
     updateTrainingLogAction,
     undefined,
   );
-  // キャンセル後に編集欄を開き直したとき、前回送信時のエラーが
-  // (再送信していないのに)表示され続けないようにするためのフラグ。
-  const [errorDismissed, setErrorDismissed] = useState(false);
-
-  const [prevPending, setPrevPending] = useState(pending);
-  if (pending !== prevPending) {
-    setPrevPending(pending);
-    if (pending) {
-      setErrorDismissed(false);
-    } else if (!state?.error) {
-      setEditing(false);
-    }
-  }
 
   if (!editing) {
     return (
@@ -149,9 +135,7 @@ export function TrainingLogRow({
             />
           </label>
           <div className="flex items-end gap-2 sm:col-span-12">
-            {state?.error && !errorDismissed && (
-              <p className="text-xs text-red-600">{state.error}</p>
-            )}
+            {error && <p className="text-xs text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={pending}
@@ -162,10 +146,7 @@ export function TrainingLogRow({
             <button
               type="button"
               disabled={pending}
-              onClick={() => {
-                setEditing(false);
-                setErrorDismissed(true);
-              }}
+              onClick={cancel}
               className="rounded border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50 disabled:opacity-50"
             >
               キャンセル

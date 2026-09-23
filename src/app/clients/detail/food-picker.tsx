@@ -1,96 +1,45 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef } from "react";
 import type { Food } from "@/lib/db/foods";
-import { useSearchCombobox } from "./use-search-combobox";
+import { useItemPicker, type ItemPickerHandle } from "./use-item-picker";
 
-const MAX_RESULTS = 20;
+export type FoodPickerHandle = ItemPickerHandle;
 
 function formatLabel(food: Food): string {
   return `${food.name}(${food.servingLabel} ${food.kcal}kcal)`;
 }
 
-export type FoodPickerHandle = {
-  reset: () => void;
-};
-
 // 食品マスタが数千件規模のため、プルダウンでは選びにくい。
-// 入力しながら候補を絞り込めるコンボボックスにして検索性を上げる。
+// 入力しながら候補を絞り込めるコンボボックスにして検索性を上げる
+// (状態管理はuseItemPicker、見た目だけここで組み立てる)。
 export const FoodPicker = forwardRef<
   FoodPickerHandle,
   { foods: Food[]; name: string; required?: boolean; defaultFood?: Food | null }
 >(function FoodPicker({ foods, name, required, defaultFood }, ref) {
-  const [selectedId, setSelectedId] = useState<string | null>(defaultFood?.id ?? null);
-  const combo = useSearchCombobox();
-  const { query, setQuery, isOpen, setIsOpen, highlighted } = combo;
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useImperativeHandle(ref, () => ({
-    reset() {
-      setSelectedId(null);
-      combo.reset();
-    },
-  }));
-
-  // 編集フォームなど、既存の選択済み食品をあらかじめ表示したい場合に使う
-  // (defaultValueと同様、マウント時の初期表示だけに使い、以後の変化は追わない)。
-  useEffect(() => {
-    if (defaultFood) {
-      setQuery(formatLabel(defaultFood));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // requiredはvalue(=selectedId)ではなく見た目上のテキスト欄に付いていると、
-  // 候補を選ばず文字だけ入力した状態でもネイティブのバリデーションを通って
-  // しまう。selectedIdの有無で独自にカスタムバリデーションメッセージを出す。
-  useEffect(() => {
-    inputRef.current?.setCustomValidity(
-      required && selectedId === null ? "候補一覧から食品を選択してください。" : "",
-    );
-  }, [required, selectedId]);
-
-  const trimmed = query.trim().toLowerCase();
-  const results = useMemo(() => {
-    if (!trimmed) return [];
-    return foods
-      .filter(
-        (food) =>
-          food.name.toLowerCase().includes(trimmed) ||
-          food.category.toLowerCase().includes(trimmed),
-      )
-      .slice(0, MAX_RESULTS);
-  }, [foods, trimmed]);
-
-  function selectFood(food: Food) {
-    setSelectedId(food.id);
-    setQuery(formatLabel(food));
-    setIsOpen(false);
-  }
+  const { selectedId, results, highlighted, isOpen, select, cancelBlur, inputProps } =
+    useItemPicker({
+      items: foods,
+      ref,
+      getId: (food) => food.id,
+      matches: (food, q) =>
+        food.name.toLowerCase().includes(q) || food.category.toLowerCase().includes(q),
+      formatLabel,
+      required,
+      defaultItem: defaultFood,
+      requiredMessage: "候補一覧から食品を選択してください。",
+    });
 
   return (
     <div className="relative">
       <input type="hidden" name={name} value={selectedId ?? ""} />
       <input
-        ref={inputRef}
+        {...inputProps}
         type="text"
-        value={query}
-        autoComplete="off"
         placeholder="食品名で検索(例: 鶏、りんご)"
         className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setSelectedId(null);
-          setIsOpen(true);
-          combo.setHighlighted(0);
-        }}
-        onFocus={() => setIsOpen(true)}
-        onBlur={combo.scheduleBlur}
-        onKeyDown={(e) =>
-          combo.handleKeyDown(e, results.length, (index) => selectFood(results[index]))
-        }
       />
-      {isOpen && trimmed && (
+      {isOpen && inputProps.value.trim() && (
         <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded border border-gray-200 bg-white text-sm shadow-lg">
           {results.length === 0 ? (
             <li className="px-3 py-2 text-gray-400">
@@ -103,9 +52,9 @@ export const FoodPicker = forwardRef<
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    combo.cancelBlur();
+                    cancelBlur();
                   }}
-                  onClick={() => selectFood(food)}
+                  onClick={() => select(food)}
                   className={`block w-full px-3 py-2 text-left hover:bg-gray-50 ${
                     index === highlighted ? "bg-gray-100" : ""
                   }`}

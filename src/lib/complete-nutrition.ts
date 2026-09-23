@@ -1,6 +1,7 @@
-// 「完全栄養素」ページの内容。お客様配布用の簡易版と、運動指導・食事指導で
-// 使える33種類の栄養素の詳細版をまとめたもの。
-// (ダウンロードフォルダの「完全食 栄養素ガイド.pdf」を元に作成)
+// 「完全栄養素」ページの内容。運動指導・食事指導で使える33種類の栄養素の
+// 詳細版をまとめたもの。
+// (ダウンロードフォルダの「完全食 栄養素ガイド.pdf」を元に作成。同PDFの
+// 「お客様配布用シンプル版」は掲載しない)
 
 export const PAGE_SUBTITLE = "完全食・33種類の栄養素ガイド";
 
@@ -19,51 +20,6 @@ export type NutrientTable = {
   noteLabel: string;
   rows: NutrientRow[];
 };
-
-// お客様配布用シンプル版(基本の栄養素のみ)。
-export const SIMPLE_MACRO_TABLE: NutrientTable = {
-  heading: "三大栄養素",
-  noteLabel: "ひとこと",
-  rows: [
-    { name: "たんぱく質", foods: "鶏むね肉、卵、大豆、魚、乳製品", role: "筋肉・肌・ホルモンの材料", note: "不足しがち" },
-    { name: "脂質", foods: "オリーブオイル、魚油、ナッツ", role: "エネルギー源、細胞膜の材料", note: "摂りすぎ注意" },
-    { name: "炭水化物", foods: "米、パン、いも類、果物", role: "体と脳のエネルギー源", note: "—" },
-    { name: "食物繊維", foods: "野菜、きのこ、海藻、玄米", role: "お腹の調子を整える", note: "不足しがち" },
-  ],
-};
-
-export const SIMPLE_VITAMIN_TABLE: NutrientTable = {
-  heading: "ビタミン(簡易版)",
-  noteLabel: "ひとこと",
-  rows: [
-    { name: "ビタミンA", foods: "レバー、にんじん、かぼちゃ", role: "目・肌・粘膜の健康", note: "—" },
-    { name: "ビタミンD", foods: "鮭、きのこ、卵黄", role: "骨を強くする", note: "不足しがち" },
-    { name: "ビタミンE", foods: "アーモンド、植物油、アボカド", role: "老化予防、血行促進", note: "—" },
-    { name: "ビタミンK", foods: "納豆、ほうれん草、ブロッコリー", role: "血液・骨の健康", note: "—" },
-    { name: "ビタミンB群(B1,B2,B6,B12など)", foods: "豚肉、レバー、卵、魚、乳製品", role: "疲労回復、代謝を助ける", note: "—" },
-    { name: "葉酸", foods: "ほうれん草、レバー、枝豆", role: "血液・細胞をつくる", note: "不足しがち" },
-    { name: "ビタミンC", foods: "柑橘類、パプリカ、いちご", role: "美肌、免疫力", note: "—" },
-  ],
-};
-
-export const SIMPLE_MINERAL_TABLE: NutrientTable = {
-  heading: "ミネラル(簡易版)",
-  noteLabel: "ひとこと",
-  rows: [
-    { name: "カルシウム", foods: "乳製品、小魚、豆腐", role: "骨・歯を強くする", note: "不足しがち" },
-    { name: "鉄", foods: "レバー、赤身肉、ほうれん草", role: "貧血予防、酸素を運ぶ", note: "不足しがち" },
-    { name: "マグネシウム", foods: "ナッツ、海藻、玄米", role: "筋肉・神経の働きを整える", note: "汗で失われやすい" },
-    { name: "カリウム", foods: "バナナ、いも類、海藻", role: "むくみ・血圧の調整", note: "汗で失われやすい" },
-    { name: "亜鉛", foods: "牡蠣、赤身肉、大豆", role: "免疫力、味覚を正常に保つ", note: "—" },
-    { name: "ナトリウム(塩分)", foods: "食塩、味噌、醤油", role: "体液・筋肉の働きを支える", note: "摂りすぎ注意" },
-  ],
-};
-
-export const EXERCISE_PLUS_ONE: string[] = [
-  "水分・塩分:汗で失われるぶん、運動前後はこまめな水分補給を",
-  "たんぱく質:トレーニング後の回復のため、運動後になるべく早めに摂ると効果的",
-  "鉄・カルシウム・ビタミンD:体づくりの土台。特に意識したい栄養素",
-];
 
 export const DETAIL_INTRO =
   "33種類の栄養素の詳細と、運動指導・食事指導で使える補足情報をまとめています。";

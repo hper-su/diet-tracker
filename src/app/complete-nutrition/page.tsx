@@ -1,10 +1,6 @@
 import {
   PAGE_SUBTITLE,
   INTRO_PARAGRAPH,
-  SIMPLE_MACRO_TABLE,
-  SIMPLE_VITAMIN_TABLE,
-  SIMPLE_MINERAL_TABLE,
-  EXERCISE_PLUS_ONE,
   DETAIL_INTRO,
   DETAIL_MACRO_TABLE,
   DETAIL_VITAMIN_TABLE,
@@ -65,24 +61,6 @@ export default function CompleteNutritionPage() {
 
       <section className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
         <p>{INTRO_PARAGRAPH}</p>
-      </section>
-
-      <section className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="font-semibold text-gray-900">お客様配布用シンプル版</h2>
-        <div className="mt-3 space-y-4">
-          <NutrientTableSection table={SIMPLE_MACRO_TABLE} />
-          <NutrientTableSection table={SIMPLE_VITAMIN_TABLE} />
-          <NutrientTableSection table={SIMPLE_MINERAL_TABLE} />
-        </div>
-
-        <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
-          <h3 className="font-medium text-gray-900">運動する方へのプラスワン</h3>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-700">
-            {EXERCISE_PLUS_ONE.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
-        </div>
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4">

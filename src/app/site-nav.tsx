@@ -17,6 +17,7 @@ const NAV_LINKS = [
   { href: "/menstrual-cycle", label: "生理" },
   { href: "/course-pricing", label: "料金" },
   { href: "/hip-care", label: "股関節" },
+  { href: "/complete-nutrition", label: "完全栄養素" },
   { href: "/vitamin-mineral-guide", label: "栄養素ガイド" },
   { href: "/data", label: "データ管理" },
 ];

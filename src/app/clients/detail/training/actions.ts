@@ -3,6 +3,8 @@ import {
   insertTrainingLogs,
   updateTrainingLog,
   deleteTrainingLog,
+  listTrainingLogsByDate,
+  setDailyMemo,
   type InsertTrainingLogInput,
 } from "@/lib/db/training-logs";
 import { validateTrainingLogInput, type TrainingLogData } from "@/lib/validation/training-log";
@@ -123,4 +125,21 @@ export async function deleteTrainingLogAction(formData: FormData) {
   if (id && clientId) {
     await deleteTrainingLog(clientId, id);
   }
+}
+
+export type DailyMemoState = { error?: string } | undefined;
+
+// その日全体の総括メモを保存する(種目とは別に1日1件だけ持つ)。
+export async function setDailyMemoAction(
+  _prevState: DailyMemoState,
+  formData: FormData,
+): Promise<DailyMemoState> {
+  const clientId = String(formData.get("client_id") ?? "");
+  const recordedAt = String(formData.get("recorded_at") ?? "");
+  if (!clientId || !recordedAt) {
+    return { error: "お客様または日付が指定されていません。" };
+  }
+
+  const logs = await listTrainingLogsByDate(clientId, recordedAt);
+  await setDailyMemo(clientId, recordedAt, logs, String(formData.get("memo") ?? ""));
 }

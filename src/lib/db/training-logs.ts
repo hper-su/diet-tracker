@@ -145,25 +145,32 @@ export type TrainingDaySummary = {
   recordedAt: string | null;
   exerciseCount: number;
   exerciseNames: string[];
+  hasMemo: boolean;
 };
 
 // 履歴一覧用。記録がある日(または「日付不明」)ごとに件数と種目名をまとめる。
+// その日の総括メモ行(isDayMemoLog)は種目ではないので、exerciseCount/
+// exerciseNamesには含めない(hasMemoで別途存在を示す)。メモだけの日
+// (種目は1件も無いがメモだけある日)も履歴に出したいため、メモ行だけの日も
+// エントリを作る。
 export async function listTrainingDates(clientId: string): Promise<TrainingDaySummary[]> {
   const all = await listAllTrainingLogs(clientId);
   const byDate = new Map<string, TrainingDaySummary>();
   for (const log of all) {
     const key = trainingLogSortKey(log.recordedAt);
-    const existing = byDate.get(key);
-    if (existing) {
+    const existing = byDate.get(key) ?? {
+      recordedAt: log.recordedAt,
+      exerciseCount: 0,
+      exerciseNames: [],
+      hasMemo: false,
+    };
+    if (isDayMemoLog(log)) {
+      existing.hasMemo = true;
+    } else {
       existing.exerciseCount += 1;
       existing.exerciseNames.push(log.exerciseName);
-    } else {
-      byDate.set(key, {
-        recordedAt: log.recordedAt,
-        exerciseCount: 1,
-        exerciseNames: [log.exerciseName],
-      });
     }
+    byDate.set(key, existing);
   }
   return Array.from(byDate.values()).sort((a, b) =>
     trainingLogSortKey(a.recordedAt).localeCompare(trainingLogSortKey(b.recordedAt)),
@@ -181,11 +188,13 @@ export type ExerciseFrequency = {
 };
 
 // 上部の「実施数が多い種目」サマリー用。日付不明の記録は「直近の記録」の
-// 更新対象からは除くが、実施回数のカウントには含める。
+// 更新対象からは除くが、実施回数のカウントには含める。その日の総括メモ行
+// (isDayMemoLog)は種目ではないため集計から除外する。
 export async function listExerciseFrequencies(clientId: string): Promise<ExerciseFrequency[]> {
   const all = await listAllTrainingLogs(clientId);
   const byExercise = new Map<string, ExerciseFrequency>();
   for (const log of all) {
+    if (isDayMemoLog(log)) continue;
     const key = log.exerciseId ?? `name:${log.exerciseName}`;
     const existing = byExercise.get(key);
     if (!existing) {
@@ -252,4 +261,46 @@ export async function updateTrainingLog(
 export async function deleteTrainingLog(clientId: string, id: string): Promise<void> {
   if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await deleteDoc(doc(db, COLLECTION, id));
+}
+
+// その日全体の総括メモ(体調・様子・次回への申し送りなど)。種目ごとのmemoとは別に、
+// 1日1件だけ持つ(食事記録の「手入力調整」行と同じ考え方で、種目を持たない特別な
+// 1行として同じコレクションに保存する)。
+const DAY_MEMO_EXERCISE_NAME = "その日の総括メモ";
+
+export function isDayMemoLog(log: Pick<TrainingLog, "exerciseId" | "exerciseName">): boolean {
+  return log.exerciseId === null && log.exerciseName === DAY_MEMO_EXERCISE_NAME;
+}
+
+// その日の総括メモ行を、指定した内容で置き換える(既存があれば更新、空文字なら削除)。
+// dayLogsはその日の記録(呼び出し側が取得済みのもの。二重取得を避けるため受け取る)。
+export async function setDailyMemo(
+  clientId: string,
+  recordedAt: string,
+  dayLogs: TrainingLog[],
+  memo: string,
+): Promise<void> {
+  const [existing, ...extras] = dayLogs.filter(isDayMemoLog);
+  await Promise.all(extras.map((extra) => deleteTrainingLog(clientId, extra.id)));
+
+  const trimmed = memo.trim();
+  if (!trimmed) {
+    if (existing) await deleteTrainingLog(clientId, existing.id);
+    return;
+  }
+
+  const fields = {
+    recordedAt,
+    exerciseId: null,
+    exerciseName: DAY_MEMO_EXERCISE_NAME,
+    weight: "",
+    reps: "",
+    sets: "",
+    memo: trimmed,
+  };
+  if (existing) {
+    await updateTrainingLog(clientId, existing.id, fields);
+  } else {
+    await insertTrainingLogs([{ clientId, ...fields }]);
+  }
 }

@@ -8,6 +8,7 @@ import { getClient, subscribeToClients } from "@/lib/db/clients";
 import { formatClientName } from "@/lib/format/client-name";
 import { listExercises, subscribeToExercises } from "@/lib/db/exercises";
 import {
+  isDayMemoLog,
   listExerciseFrequencies,
   listTrainingDates,
   listTrainingLogsByDate,
@@ -19,6 +20,7 @@ import { ClientTabs } from "../client-tabs";
 import { TrainingLogForm } from "./training-log-form";
 import { TrainingLogRow } from "./training-log-row";
 import { TrainingSummary } from "./training-summary";
+import { DailyMemoForm } from "./daily-memo-form";
 
 export default function ClientTrainingPage() {
   return (
@@ -73,6 +75,10 @@ function ClientTrainingPageInner() {
   // 「日付不明」の記録一覧を見ている間も、新規記録フォームの日付欄はきちんと
   // 有効な日付を初期値にする(今日の日付にしておく)。
   const formDate = date ?? today;
+  // その日の総括メモは種目とは別の特別な行として同じコレクションに保存されているため、
+  // 一覧表示・編集対象の種目行からは除く。
+  const dayMemoLog = logs.find(isDayMemoLog) ?? null;
+  const exerciseLogs = logs.filter((log) => !isDayMemoLog(log));
 
   return (
     <div className="space-y-6">
@@ -117,7 +123,14 @@ function ClientTrainingPageInner() {
                     day.recordedAt === date ? "bg-gray-100 font-medium" : ""
                   }`}
                 >
-                  <span>{day.recordedAt ?? "日付不明"}</span>
+                  <span>
+                    {day.recordedAt ?? "日付不明"}
+                    {day.hasMemo && (
+                      <span title="総括メモあり" className="ml-1">
+                        📝
+                      </span>
+                    )}
+                  </span>
                   <span className="text-gray-600">
                     {day.exerciseCount}種目
                     <span className="ml-3 text-xs text-gray-400">
@@ -180,10 +193,10 @@ function ClientTrainingPageInner() {
               </tr>
             </thead>
             <tbody>
-              {logs.map((log) => (
+              {exerciseLogs.map((log) => (
                 <TrainingLogRow key={log.id} log={log} clientId={clientId} exercises={exercises} />
               ))}
-              {logs.length === 0 && (
+              {exerciseLogs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
                     この日の記録はまだありません。
@@ -194,6 +207,10 @@ function ClientTrainingPageInner() {
           </table>
         </div>
       </section>
+
+      {date !== null && (
+        <DailyMemoForm clientId={clientId} date={date} memo={dayMemoLog?.memo ?? null} />
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
   listExerciseFrequencies,
   listTrainingDates,
   listTrainingLogsByDate,
+  listTrainingLogsByUnknownDate,
   subscribeToTrainingLogs,
 } from "@/lib/db/training-logs";
 import { addDaysISODate, todayISODate } from "@/lib/date";
@@ -31,7 +32,11 @@ function ClientTrainingPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get("id") ?? "";
-  const date = searchParams.get("date") || todayISODate();
+  const rawDate = searchParams.get("date");
+  // 履歴一覧の「日付不明」行から開いたときは、date=unknown という特別な値で
+  // 遷移してくる(過去データ移行分、recordedAt=nullの記録)。
+  const isUnknownDate = rawDate === "unknown";
+  const date = isUnknownDate ? null : rawDate || todayISODate();
 
   const data = useLiveQuery(async () => {
     const client = await getClient(clientId);
@@ -39,7 +44,7 @@ function ClientTrainingPageInner() {
 
     const [exercises, logs, dates, frequencies] = await Promise.all([
       listExercises(),
-      listTrainingLogsByDate(clientId, date),
+      date !== null ? listTrainingLogsByDate(clientId, date) : listTrainingLogsByUnknownDate(clientId),
       listTrainingDates(clientId),
       listExerciseFrequencies(clientId),
     ]);
@@ -65,6 +70,9 @@ function ClientTrainingPageInner() {
 
   const { client, exercises, logs, dates, frequencies } = data;
   const today = todayISODate();
+  // 「日付不明」の記録一覧を見ている間も、新規記録フォームの日付欄はきちんと
+  // 有効な日付を初期値にする(今日の日付にしておく)。
+  const formDate = date ?? today;
 
   return (
     <div className="space-y-6">
@@ -83,7 +91,7 @@ function ClientTrainingPageInner() {
         <TrainingSummary frequencies={frequencies} />
       </section>
 
-      <TrainingLogForm clientId={clientId} date={date} exercises={exercises} />
+      <TrainingLogForm clientId={clientId} date={formDate} exercises={exercises} />
 
       <section className="rounded-lg border border-gray-200 bg-white">
         <div className="flex items-center justify-between border-b border-gray-200 p-4">
@@ -104,11 +112,7 @@ function ClientTrainingPageInner() {
             {[...dates].reverse().map((day) => (
               <li key={day.recordedAt ?? "unknown"}>
                 <Link
-                  href={
-                    day.recordedAt
-                      ? `/clients/detail/training?id=${clientId}&date=${day.recordedAt}`
-                      : `/clients/detail/training?id=${clientId}`
-                  }
+                  href={`/clients/detail/training?id=${clientId}&date=${day.recordedAt ?? "unknown"}`}
                   className={`flex flex-wrap items-center justify-between gap-2 px-4 py-2 hover:bg-gray-50 ${
                     day.recordedAt === date ? "bg-gray-100 font-medium" : ""
                   }`}
@@ -129,31 +133,38 @@ function ClientTrainingPageInner() {
 
       <section className="rounded-lg border border-gray-200 bg-white">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 p-4">
-          <h2 className="font-medium">{date} の記録</h2>
-          <div className="flex items-center gap-2 text-sm">
-            <Link
-              href={`/clients/detail/training?id=${clientId}&date=${addDaysISODate(date, -1)}`}
-              className="rounded border border-gray-300 px-2 py-1 hover:bg-gray-50"
-            >
-              ← 前日
-            </Link>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => {
-                if (!e.target.value) return;
-                router.push(`/clients/detail/training?id=${clientId}&date=${e.target.value}`);
-              }}
-              className="rounded border border-gray-300 px-2 py-1 text-sm"
-            />
-            <Link
-              href={`/clients/detail/training?id=${clientId}&date=${addDaysISODate(date, 1)}`}
-              className="rounded border border-gray-300 px-2 py-1 hover:bg-gray-50"
-            >
-              翌日 →
-            </Link>
-          </div>
+          <h2 className="font-medium">{date ?? "日付不明"} の記録</h2>
+          {date !== null && (
+            <div className="flex items-center gap-2 text-sm">
+              <Link
+                href={`/clients/detail/training?id=${clientId}&date=${addDaysISODate(date, -1)}`}
+                className="rounded border border-gray-300 px-2 py-1 hover:bg-gray-50"
+              >
+                ← 前日
+              </Link>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  router.push(`/clients/detail/training?id=${clientId}&date=${e.target.value}`);
+                }}
+                className="rounded border border-gray-300 px-2 py-1 text-sm"
+              />
+              <Link
+                href={`/clients/detail/training?id=${clientId}&date=${addDaysISODate(date, 1)}`}
+                className="rounded border border-gray-300 px-2 py-1 hover:bg-gray-50"
+              >
+                翌日 →
+              </Link>
+            </div>
+          )}
         </div>
+        {date === null && (
+          <p className="border-b border-gray-100 bg-amber-50 px-4 py-2 text-xs text-amber-900">
+            実施日が分からない過去の記録です。行を編集して日付を入力すると、通常の記録に変わります。
+          </p>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full min-w-max text-sm">
             <thead>

@@ -43,7 +43,7 @@ import {
 } from "firebase/firestore";
 import { parseExerciseCell } from "./lib/parse-training-row.mjs";
 import { assignTrainingSessionDates } from "./lib/assign-training-dates.mjs";
-import { findMatchingClient, resolveClientName } from "./lib/client-name-match.mjs";
+import { findMatchingClients, resolveClientName } from "./lib/client-name-match.mjs";
 
 function fail(message) {
   throw new Error(message);
@@ -139,7 +139,17 @@ async function main() {
     const clientSummaries = [];
 
     for (const [excelName, clientRows] of byClient) {
-      const matched = findMatchingClient(existingClients, excelName);
+      const matches = findMatchingClients(existingClients, excelName);
+      if (matches.length > 1) {
+        fail(
+          `お客様名「${excelName}」が既存のお客様に複数件(${matches
+            .map((c) => `${c.name}(${c.id})`)
+            .join("、")})一致しました。表記ゆれの整理が必要なため、` +
+            `新規登録の対象客とみなさず処理を中断します。CLIENT_NAME_OVERRIDESの追加、` +
+            `またはFirestore側のお客様名の重複整理を行ってから再実行してください。`,
+        );
+      }
+      const matched = matches[0] ?? null;
       const clientKey = matched ? matched.id : `new:${excelName}`;
       if (!matched) {
         const alreadyQueued = newClients.some((c) => c.excelName === excelName);
@@ -148,10 +158,19 @@ async function main() {
         }
       }
 
-      // セッション番号(古い順)ごとに行をまとめる。
+      // セッション番号(古い順)ごとに行をまとめる。Number(row.session)がNaNに
+      // なる行(空欄・数値化できない値)を紛れ込ませると、Mapのキーとして
+      // 同一視されて1つのセッションに合流してしまい、以降の日付割り当て位置が
+      // ずれて他のセッションの日付まで誤って割り当ててしまうため、ここで弾く。
       const bySession = new Map();
       for (const row of clientRows) {
         const session = Number(row.session);
+        if (!Number.isFinite(session)) {
+          fail(
+            `${excelName}: トレーニング回(session)の値が数値ではありません: ` +
+              `${JSON.stringify(row.session)}(種目=${row.exercise})`,
+          );
+        }
         if (!bySession.has(session)) bySession.set(session, []);
         bySession.get(session).push(row);
       }

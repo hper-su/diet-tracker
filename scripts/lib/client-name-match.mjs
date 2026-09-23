@@ -21,10 +21,19 @@ export function resolveClientName(excelName) {
 }
 
 // Firestoreの既存お客様一覧(name付き)から、resolveClientName後の名前と
-// スペース無視の完全一致で1件を探す。0件・複数件ヒットはnullを返し、
-// 呼び出し側で「新規お客様」または「要手動確認」として扱う。
-export function findMatchingClient(clients, excelName) {
+// スペース無視の完全一致で該当する行を全て返す(0件・1件・複数件のいずれもあり得る)。
+// 呼び出し側(findMatchingClient/import-training-logs.mjs)が件数に応じて
+// 「新規お客様」「そのまま使う」「要手動確認」を判断する。
+export function findMatchingClients(clients, excelName) {
   const target = normalizeClientName(resolveClientName(excelName));
-  const matches = clients.filter((client) => normalizeClientName(client.name) === target);
+  return clients.filter((client) => normalizeClientName(client.name) === target);
+}
+
+// 1件だけヒットした場合のみその行を返す。0件は新規お客様候補としてnullを返すが、
+// 複数件ヒット(表記ゆれの結果、既存お客様同士が同じ正規化名になった等)も
+// 区別なくnullを返してしまうと、呼び出し側が誤って「新規お客様」として重複登録
+// してしまう恐れがある。複数件ヒットの判定が必要な場合はfindMatchingClients()を使うこと。
+export function findMatchingClient(clients, excelName) {
+  const matches = findMatchingClients(clients, excelName);
   return matches.length === 1 ? matches[0] : null;
 }

@@ -3,6 +3,7 @@ import {
   normalizeClientName,
   resolveClientName,
   findMatchingClient,
+  findMatchingClients,
 } from "./client-name-match.mjs";
 
 describe("normalizeClientName", () => {
@@ -52,5 +53,20 @@ describe("findMatchingClient", () => {
   it("returns null when more than one client matches", () => {
     const dupes = [...clients, { id: "4", name: "望月良枝" }];
     expect(findMatchingClient(dupes, "望月良枝")).toBeNull();
+  });
+});
+
+describe("findMatchingClients", () => {
+  const clients = [
+    { id: "1", name: "望月 良枝" },
+    { id: "4", name: "望月良枝" },
+  ];
+
+  it("returns every match so the caller can distinguish 0/1/many", () => {
+    expect(findMatchingClients(clients, "望月良枝")).toEqual(clients);
+  });
+
+  it("returns an empty array when nothing matches", () => {
+    expect(findMatchingClients(clients, "存在しないお客様")).toEqual([]);
   });
 });

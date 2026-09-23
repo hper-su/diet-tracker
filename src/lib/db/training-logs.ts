@@ -66,6 +66,21 @@ export async function listTrainingLogsByDate(
   return snap.docs.map((d) => fromDoc(d.id, d.data() as TrainingLogDoc));
 }
 
+// 日付不明(recordedAt=null、過去データ移行分)の記録一覧。listTrainingLogsByDate
+// は具体的な日付でしか一致しないため、これらは別クエリで取得する必要がある
+// (履歴一覧の「日付不明」行から開けるようにするため)。
+export async function listTrainingLogsByUnknownDate(clientId: string): Promise<TrainingLog[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTION),
+      where("clientId", "==", clientId),
+      where("recordedAt", "==", null),
+      orderBy("createdAt", "asc"),
+    ),
+  );
+  return snap.docs.map((d) => fromDoc(d.id, d.data() as TrainingLogDoc));
+}
+
 export function subscribeToTrainingLogs(clientId: string, callback: () => void): Unsubscribe {
   return subscribeToCollectionByClient(db, COLLECTION, clientId, callback);
 }

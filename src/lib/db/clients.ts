@@ -78,12 +78,16 @@ export function subscribeToClients(callback: () => void): Unsubscribe {
 
 // 指定コレクションから、お客様の最新の記録日(recordedAt)を1件だけ取得する。
 // (clientId, recordedAt, createdAt) の既存インデックスを逆順に読むため、追加の
-// インデックスは不要。記録が無い、または取得に失敗した場合はnull(一覧表示を
-// 止めないよう、失敗は記録なし扱いにしてログだけ残す)。
+// インデックスは不要。
+// 戻り値はnull(クエリは成功したが記録が1件も無いことを確認できた)と
+// undefined(クエリ自体が失敗した。一覧表示を止めないようここでは例外にせず
+// ログだけ残す)を区別する。呼び出し側でこの2つを同じ「記録なし」として扱って
+// よい場面(並び替え)と、区別が必要な場面(hasMeasurementsバッジ。取得失敗を
+// 「未登録」と誤表示しないようにする)があるため。
 async function getLatestRecordedAt(
   collectionName: string,
   clientId: string,
-): Promise<string | null> {
+): Promise<string | null | undefined> {
   try {
     const snap = await getDocs(
       query(
@@ -97,31 +101,37 @@ async function getLatestRecordedAt(
     return snap.empty ? null : (snap.docs[0].data() as { recordedAt: string }).recordedAt;
   } catch (error) {
     console.error(error);
-    return null;
+    return undefined;
   }
 }
 
 // お客様ごとの最終記録日(食事・体重ログの recordedAt の最大値)。ログが1件も
-// 無いお客様は含まれない(呼び出し側は「記録なし」として扱う)。
+// 無い(または取得に失敗した)お客様は含まれない(呼び出し側は「記録なし」として扱う)。
 // 全記録を読むと記録数に比例して読み取り量が増えるため、お客様ごとに
 // 最新1件だけを問い合わせる(読み取りはお客様数×2件で済む)。
 async function getLastActivityDates(
   clientIds: string[],
-): Promise<{ lastActivity: Map<string, string>; hasMeasurements: Set<string> }> {
+): Promise<{ lastActivity: Map<string, string>; hasNoMeasurements: Set<string> }> {
   const lastActivity = new Map<string, string>();
-  const hasMeasurements = new Set<string>();
+  const hasNoMeasurements = new Set<string>();
   await Promise.all(
     clientIds.map(async (clientId) => {
       const [meal, measurement] = await Promise.all([
         getLatestRecordedAt(MEAL_LOGS_COLLECTION, clientId),
         getLatestRecordedAt(MEASUREMENTS_COLLECTION, clientId),
       ]);
-      if (measurement !== null) hasMeasurements.add(clientId);
-      const latest = [meal, measurement].filter((d): d is string => d !== null).sort().pop();
+      // measurement === null は「クエリは成功し、記録が1件も無いと確認できた」場合のみ。
+      // undefined(クエリ自体が失敗)の場合は、取得失敗を「体重データ未登録」と
+      // 誤表示しないよう、安全側(登録済み扱い)に倒す。
+      if (measurement === null) hasNoMeasurements.add(clientId);
+      const latest = [meal, measurement]
+        .filter((d): d is string => typeof d === "string")
+        .sort()
+        .pop();
       if (latest) lastActivity.set(clientId, latest);
     }),
   );
-  return { lastActivity, hasMeasurements };
+  return { lastActivity, hasNoMeasurements };
 }
 
 export type ClientListItem = Client & { hasMeasurements: boolean };
@@ -134,7 +144,7 @@ export type ClientListItem = Client & { hasMeasurements: boolean };
 // ばかりで、体重データが未登録の場合など)を一覧上で見分けられるようにするためのフラグ。
 export async function listClientsByRecentActivity(): Promise<ClientListItem[]> {
   const clients = await listClients();
-  const { lastActivity, hasMeasurements } = await getLastActivityDates(
+  const { lastActivity, hasNoMeasurements } = await getLastActivityDates(
     clients.map((c) => c.id),
   );
   return [...clients]
@@ -143,7 +153,7 @@ export async function listClientsByRecentActivity(): Promise<ClientListItem[]> {
       const bDate = lastActivity.get(b.id) ?? "";
       return bDate.localeCompare(aDate);
     })
-    .map((client) => ({ ...client, hasMeasurements: hasMeasurements.has(client.id) }));
+    .map((client) => ({ ...client, hasMeasurements: !hasNoMeasurements.has(client.id) }));
 }
 
 export type InsertClientInput = {

@@ -129,8 +129,9 @@ export function FoodRow({ food }: { food: Food }) {
             </button>
             <button
               type="button"
+              disabled={pending}
               onClick={cancel}
-              className="rounded border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50"
+              className="rounded border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50 disabled:opacity-50"
             >
               キャンセル
             </button>

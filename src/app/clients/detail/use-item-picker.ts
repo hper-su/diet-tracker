@@ -58,11 +58,18 @@ export function useItemPicker<T>({
   // requiredはvalue(=selectedId)ではなく見た目上のテキスト欄に付いていると、
   // 候補を選ばず文字だけ入力した状態でもネイティブのバリデーションを通ってしまう。
   // selectedIdの有無で独自にカスタムバリデーションメッセージを出す。
+  // required=falseの行(複数行フォームで他の項目に触れていない行)でも、
+  // 検索語だけ入力されて候補を選び切れていない状態(=途中でやめた入力)は
+  // 無言で捨てられると入力した内容が失われるため、requiredの値に関わらず検証する。
   useEffect(() => {
-    inputRef.current?.setCustomValidity(
-      required && selectedId === null ? requiredMessage : "",
-    );
-  }, [required, selectedId, requiredMessage]);
+    if (selectedId !== null) {
+      inputRef.current?.setCustomValidity("");
+    } else if (required || query.trim() !== "") {
+      inputRef.current?.setCustomValidity(requiredMessage);
+    } else {
+      inputRef.current?.setCustomValidity("");
+    }
+  }, [required, selectedId, query, requiredMessage]);
 
   const trimmed = query.trim().toLowerCase();
   const results = useMemo(() => {

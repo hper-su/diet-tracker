@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState } from "react";
 import { setDailyMemoAction } from "./actions";
 
 // 種目ごとのメモとは別に、その日全体の総括(体調・様子・次回への申し送りなど)を
@@ -15,18 +15,13 @@ export function DailyMemoForm({
   memo: string | null;
 }) {
   const [state, formAction, pending] = useActionState(setDailyMemoAction, undefined);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // 日付を切り替えたとき、前の日の入力欄の値が残らないようにする
-  // (defaultValueはマウント時にしか反映されないため、date変更時に手動で戻す)。
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.value = memo ?? "";
-    }
-  }, [date, memo]);
 
   return (
     <form
+      // 日付を切り替えたときにフォーム全体を作り直し、前の日のpending/エラー状態が
+      // 別の日に持ち越されたり、textareaの初期値が古いままになったりしないようにする
+      // (TrainingLogForm/MealLogFormと同じ考え方)。
+      key={date}
       action={formAction}
       className="space-y-2 rounded-lg border border-gray-200 bg-white p-4"
     >
@@ -35,7 +30,6 @@ export function DailyMemoForm({
       <label className="block text-sm">
         <span className="mb-1 block font-medium">{date} の総括メモ</span>
         <textarea
-          ref={textareaRef}
           name="memo"
           rows={3}
           defaultValue={memo ?? ""}

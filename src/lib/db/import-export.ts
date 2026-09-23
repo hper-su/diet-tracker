@@ -12,6 +12,8 @@ import type {
   MeasurementRecord,
   MealLogRecord,
   ProtocolCheckRecord,
+  ExerciseRecord,
+  TrainingLogRecord,
 } from "./client";
 import type { Food } from "./foods";
 import type { UsualMeal } from "./usual-meals";
@@ -28,6 +30,8 @@ export type ExportedData = {
   mealLogs: MealLogRecord[];
   usualMeals: UsualMeal[];
   protocolChecks: ProtocolCheckRecord[];
+  exercises: ExerciseRecord[];
+  trainingLogs: TrainingLogRecord[];
 };
 
 const COLLECTIONS = [
@@ -37,6 +41,8 @@ const COLLECTIONS = [
   "mealLogs",
   "usualMeals",
   "protocolChecks",
+  "exercises",
+  "trainingLogs",
 ] as const;
 
 // バックアップ・共有DBの障害時復旧用に、全コレクションの内容を1つのJSONにまとめる。
@@ -48,6 +54,8 @@ export async function exportAllData(): Promise<ExportedData> {
     mealLogsSnap,
     usualMealsSnap,
     protocolChecksSnap,
+    exercisesSnap,
+    trainingLogsSnap,
   ] = await Promise.all(COLLECTIONS.map((name) => getDocs(collection(db, name))));
 
   const clients: ClientRecord[] = clientsSnap.docs.map((d) => {
@@ -88,6 +96,12 @@ export async function exportAllData(): Promise<ExportedData> {
     protocolChecks: protocolChecksSnap.docs.map(
       (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as ProtocolCheckRecord,
     ),
+    exercises: exercisesSnap.docs.map(
+      (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as ExerciseRecord,
+    ),
+    trainingLogs: trainingLogsSnap.docs.map(
+      (d) => ({ id: d.id, ...stripCreatedAt(d.data()) }) as TrainingLogRecord,
+    ),
   };
 }
 
@@ -95,8 +109,10 @@ export async function exportAllData(): Promise<ExportedData> {
 // 伴うため、その手前までの純粋なロジックを個別に検証できるようにする)。
 export function isExportedData(
   value: unknown,
-): value is Omit<ExportedData, "protocolChecks"> & {
+): value is Omit<ExportedData, "protocolChecks" | "exercises" | "trainingLogs"> & {
   protocolChecks?: ProtocolCheckRecord[];
+  exercises?: ExerciseRecord[];
+  trainingLogs?: TrainingLogRecord[];
 } {
   if (typeof value !== "object" || value === null) return false;
   const data = value as Record<string, unknown>;
@@ -107,9 +123,12 @@ export function isExportedData(
     Array.isArray(data.foods) &&
     Array.isArray(data.mealLogs) &&
     Array.isArray(data.usualMeals) &&
-    // protocolChecksはこの機能追加より前のエクスポートJSONには存在しないため、
-    // 無ければ空配列として扱えるよう任意項目にする(フォーマットversionは1のまま)。
-    (data.protocolChecks === undefined || Array.isArray(data.protocolChecks))
+    // protocolChecks/exercises/trainingLogsはこれらの機能追加より前のエクスポート
+    // JSONには存在しないため、無ければ空配列として扱えるよう任意項目にする
+    // (フォーマットversionは1のまま)。
+    (data.protocolChecks === undefined || Array.isArray(data.protocolChecks)) &&
+    (data.exercises === undefined || Array.isArray(data.exercises)) &&
+    (data.trainingLogs === undefined || Array.isArray(data.trainingLogs))
   );
 }
 
@@ -184,6 +203,8 @@ function normalizeLegacyIds(
     mealLogs: mapArray(raw.mealLogs, ["id", "clientId", "foodId"]),
     usualMeals: mapArray(raw.usualMeals, ["id", "clientId", "foodId"]),
     protocolChecks: mapArray(raw.protocolChecks, ["id", "clientId"]),
+    exercises: mapArray(raw.exercises, ["id"]),
+    trainingLogs: mapArray(raw.trainingLogs, ["id", "clientId", "exerciseId"]),
   };
 }
 
@@ -193,13 +214,18 @@ function normalizeLegacyIds(
 // 挙動と同じ扱いで)nullに補正し、参照先の無いclientIdなど補正できないものは
 // エラーにする。
 export function validateAndSanitize(
-  data: Omit<ExportedData, "protocolChecks"> & {
+  data: Omit<ExportedData, "protocolChecks" | "exercises" | "trainingLogs"> & {
     protocolChecks?: ProtocolCheckRecord[];
+    exercises?: ExerciseRecord[];
+    trainingLogs?: TrainingLogRecord[];
   },
 ): ExportedData {
   const clientIds = new Set(data.clients.map((c) => c.id));
   const foodIds = new Set(data.foods.map((f) => f.id));
   const protocolChecks = data.protocolChecks ?? [];
+  const exercises = data.exercises ?? [];
+  const trainingLogsRaw = data.trainingLogs ?? [];
+  const exerciseIds = new Set(exercises.map((e) => e.id));
 
   for (const check of protocolChecks) {
     if (!clientIds.has(check.clientId)) {
@@ -290,7 +316,35 @@ export function validateAndSanitize(
       : meal;
   });
 
-  return { ...data, mealLogs, usualMeals, protocolChecks };
+  for (const exercise of exercises) {
+    if (!isNonEmptyId(exercise.id) || !exercise.name || !Array.isArray(exercise.aliases)) {
+      throw new ImportFormatError("種目マスタのデータ形式が正しくありません。");
+    }
+  }
+  assertNoDuplicateKey(
+    exercises,
+    (exercise) => exercise.name,
+    "種目マスタに、種目名が重複している行があります。",
+  );
+
+  const trainingLogs = trainingLogsRaw.map((log) => {
+    if (!clientIds.has(log.clientId)) {
+      throw new ImportFormatError(
+        "筋トレ記録に、存在しないお客様を参照している行があります。",
+      );
+    }
+    if (
+      !log.exerciseName ||
+      (log.recordedAt !== null && typeof log.recordedAt !== "string")
+    ) {
+      throw new ImportFormatError("筋トレ記録のデータ形式が正しくありません。");
+    }
+    return log.exerciseId != null && !exerciseIds.has(log.exerciseId)
+      ? { ...log, exerciseId: null }
+      : log;
+  });
+
+  return { ...data, mealLogs, usualMeals, protocolChecks, exercises, trainingLogs };
 }
 
 async function deleteDocsByIds(collectionName: string, ids: string[]): Promise<void> {
@@ -377,6 +431,10 @@ export async function importAllData(raw: unknown): Promise<void> {
     createdAt: orderingTimestamp(row.id, index),
   }));
   await replaceCollection("protocolChecks", data.protocolChecks, (row, index) => ({
+    createdAt: orderingTimestamp(row.id, index),
+  }));
+  await replaceCollection("exercises", data.exercises);
+  await replaceCollection("trainingLogs", data.trainingLogs, (row, index) => ({
     createdAt: orderingTimestamp(row.id, index),
   }));
 }

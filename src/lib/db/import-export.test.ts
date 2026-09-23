@@ -56,6 +56,10 @@ function baseData(): ExportedData {
         memo: null,
       },
     ],
+    exercises: [
+      { id: "1", name: "ラットプルダウン", aliases: ["ラット"] },
+    ],
+    trainingLogs: [],
   };
 }
 
@@ -90,6 +94,13 @@ describe("isExportedData", () => {
     const data = baseData() as unknown as Record<string, unknown>;
     data.protocolChecks = "not-an-array";
     expect(isExportedData(data)).toBe(false);
+  });
+
+  it("accepts an export object missing exercises/trainingLogs (pre-existing export format)", () => {
+    const data = baseData() as Record<string, unknown>;
+    delete data.exercises;
+    delete data.trainingLogs;
+    expect(isExportedData(data)).toBe(true);
   });
 });
 
@@ -214,5 +225,71 @@ describe("validateAndSanitize", () => {
       memo: null,
     });
     expect(validateAndSanitize(data).mealLogs[0].kcal).toBe(-120);
+  });
+
+  it("defaults exercises/trainingLogs to an empty array when absent", () => {
+    const data = baseData() as Record<string, unknown>;
+    delete data.exercises;
+    delete data.trainingLogs;
+    const result = validateAndSanitize(
+      data as unknown as Parameters<typeof validateAndSanitize>[0],
+    );
+    expect(result.exercises).toEqual([]);
+    expect(result.trainingLogs).toEqual([]);
+  });
+
+  it("throws when exercises has a duplicate name", () => {
+    const data = baseData();
+    data.exercises.push({ id: "2", name: "ラットプルダウン", aliases: [] });
+    expect(() => validateAndSanitize(data)).toThrow(ImportFormatError);
+  });
+
+  it("throws when a trainingLog references a non-existent client", () => {
+    const data = baseData();
+    data.trainingLogs.push({
+      id: "1",
+      clientId: "999",
+      recordedAt: "2026-09-09",
+      exerciseId: "1",
+      exerciseName: "ラットプルダウン",
+      weight: "60",
+      reps: "10",
+      sets: "3",
+      memo: null,
+    });
+    expect(() => validateAndSanitize(data)).toThrow(ImportFormatError);
+  });
+
+  it("nulls out a trainingLog's exerciseId when the referenced exercise no longer exists", () => {
+    const data = baseData();
+    data.trainingLogs.push({
+      id: "1",
+      clientId: "1",
+      recordedAt: "2026-09-09",
+      exerciseId: "999",
+      exerciseName: "存在しない種目",
+      weight: "60",
+      reps: "10",
+      sets: "3",
+      memo: null,
+    });
+    const result = validateAndSanitize(data);
+    expect(result.trainingLogs[0].exerciseId).toBeNull();
+  });
+
+  it("accepts a trainingLog with recordedAt null (date unknown, historical import)", () => {
+    const data = baseData();
+    data.trainingLogs.push({
+      id: "1",
+      clientId: "1",
+      recordedAt: null,
+      exerciseId: "1",
+      exerciseName: "ラットプルダウン",
+      weight: "60",
+      reps: "10",
+      sets: "3",
+      memo: null,
+    });
+    expect(validateAndSanitize(data).trainingLogs[0].recordedAt).toBeNull();
   });
 });

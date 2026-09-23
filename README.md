@@ -153,6 +153,8 @@ gh workflow run add-meal-log.yml -f json='[{"client":"穴見孝和","date":"2026
 5. お客様の「食事記録」タブで日付ごとに食品を選んで記録する。数量は基準量の倍数(例: 1.5人前なら1.5)。目標摂取カロリーとの差分もその場で確認できる
    - 画面中ほどの「過去の記録」に、記録のある日が新しい順に(合計kcal・PFC付きで)並ぶ。日付をクリックするとその日の記録を開ける(初期は直近90日、「さらに90日前まで表示」で最大730日まで遡れる。未来日付の記録も表示される)
    - 記録の行をクリック(またはフォーカスしてEnter/スペース)すると、その場で編集できる。編集フォームでは日付も変更でき、別の日に記録を移せる
+6. 「種目マスタ」で普段行うトレーニング種目を登録する(全お客様共通。略語・表記ゆれは別名として登録しておくと検索で見つけやすい)
+7. お客様の「筋トレ記録」タブで日付ごとに実施した種目・重さ・回数・セット数・メモを記録する。上部には実施回数が多い種目と直近の記録がまとまって表示される
 
 ## 構成
 
@@ -160,18 +162,25 @@ gh workflow run add-meal-log.yml -f json='[{"client":"穴見孝和","date":"2026
 - `src/app/clients/detail` : お客様のプロフィール編集・測定値記録・推移グラフ(概要タブ、`?id=`で対象を指定)
 - `src/app/clients/detail/plan` : 目標設定・ダイエット/増量プランの算出結果・PFCバランス
 - `src/app/clients/detail/meals` : 日付ごとの食事記録(過去の日ごとの履歴一覧・行クリックでの編集・日付変更)、その日の合計と目標摂取カロリーとの差分
+- `src/app/clients/detail/training` : 日付ごとの筋トレ記録(種目・重さ・回数・セット数・メモ)、実施回数が多い種目のサマリー
 - `src/app/foods` : 食品マスタの検索・登録・削除(全お客様共通)
+- `src/app/exercises` : 種目マスタの検索・登録・削除(全お客様共通。別名での曖昧検索に対応)
 - `src/app/data` : 全データのエクスポート/インポート(バックアップ・復元)
 - `.github/workflows/add-meal-log.yml` : `scripts/add-meal-log.mjs`をGitHub Actions上で
   実行するワークフロー(このPCに依存せず外部から食事記録を登録するため)
 - `firestore.rules` : Firebaseコンソールの Firestore Database → ルール タブに貼り付ける
   アクセス制御(ログイン済みユーザーのみ全操作可)
 - `firestore.indexes.json` : `clientId`絞り込み+日付順ソートを行うクエリ(measurements/
-  mealLogs/usualMeals/protocolChecks)に必要な複合インデックスの定義。
+  mealLogs/usualMeals/protocolChecks/trainingLogs)に必要な複合インデックスの定義。
   Firebase CLIが無い場合はコンソールから手動で同じ内容を作成する(セットアップ手順参照)
 - `scripts/extract-mext-foods.cjs` / `extract-pfc-balance-table.cjs` : 文部科学省の公式Excel等から
   `src/lib/db/data/*.json` を再生成するスクリプト(食品マスタの一括シードは現在無効化中のため未使用)
 - `scripts/export-sqlite-to-json.cjs` : 旧SQLite版のデータをJSONに変換する一度きりの移行スクリプト
+- `scripts/backup-firestore.mjs` : 全コレクションをJSONへ書き出す簡易バックアップ(大きな一括書き込みの前の保険用)
+- `scripts/import-training-logs.mjs` : Excel「お客様筋トレ記録」から書き出したJSONを元に、
+  お客様(表記ゆれ・新規分含む)・種目マスタ・筋トレ記録を一括登録した一度きりの移行スクリプト
+  (種目名の正規化ルールは`scripts/lib/exercise-normalize.mjs`、日付の割り当ては
+  `scripts/lib/assign-training-dates.mjs`、お客様名の照合は`scripts/lib/client-name-match.mjs`)
 - `scripts/generate-icons.mjs` : PWAアイコン(`public/icon-*.png`)のプレースホルダー生成
   (正式なロゴに差し替える場合、このスクリプトの再実行は不要。ファイルを直接置き換えればよい)
 - `src/lib/health` : BMR/PFC/プラン算出などの純粋な計算ロジック(ユニットテスト対象)

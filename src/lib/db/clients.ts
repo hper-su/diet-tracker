@@ -105,33 +105,45 @@ async function getLatestRecordedAt(
 // 無いお客様は含まれない(呼び出し側は「記録なし」として扱う)。
 // 全記録を読むと記録数に比例して読み取り量が増えるため、お客様ごとに
 // 最新1件だけを問い合わせる(読み取りはお客様数×2件で済む)。
-async function getLastActivityDates(clientIds: string[]): Promise<Map<string, string>> {
+async function getLastActivityDates(
+  clientIds: string[],
+): Promise<{ lastActivity: Map<string, string>; hasMeasurements: Set<string> }> {
   const lastActivity = new Map<string, string>();
+  const hasMeasurements = new Set<string>();
   await Promise.all(
     clientIds.map(async (clientId) => {
       const [meal, measurement] = await Promise.all([
         getLatestRecordedAt(MEAL_LOGS_COLLECTION, clientId),
         getLatestRecordedAt(MEASUREMENTS_COLLECTION, clientId),
       ]);
+      if (measurement !== null) hasMeasurements.add(clientId);
       const latest = [meal, measurement].filter((d): d is string => d !== null).sort().pop();
       if (latest) lastActivity.set(clientId, latest);
     }),
   );
-  return lastActivity;
+  return { lastActivity, hasMeasurements };
 }
+
+export type ClientListItem = Client & { hasMeasurements: boolean };
 
 // 食事・体重の記録日が新しい順。記録が1件も無いお客様は末尾に回り、その中では
 // 登録日が新しい順(listClientsの並び)を保つ。
 // 最終記録日は一覧を開いたとき・お客様の追加変更があったときに再取得する
 // (他端末の記録追加による並び替えはリアルタイムには反映しない)。
-export async function listClientsByRecentActivity(): Promise<Client[]> {
+// hasMeasurementsは、体重測定記録が1件も無いお客様(過去データ移行で新規作成した
+// ばかりで、体重データが未登録の場合など)を一覧上で見分けられるようにするためのフラグ。
+export async function listClientsByRecentActivity(): Promise<ClientListItem[]> {
   const clients = await listClients();
-  const lastActivity = await getLastActivityDates(clients.map((c) => c.id));
-  return [...clients].sort((a, b) => {
-    const aDate = lastActivity.get(a.id) ?? "";
-    const bDate = lastActivity.get(b.id) ?? "";
-    return bDate.localeCompare(aDate);
-  });
+  const { lastActivity, hasMeasurements } = await getLastActivityDates(
+    clients.map((c) => c.id),
+  );
+  return [...clients]
+    .sort((a, b) => {
+      const aDate = lastActivity.get(a.id) ?? "";
+      const bDate = lastActivity.get(b.id) ?? "";
+      return bDate.localeCompare(aDate);
+    })
+    .map((client) => ({ ...client, hasMeasurements: hasMeasurements.has(client.id) }));
 }
 
 export type InsertClientInput = {

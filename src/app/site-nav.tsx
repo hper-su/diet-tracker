@@ -8,6 +8,7 @@ import { SignOutButton } from "./sign-out-button";
 const NAV_LINKS = [
   { href: "/clients", label: "お客様" },
   { href: "/foods", label: "食品マスタ" },
+  { href: "/exercises", label: "種目マスタ" },
   { href: "/body-composition", label: "体組成ガイド" },
   { href: "/anatomy", label: "筋肉・骨" },
   { href: "/conditions", label: "疾患" },

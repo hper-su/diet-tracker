@@ -7,12 +7,13 @@ export function ClientTabs({
   active,
 }: {
   id: string;
-  active: "profile" | "plan" | "meals";
+  active: "profile" | "plan" | "meals" | "training";
 }) {
   const tabs = [
     { key: "profile", href: `/clients/detail?id=${id}`, label: "概要" },
     { key: "plan", href: `/clients/detail/plan?id=${id}`, label: "プラン" },
     { key: "meals", href: `/clients/detail/meals?id=${id}`, label: "食事記録" },
+    { key: "training", href: `/clients/detail/training?id=${id}`, label: "筋トレ記録" },
   ] as const;
 
   return (

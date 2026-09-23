@@ -4,6 +4,8 @@ import type { Food } from "./foods";
 import type { MealLog } from "./meal-logs";
 import type { UsualMeal } from "./usual-meals";
 import type { ProtocolCheck } from "./protocol-checks";
+import type { Exercise } from "./exercises";
+import type { TrainingLog } from "./training-logs";
 
 export type ClientRecord = Client & { createdAt: string };
 export type MeasurementRecord = Measurement & { clientId: string };
@@ -11,3 +13,5 @@ export type MealLogRecord = MealLog & { clientId: string };
 export type FoodRecord = Food;
 export type UsualMealRecord = UsualMeal;
 export type ProtocolCheckRecord = ProtocolCheck & { clientId: string };
+export type ExerciseRecord = Exercise;
+export type TrainingLogRecord = TrainingLog & { clientId: string };

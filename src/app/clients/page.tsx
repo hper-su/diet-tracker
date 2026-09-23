@@ -34,7 +34,9 @@ export default function ClientsPage() {
           <li key={client.id}>
             <Link
               href={`/clients/detail?id=${client.id}`}
-              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3 hover:bg-gray-50"
+              className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3 hover:bg-gray-50 ${
+                client.hasMeasurements ? "" : "bg-amber-50"
+              }`}
             >
               <div className="min-w-0">
                 <span className="font-medium">
@@ -43,6 +45,11 @@ export default function ClientsPage() {
                 {client.birthdate && isBirthdayToday(client.birthdate) && (
                   <span title="本日お誕生日です" className="ml-1">
                     🎂
+                  </span>
+                )}
+                {!client.hasMeasurements && (
+                  <span className="ml-2 rounded bg-amber-200 px-1.5 py-0.5 text-xs text-amber-900">
+                    体重データ未登録
                   </span>
                 )}
                 {client.gender && (

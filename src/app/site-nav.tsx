@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { href: "/diet-plateau", label: "停滞期ガイド" },
   { href: "/menstrual-cycle", label: "生理" },
   { href: "/course-pricing", label: "料金" },
+  { href: "/hip-care", label: "股関節" },
   { href: "/vitamin-mineral-guide", label: "栄養素ガイド" },
   { href: "/data", label: "データ管理" },
 ];

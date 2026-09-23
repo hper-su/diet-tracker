@@ -6,6 +6,24 @@ import { useItemPicker, type ItemPickerHandle } from "./use-item-picker";
 
 export type ExercisePickerHandle = ItemPickerHandle;
 
+function getExerciseId(exercise: Exercise): string {
+  return exercise.id;
+}
+
+function formatExerciseLabel(exercise: Exercise): string {
+  return exercise.name;
+}
+
+// モジュールスコープの安定した関数参照にする(コンポーネント内でインライン定義
+// すると毎レンダー新しい関数になり、useItemPicker内のresultsのメモ化が
+// 効かなくなってしまうため)。
+function matchesExercise(exercise: Exercise, query: string): boolean {
+  return (
+    exercise.name.toLowerCase().includes(query) ||
+    exercise.aliases.some((alias) => alias.toLowerCase().includes(query))
+  );
+}
+
 // 種目マスタが100件超になり得るため、プルダウンでは選びにくい。食品選択の
 // FoodPickerと同様、入力しながら候補(種目名・別名)を絞り込めるコンボボックスにする
 // (状態管理はuseItemPicker、見た目だけここで組み立てる)。
@@ -17,11 +35,9 @@ export const ExercisePicker = forwardRef<
     useItemPicker({
       items: exercises,
       ref,
-      getId: (exercise) => exercise.id,
-      matches: (exercise, q) =>
-        exercise.name.toLowerCase().includes(q) ||
-        exercise.aliases.some((alias) => alias.toLowerCase().includes(q)),
-      formatLabel: (exercise) => exercise.name,
+      getId: getExerciseId,
+      matches: matchesExercise,
+      formatLabel: formatExerciseLabel,
       required,
       defaultItem: defaultExercise,
       requiredMessage: "候補一覧から種目を選択してください。",

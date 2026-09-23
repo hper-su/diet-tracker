@@ -3,10 +3,12 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  setDoc,
   query,
   where,
   orderBy,
   getDocs,
+  serverTimestamp,
   Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
@@ -125,6 +127,13 @@ function armCacheInvalidation(clientId: string) {
   }
 }
 
+// 書き込み後、Firestoreの onSnapshot 通知(非同期・多少のラグがある)を待たずに
+// その場でキャッシュを破棄する。onSnapshotによる無効化(他端末からの変更向け)は
+// 引き続き残すが、自分自身が行った書き込みの反映はこちらで即時に行う。
+function invalidateAllLogsCache(clientId: string): void {
+  allLogsCache.delete(clientId);
+}
+
 async function listAllTrainingLogs(clientId: string): Promise<TrainingLog[]> {
   armCacheInvalidation(clientId);
   let cached = allLogsCache.get(clientId);
@@ -237,6 +246,9 @@ export type InsertTrainingLogInput = {
 // 複数件をまとめて登録する(筋トレ記録フォームの複数行送信、過去データ移行など)。
 export async function insertTrainingLogs(inputs: InsertTrainingLogInput[]): Promise<void> {
   await chunkedBatchInsert(db, COLLECTION, inputs);
+  for (const clientId of new Set(inputs.map((input) => input.clientId))) {
+    invalidateAllLogsCache(clientId);
+  }
 }
 
 export type UpdateTrainingLogInput = {
@@ -256,11 +268,13 @@ export async function updateTrainingLog(
 ): Promise<void> {
   if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await updateDoc(doc(db, COLLECTION, id), { ...input });
+  invalidateAllLogsCache(clientId);
 }
 
 export async function deleteTrainingLog(clientId: string, id: string): Promise<void> {
   if (!(await belongsToClient(db, COLLECTION, id, clientId))) return;
   await deleteDoc(doc(db, COLLECTION, id));
+  invalidateAllLogsCache(clientId);
 }
 
 // その日全体の総括メモ(体調・様子・次回への申し送りなど)。種目ごとのmemoとは別に、
@@ -272,6 +286,15 @@ export function isDayMemoLog(log: Pick<TrainingLog, "exerciseId" | "exerciseName
   return log.exerciseId === null && log.exerciseName === DAY_MEMO_EXERCISE_NAME;
 }
 
+// クライアント×日付ごとに固定のドキュメントIDにする(addDocによるランダムID
+// 採番はしない)。ランダムIDのまま「既存を読んで無ければ作る」実装だと、
+// ほぼ同時に2回保存された場合にどちらも「既存なし」と判定して2件作ってしまう
+// 競合が起こり得るが、固定IDへのsetDoc(上書き)にすることで、同時に保存されても
+// 常に1件に収束するようにする。
+function dayMemoDocId(clientId: string, recordedAt: string): string {
+  return `dayMemo_${clientId}_${recordedAt}`;
+}
+
 // その日の総括メモ行を、指定した内容で置き換える(既存があれば更新、空文字なら削除)。
 // dayLogsはその日の記録(呼び出し側が取得済みのもの。二重取得を避けるため受け取る)。
 export async function setDailyMemo(
@@ -280,27 +303,29 @@ export async function setDailyMemo(
   dayLogs: TrainingLog[],
   memo: string,
 ): Promise<void> {
-  const [existing, ...extras] = dayLogs.filter(isDayMemoLog);
-  await Promise.all(extras.map((extra) => deleteTrainingLog(clientId, extra.id)));
+  const targetId = dayMemoDocId(clientId, recordedAt);
+  // 本来の固定ID以外の総括メモ行(このスキーマ導入前にランダムIDで作られたもの、
+  // または稀に他の異常で紛れ込んだもの)が残っていれば削除する。
+  const staleExtras = dayLogs.filter((log) => isDayMemoLog(log) && log.id !== targetId);
+  await Promise.all(staleExtras.map((extra) => deleteTrainingLog(clientId, extra.id)));
 
   const trimmed = memo.trim();
+  const ref = doc(db, COLLECTION, targetId);
   if (!trimmed) {
-    if (existing) await deleteTrainingLog(clientId, existing.id);
-    return;
-  }
-
-  const fields = {
-    recordedAt,
-    exerciseId: null,
-    exerciseName: DAY_MEMO_EXERCISE_NAME,
-    weight: "",
-    reps: "",
-    sets: "",
-    memo: trimmed,
-  };
-  if (existing) {
-    await updateTrainingLog(clientId, existing.id, fields);
+    // Firestoreのdeleteは対象が存在しなくてもエラーにならない(冪等)。
+    await deleteDoc(ref);
   } else {
-    await insertTrainingLogs([{ clientId, ...fields }]);
+    await setDoc(ref, {
+      clientId,
+      recordedAt,
+      exerciseId: null,
+      exerciseName: DAY_MEMO_EXERCISE_NAME,
+      weight: "",
+      reps: "",
+      sets: "",
+      memo: trimmed,
+      createdAt: serverTimestamp(),
+    });
   }
+  invalidateAllLogsCache(clientId);
 }

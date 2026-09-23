@@ -31,11 +31,25 @@ export function MealLogForm({
   const nextKey = useRef(1);
   const [rows, setRows] = useState<Row[]>([{ key: 0 }]);
   const foodPickerRefs = useRef(new Map<number, FoodPickerHandle | null>());
-  // メモに入力がある行だけ、食品の選択を必須にする(何も入力していない行は無視して
-  // よいが、メモを書いたのに食品の選択を忘れた行を無言で捨ててしまうと、せっかく
-  // 入力したメモが失われてしまうため)。数量は未入力行でも常に"1"が入っている
-  // (defaultValue)ため、「行に触れたかどうか」の判定には使えない。
+  const rowRefs = useRef(new Map<number, HTMLDivElement | null>());
+  // メモに入力がある行、または数量を初期値の"1"から変更した行だけ、食品の選択を
+  // 必須にする(何も入力していない行は無視してよいが、他の項目を触ったのに食品の
+  // 選択を忘れた行を無言で捨ててしまうと、せっかく入力した内容が失われるため)。
+  // 数量は未入力行でも常に"1"が入っている(defaultValue)ため、"1"のままか
+  // どうかでしか「触れたか」を判定できない(1のまま他の値に変えた場合は
+  // このロジックでは検知できないが、稀なケースとして許容する)。
   const [rowRequired, setRowRequired] = useState<Record<number, boolean>>({});
+
+  function handleRowFieldChange(key: number) {
+    const rowEl = rowRefs.current.get(key);
+    if (!rowEl) return;
+    const quantity = rowEl.querySelector<HTMLInputElement>('input[name="quantity"]');
+    const memo = rowEl.querySelector<HTMLInputElement>('input[name="memo"]');
+    const hasData =
+      (quantity !== null && quantity.value.trim() !== "" && quantity.value.trim() !== "1") ||
+      (memo !== null && memo.value.trim() !== "");
+    setRowRequired((prev) => ({ ...prev, [key]: hasData }));
+  }
 
   useEffect(() => {
     if (!pending && !state?.error) {
@@ -61,6 +75,7 @@ export function MealLogForm({
 
   function removeRow(key: number) {
     foodPickerRefs.current.delete(key);
+    rowRefs.current.delete(key);
     setRowRequired((prev) => {
       const { [key]: _removed, ...rest } = prev;
       return rest;
@@ -102,7 +117,13 @@ export function MealLogForm({
 
       <div className="space-y-2">
         {rows.map((row, index) => (
-          <div key={row.key} className="grid items-start gap-2 sm:grid-cols-8">
+          <div
+            key={row.key}
+            ref={(el) => {
+              rowRefs.current.set(row.key, el);
+            }}
+            className="grid items-start gap-2 sm:grid-cols-8"
+          >
             <div className="sm:col-span-1">
               {index === 0 && (
                 <span className="mb-1 block text-xs text-gray-500">区分</span>
@@ -146,6 +167,7 @@ export function MealLogForm({
                 min="0.1"
                 placeholder="例: 1"
                 defaultValue="1"
+                onChange={() => handleRowFieldChange(row.key)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
@@ -158,9 +180,7 @@ export function MealLogForm({
               <input
                 name="memo"
                 placeholder="メモ(任意)"
-                onChange={(e) =>
-                  setRowRequired((prev) => ({ ...prev, [row.key]: e.target.value.trim() !== "" }))
-                }
+                onChange={() => handleRowFieldChange(row.key)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               />
             </div>

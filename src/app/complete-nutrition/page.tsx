@@ -1,6 +1,7 @@
 import {
   PAGE_SUBTITLE,
   INTRO_PARAGRAPH,
+  RELATED_GUIDE_NOTE,
   DETAIL_INTRO,
   DETAIL_MACRO_TABLE,
   DETAIL_VITAMIN_TABLE,
@@ -61,6 +62,7 @@ export default function CompleteNutritionPage() {
 
       <section className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
         <p>{INTRO_PARAGRAPH}</p>
+        <p className="mt-2 text-xs text-gray-500">{RELATED_GUIDE_NOTE}</p>
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4">

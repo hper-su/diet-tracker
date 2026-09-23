@@ -12,6 +12,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getFirestore, collection, doc, getDocs, updateDoc, terminate } from "firebase/firestore";
+import { EXERCISE_ALIAS_MAP } from "./lib/exercise-normalize.mjs";
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -25,14 +26,28 @@ function requireEnv(name) {
   return value;
 }
 
+// import-training-logs.mjsの正規化に使うEXERCISE_ALIAS_MAP(略語→正式名)を
+// 唯一の情報源として、そこから別名一覧を導出する(データを別ファイルに
+// 手打ちで複製すると、片方だけ更新されて食い違う恐れがあるため)。
+// 略語が正式名の部分文字列になっているペア(例:「ラットプル」⊂「ラットプルダウン」)は
+// 種目名の部分一致検索だけで見つけられるため、別名登録の対象から除く。
+// 「バンドステップ×」のように、検索語として入力されることが想定しにくい
+// 表記ゆれ(末尾に記号が付いただけの誤入力)も明示的に除外する。
+const ALIAS_CANDIDATES_TO_SKIP = new Set(["バンドステップ×"]);
+
+function buildAliasesToAdd() {
+  const result = new Map();
+  for (const [abbrev, canonical] of EXERCISE_ALIAS_MAP) {
+    if (ALIAS_CANDIDATES_TO_SKIP.has(abbrev)) continue;
+    if (canonical.includes(abbrev)) continue; // 部分一致検索で見つけられるため不要
+    if (!result.has(canonical)) result.set(canonical, []);
+    result.get(canonical).push(abbrev);
+  }
+  return result;
+}
+
 // 種目名 -> 追加する別名(部分一致検索では見つけられない表記ゆれ・略語のみ)。
-const ALIASES_TO_ADD = new Map([
-  ["ルーマニアデットリフト", ["ルーマニアン", "ルーマニアンデッドリフト"]],
-  ["デッドバック", ["デットバック"]],
-  ["ツイストプランク", ["プランクツイスト"]],
-  ["ダンベルスイングスクワット", ["ダンベルスイングSQ"]],
-  ["プレスダウン", ["ブレスダウン"]],
-]);
+const ALIASES_TO_ADD = buildAliasesToAdd();
 
 const firebaseConfig = {
   apiKey: requireEnv("NEXT_PUBLIC_FIREBASE_API_KEY"),

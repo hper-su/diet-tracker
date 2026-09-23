@@ -10,6 +10,17 @@ function formatLabel(food: Food): string {
   return `${food.name}(${food.servingLabel} ${food.kcal}kcal)`;
 }
 
+function getFoodId(food: Food): string {
+  return food.id;
+}
+
+// モジュールスコープの安定した関数参照にする(コンポーネント内でインライン定義
+// すると毎レンダー新しい関数になり、useItemPicker内のresultsのメモ化が
+// 効かなくなってしまうため)。
+function matchesFood(food: Food, query: string): boolean {
+  return food.name.toLowerCase().includes(query) || food.category.toLowerCase().includes(query);
+}
+
 // 食品マスタが数千件規模のため、プルダウンでは選びにくい。
 // 入力しながら候補を絞り込めるコンボボックスにして検索性を上げる
 // (状態管理はuseItemPicker、見た目だけここで組み立てる)。
@@ -21,9 +32,8 @@ export const FoodPicker = forwardRef<
     useItemPicker({
       items: foods,
       ref,
-      getId: (food) => food.id,
-      matches: (food, q) =>
-        food.name.toLowerCase().includes(q) || food.category.toLowerCase().includes(q),
+      getId: getFoodId,
+      matches: matchesFood,
       formatLabel,
       required,
       defaultItem: defaultFood,

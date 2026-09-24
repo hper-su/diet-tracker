@@ -10,6 +10,7 @@ import { listExercises, subscribeToExercises } from "@/lib/db/exercises";
 import {
   isDayMemoLog,
   listExerciseFrequencies,
+  listExerciseHistory,
   listTrainingDates,
   listTrainingLogsByDate,
   listTrainingLogsByUnknownDate,
@@ -21,6 +22,7 @@ import { TrainingLogForm } from "./training-log-form";
 import { TrainingLogRow } from "./training-log-row";
 import { TrainingSummary } from "./training-summary";
 import { DailyMemoForm } from "./daily-memo-form";
+import { ExerciseHistoryChart, toExerciseHistoryPoints } from "./exercise-history-chart";
 
 export default function ClientTrainingPage() {
   return (
@@ -39,20 +41,23 @@ function ClientTrainingPageInner() {
   // 遷移してくる(過去データ移行分、recordedAt=nullの記録)。
   const isUnknownDate = rawDate === "unknown";
   const date = isUnknownDate ? null : rawDate || todayISODate();
+  // 推移グラフで選択中の種目(未選択なら空文字)。
+  const selectedExerciseId = searchParams.get("exercise") ?? "";
 
   const data = useLiveQuery(async () => {
     const client = await getClient(clientId);
     if (!client) return { client: null };
 
-    const [exercises, logs, dates, frequencies] = await Promise.all([
+    const [exercises, logs, dates, frequencies, history] = await Promise.all([
       listExercises(),
       date !== null ? listTrainingLogsByDate(clientId, date) : listTrainingLogsByUnknownDate(clientId),
       listTrainingDates(clientId),
       listExerciseFrequencies(clientId),
+      selectedExerciseId ? listExerciseHistory(clientId, selectedExerciseId) : Promise.resolve([]),
     ]);
 
-    return { client, exercises, logs, dates, frequencies };
-  }, [clientId, date], [
+    return { client, exercises, logs, dates, frequencies, history };
+  }, [clientId, date, selectedExerciseId], [
     subscribeToClients,
     subscribeToExercises,
     (cb) => subscribeToTrainingLogs(clientId, cb),
@@ -70,7 +75,7 @@ function ClientTrainingPageInner() {
     return <NotFound />;
   }
 
-  const { client, exercises, logs, dates, frequencies } = data;
+  const { client, exercises, logs, dates, frequencies, history } = data;
   const today = todayISODate();
   // 「日付不明」の記録一覧を見ている間も、新規記録フォームの日付欄はきちんと
   // 有効な日付を初期値にする(今日の日付にしておく)。
@@ -95,6 +100,43 @@ function ClientTrainingPageInner() {
           実施数が多い種目
         </h2>
         <TrainingSummary frequencies={frequencies} />
+      </section>
+
+      <section className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-medium">種目別の推移</h2>
+          <select
+            value={selectedExerciseId}
+            onChange={(e) => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (e.target.value) {
+                params.set("exercise", e.target.value);
+              } else {
+                params.delete("exercise");
+              }
+              router.push(`/clients/detail/training?${params.toString()}`);
+            }}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          >
+            <option value="">種目を選択...</option>
+            {frequencies
+              .filter((f) => f.exerciseId !== null)
+              .map((f) => (
+                <option key={f.exerciseId} value={f.exerciseId!}>
+                  {f.exerciseName}({f.count}回)
+                </option>
+              ))}
+          </select>
+        </div>
+        {selectedExerciseId ? (
+          <div className="mt-3">
+            <ExerciseHistoryChart data={toExerciseHistoryPoints(history)} />
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-gray-500">
+            種目を選ぶと、重さ・回数の推移(1回のトレーニングの中の最大値)をグラフで確認できます。
+          </p>
+        )}
       </section>
 
       <TrainingLogForm clientId={clientId} date={formDate} exercises={exercises} />

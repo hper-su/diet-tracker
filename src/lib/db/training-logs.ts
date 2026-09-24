@@ -232,6 +232,19 @@ export async function listExerciseFrequencies(clientId: string): Promise<Exercis
   return Array.from(byExercise.values()).sort((a, b) => b.count - a.count);
 }
 
+// 推移グラフ用に、指定した種目(exerciseId)の記録だけを日付の古い順で返す。
+// 日付不明(recordedAt=null、過去データ移行分)の記録はグラフの横軸に置けない
+// ため除外する(実施回数サマリーには引き続き含まれる)。
+export async function listExerciseHistory(
+  clientId: string,
+  exerciseId: string,
+): Promise<TrainingLog[]> {
+  const all = await listAllTrainingLogs(clientId);
+  return all
+    .filter((log) => log.exerciseId === exerciseId && log.recordedAt !== null)
+    .sort((a, b) => a.recordedAt!.localeCompare(b.recordedAt!));
+}
+
 export type InsertTrainingLogInput = {
   clientId: string;
   recordedAt: string | null;

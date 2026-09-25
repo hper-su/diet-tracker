@@ -11,7 +11,8 @@ import { WGER_MUSCLES } from "@/lib/wger/data";
 // 違うがautoに任せる)。図を押すと、同じ図を大きくしたダイアログを開く。
 const BODY_WIDTH = 200;
 const BODY_HEIGHT = 369;
-const ENLARGED_WIDTH = 340;
+// 拡大時の1枚の幅。タブレット縦(768px)のダイアログ内側(約688px)に2枚並ぶ幅にしている。
+const ENLARGED_WIDTH = 320;
 
 const VIEWS = [
   { key: "front", label: "前面", isFront: true },

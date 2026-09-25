@@ -26,7 +26,6 @@ export default function ExercisesPage() {
               <tr className="text-left text-gray-500">
                 <th className="px-4 py-2">種目名</th>
                 <th className="px-4 py-2">別名</th>
-                <th className="px-4 py-2">wger種目</th>
                 <th className="sticky right-0 bg-white px-4 py-2" />
               </tr>
             </thead>
@@ -36,7 +35,7 @@ export default function ExercisesPage() {
               ))}
               {exercises.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={3} className="px-4 py-6 text-center text-gray-500">
                     まだ種目が登録されていません。
                   </td>
                 </tr>

@@ -68,7 +68,7 @@ export function WgerExercisePanel({ wgerId }: { wgerId: number }) {
                 src={src}
                 alt={`${exercise.name}のフォーム`}
                 loading="lazy"
-                className="h-40 w-40 rounded border border-gray-100 object-cover"
+                className="h-32 w-32 rounded border border-gray-100 object-cover sm:h-40 sm:w-40"
               />
             ))}
           </div>

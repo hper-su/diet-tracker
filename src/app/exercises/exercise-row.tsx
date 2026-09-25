@@ -20,23 +20,23 @@ export function ExerciseRow({ exercise }: { exercise: Exercise }) {
     return (
       <>
         <tr className="border-t border-gray-100">
-          <td className="px-4 py-2 font-medium">{exercise.name}</td>
-          <td className="px-4 py-2 text-gray-500">
-            {exercise.aliases.join("、") || "—"}
-          </td>
-          <td className="px-4 py-2 text-gray-500">
-            {wger ? (
+          <td className="px-4 py-2">
+            <div className="font-medium">{exercise.name}</div>
+            {/* 右端の操作列が固定表示のため、別の列にすると狭い画面で隠れてしまう。
+                種目名の下に置いて常に見えるようにする。 */}
+            {wger && (
               <button
                 type="button"
                 onClick={() => setDetailOpen((open) => !open)}
                 aria-expanded={detailOpen}
-                className="rounded px-1 py-0.5 text-left text-xs text-blue-600 hover:bg-blue-50"
+                className="-ml-1 mt-0.5 rounded px-1 py-1 text-left text-xs text-blue-600 hover:bg-blue-50"
               >
-                {detailOpen ? "▾" : "▸"} {wger.name}
+                {detailOpen ? "▾" : "▸"} wger: {wger.name}
               </button>
-            ) : (
-              "—"
             )}
+          </td>
+          <td className="px-4 py-2 text-gray-500">
+            {exercise.aliases.join("、") || "—"}
           </td>
           <td className="sticky right-0 bg-white px-4 py-2 text-right whitespace-nowrap">
             <button
@@ -59,8 +59,12 @@ export function ExerciseRow({ exercise }: { exercise: Exercise }) {
         </tr>
         {detailOpen && exercise.wgerId != null && (
           <tr className="bg-gray-50">
-            <td colSpan={4} className="px-4 py-3">
-              <WgerExercisePanel wgerId={exercise.wgerId} />
+            <td colSpan={3} className="px-4 py-3">
+              {/* 表は横スクロールできる幅(min-w-max)のため、そのままだと詳細が表の幅いっぱいに
+                  広がり画面の外へはみ出す。横スクロールしても左端に留め、画面幅に収める。 */}
+              <div className="sticky left-0 w-[min(calc(100vw-5rem),48rem)]">
+                <WgerExercisePanel wgerId={exercise.wgerId} />
+              </div>
             </td>
           </tr>
         )}
@@ -70,7 +74,7 @@ export function ExerciseRow({ exercise }: { exercise: Exercise }) {
 
   return (
     <tr className="border-t border-gray-100 bg-gray-50">
-      <td colSpan={4} className="px-4 py-3">
+      <td colSpan={3} className="px-4 py-3">
         <form action={formAction} className="grid gap-2 sm:grid-cols-6">
           <input type="hidden" name="id" value={exercise.id} />
           <label className="block text-xs sm:col-span-2">

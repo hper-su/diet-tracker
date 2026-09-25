@@ -122,6 +122,7 @@ export function TrainingLogRow({
             <span className="mb-1 block text-gray-500">セット数</span>
             <input
               name="sets"
+              inputMode="numeric"
               defaultValue={log.sets}
               className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />

@@ -61,13 +61,13 @@ export const MUSCLE_EXERCISE_TABLE: Record<ExerciseCategory, MuscleExerciseRow[]
     {
       exercise: "ラットプルダウン",
       primaryMuscles: "広背筋",
-      secondaryMuscles: "上腕二頭筋、大円筋、菱形筋",
+      secondaryMuscles: "上腕二頭筋、上腕筋、大円筋、菱形筋、僧帽筋下部",
       bonesJoints: "上腕骨、肩甲骨、肩関節",
     },
     {
       exercise: "ベントオーバーロウ",
       primaryMuscles: "広背筋、僧帽筋中部",
-      secondaryMuscles: "菱形筋、上腕二頭筋、脊柱起立筋、腰方形筋(安定)",
+      secondaryMuscles: "菱形筋、三角筋後部、上腕二頭筋、脊柱起立筋、腰方形筋(安定)",
       bonesJoints: "上腕骨、肩甲骨、脊柱、腰椎",
     },
     {
@@ -205,7 +205,7 @@ export const MUSCLE_EXERCISE_TABLE: Record<ExerciseCategory, MuscleExerciseRow[]
     {
       exercise: "プランク",
       primaryMuscles: "腹直筋、腹横筋",
-      secondaryMuscles: "脊柱起立筋、大殿筋、骨盤底筋群、横隔膜(ブレーシング)",
+      secondaryMuscles: "腹斜筋、脊柱起立筋、大殿筋、骨盤底筋群、横隔膜(ブレーシング)",
       bonesJoints: "脊柱、肋骨、寛骨",
     },
     {
@@ -217,7 +217,7 @@ export const MUSCLE_EXERCISE_TABLE: Record<ExerciseCategory, MuscleExerciseRow[]
     {
       exercise: "デッドバグ",
       primaryMuscles: "腹横筋、腹直筋",
-      secondaryMuscles: "腸腰筋、骨盤底筋群",
+      secondaryMuscles: "腹斜筋、腸腰筋、骨盤底筋群",
       bonesJoints: "脊柱、肋骨",
     },
     {

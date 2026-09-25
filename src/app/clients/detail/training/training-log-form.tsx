@@ -156,6 +156,7 @@ export function TrainingLogForm({
               )}
               <input
                 name="sets"
+                inputMode="numeric"
                 placeholder="例: 3"
                 onChange={() => handleRowFieldChange(row.key)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm"

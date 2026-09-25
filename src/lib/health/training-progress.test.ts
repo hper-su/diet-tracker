@@ -22,6 +22,11 @@ describe("parsePeakNumber", () => {
     expect(parsePeakNumber("15(同上)")).toBe(15);
   });
 
+  it("reads full-width digits saved before input normalization", () => {
+    expect(parsePeakNumber("１２")).toBe(12);
+    expect(parsePeakNumber("２５、２０")).toBe(25);
+  });
+
   it("returns null for an empty string", () => {
     expect(parsePeakNumber("")).toBeNull();
   });

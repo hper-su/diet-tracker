@@ -6,7 +6,8 @@
 //
 // 出力:
 //   src/lib/wger/exercises.generated.json  種目(名称・器具・主働筋/補助筋ID・画像URL)と筋肉一覧
-//   public/anatomy/wger/*.svg              人体(前面/背面)と筋肉ごとのオーバーレイSVG
+//   public/anatomy/wger/body-*.webp       人体(前面/背面)。元SVGは座標が細かく300KB超のため、WebPへ変換
+//   public/anatomy/wger/{main,secondary}-N.svg  筋肉ごとのオーバーレイSVG(各3KB程度)
 //
 // 使い方(認証不要):
 //   node scripts/build-wger-data.mjs
@@ -18,6 +19,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 import {
   UNMAPPED_EXERCISE_NAMES,
   WGER_EXERCISE_MAP,
@@ -27,6 +29,21 @@ import {
 const API = "https://wger.de/api/v2";
 const STATIC = "https://wger.de/static/images/muscles";
 const ENGLISH_LANGUAGE_ID = 2;
+
+// 人体図(元は200x369)を拡大表示でも粗くならない幅のWebPにする。
+// 表示側は筋肉オーバーレイ(viewBox 200x*)と同じ縦横比の箱に重ねるため、
+// 高さは元の縦横比(200:369)に合わせて固定する。
+const BODY_WEBP_WIDTH = 720;
+const BODY_WEBP_HEIGHT = Math.round((BODY_WEBP_WIDTH * 369) / 200);
+const BODY_SVG_WIDTH = 200;
+
+async function writeBodyWebp(svgUrl, file) {
+  const svg = await fetchSvg(svgUrl);
+  await sharp(Buffer.from(svg), { density: (72 * BODY_WEBP_WIDTH) / BODY_SVG_WIDTH })
+    .resize(BODY_WEBP_WIDTH, BODY_WEBP_HEIGHT, { fit: "fill" })
+    .webp({ quality: 80, alphaQuality: 80 })
+    .toFile(file);
+}
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const jsonPath = path.join(rootDir, "src/lib/wger/exercises.generated.json");
@@ -72,13 +89,13 @@ const muscles = muscleList
   .sort((a, b) => a.id - b.id);
 
 await mkdir(svgDir, { recursive: true });
-await writeFile(
-  path.join(svgDir, "body-front.svg"),
-  await fetchSvg(`${STATIC}/muscular_system_front.svg`),
+await writeBodyWebp(
+  `${STATIC}/muscular_system_front.svg`,
+  path.join(svgDir, "body-front.webp"),
 );
-await writeFile(
-  path.join(svgDir, "body-back.svg"),
-  await fetchSvg(`${STATIC}/muscular_system_back.svg`),
+await writeBodyWebp(
+  `${STATIC}/muscular_system_back.svg`,
+  path.join(svgDir, "body-back.webp"),
 );
 for (const m of muscleList) {
   await writeFile(path.join(svgDir, `main-${m.id}.svg`), await fetchSvg(m.image_url_main));
@@ -109,7 +126,7 @@ for (const id of uniqueWgerIds()) {
 await mkdir(path.dirname(jsonPath), { recursive: true });
 await writeFile(jsonPath, `${JSON.stringify({ muscles, exercises }, null, 2)}\n`);
 
-console.log(`筋肉 ${muscles.length}件 / 種目 ${exercises.length}件 / SVG ${2 + muscleList.length * 2}枚を出力しました。`);
+console.log(`筋肉 ${muscles.length}件 / 種目 ${exercises.length}件 / 人体図(WebP)2枚 / 筋肉SVG ${muscleList.length * 2}枚を出力しました。`);
 console.log(`マスタ種目のうちwgerに対応づけたもの: ${WGER_EXERCISE_MAP.size}件`);
 console.log(`未対応: ${UNMAPPED_EXERCISE_NAMES.length}件`);
 for (const ex of exercises) {

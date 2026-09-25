@@ -39,7 +39,7 @@ describe("wger-exercise-map", () => {
       }
     }
     for (const view of ["front", "back"]) {
-      expect(existsSync(path.join(rootDir, `public/anatomy/wger/body-${view}.svg`))).toBe(true);
+      expect(existsSync(path.join(rootDir, `public/anatomy/wger/body-${view}.webp`))).toBe(true);
     }
   });
 });

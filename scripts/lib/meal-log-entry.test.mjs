@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { parseArgs, normalizeEntry, MEAL_TYPE_ALIASES } from "./meal-log-entry.mjs";
+import {
+  parseArgs,
+  normalizeEntry,
+  MEAL_TYPE_ALIASES,
+  mealLogDuplicateKey,
+  splitDuplicates,
+} from "./meal-log-entry.mjs";
 
 describe("parseArgs", () => {
   it("reads a flag with a following value", () => {
@@ -115,5 +121,57 @@ describe("normalizeEntry", () => {
 
   it("includes the 1-based entry number in error messages", () => {
     expect(() => normalizeEntry(baseEntry({ client: undefined }), 2)).toThrow(/3件目/);
+  });
+});
+
+describe("splitDuplicates", () => {
+  const log = (overrides = {}) => ({
+    clientId: "c1",
+    recordedAt: "2026-09-25",
+    mealType: "lunch",
+    foodName: "味噌汁",
+    quantity: 1,
+    kcal: 70,
+    proteinG: 4.5,
+    fatG: 3,
+    carbG: 6,
+    ...overrides,
+  });
+
+  it("treats everything as fresh when nothing is registered yet", () => {
+    const toInsert = [log(), log({ foodName: "ご飯" })];
+    expect(splitDuplicates(toInsert, [])).toEqual({ fresh: toInsert, duplicates: [] });
+  });
+
+  it("skips an entry identical to an existing log", () => {
+    const toInsert = [log(), log({ foodName: "ご飯" })];
+    const result = splitDuplicates(toInsert, [{ ...log(), memo: null, foodId: null }]);
+    expect(result.duplicates).toEqual([toInsert[0]]);
+    expect(result.fresh).toEqual([toInsert[1]]);
+  });
+
+  it("does not treat the same food in a different meal as a duplicate", () => {
+    const result = splitDuplicates([log({ mealType: "dinner" })], [log()]);
+    expect(result.duplicates).toEqual([]);
+  });
+
+  it("does not treat a different client, date, or nutrient value as a duplicate", () => {
+    const toInsert = [log({ clientId: "c2" }), log({ recordedAt: "2026-09-26" }), log({ kcal: 71 })];
+    expect(splitDuplicates(toInsert, [log()]).fresh).toEqual(toInsert);
+  });
+
+  it("matches counts, so a second identical entry beyond the existing one is fresh", () => {
+    const toInsert = [log(), log()];
+    const result = splitDuplicates(toInsert, [log()]);
+    expect(result.duplicates).toHaveLength(1);
+    expect(result.fresh).toHaveLength(1);
+  });
+
+  it("supports a custom key function for wrapped items", () => {
+    const wrapped = [{ clientId: "c1", entry: log() }];
+    const result = splitDuplicates(wrapped, [log()], ({ clientId, entry }) =>
+      mealLogDuplicateKey({ ...entry, clientId }),
+    );
+    expect(result.duplicates).toEqual(wrapped);
   });
 });

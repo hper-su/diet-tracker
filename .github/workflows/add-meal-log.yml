@@ -22,6 +22,11 @@ on:
         required: false
         default: "false"
         type: boolean
+      allow_duplicates:
+        description: "true にすると重複チェックを行わず、登録済みと同じ内容でも登録する"
+        required: false
+        default: "false"
+        type: boolean
 
 jobs:
   add-meal-log:
@@ -44,9 +49,9 @@ jobs:
           MEAL_LOG_BOT_PASSWORD: ${{ secrets.MEAL_LOG_BOT_PASSWORD }}
           MEAL_JSON: ${{ github.event.inputs.json }}
           DRY_RUN: ${{ github.event.inputs.dry_run }}
+          ALLOW_DUPLICATES: ${{ github.event.inputs.allow_duplicates }}
         run: |
-          if [ "$DRY_RUN" = "true" ]; then
-            node scripts/add-meal-log.mjs --json "$MEAL_JSON" --dry-run
-          else
-            node scripts/add-meal-log.mjs --json "$MEAL_JSON"
-          fi
+          set -- --json "$MEAL_JSON"
+          if [ "$DRY_RUN" = "true" ]; then set -- "$@" --dry-run; fi
+          if [ "$ALLOW_DUPLICATES" = "true" ]; then set -- "$@" --allow-duplicates; fi
+          node scripts/add-meal-log.mjs "$@"

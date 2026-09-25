@@ -72,6 +72,13 @@ describe("findRelatedExercisesForBone", () => {
     expect(results.some((r) => r.exercise === "スクワット")).toBe(true);
   });
 
+  it("resolves the bones that make up 寛骨 (腸骨・恥骨・坐骨)", () => {
+    for (const bone of ["腸骨", "恥骨", "坐骨"]) {
+      const results = findRelatedExercisesForBone(bone);
+      expect(results.some((r) => r.exercise === "ヒップスラスト"), bone).toBe(true);
+    }
+  });
+
   it("finds exercises for 上腕骨", () => {
     const results = findRelatedExercisesForBone("上腕骨");
     expect(results.some((r) => r.exercise === "ベンチプレス")).toBe(true);

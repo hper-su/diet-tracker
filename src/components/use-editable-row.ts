@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { submitKeepingInput } from "./submit-keeping-input";
 
 type ActionState = { error?: string } | undefined;
 
@@ -44,6 +45,8 @@ export function useEditableRow<S extends ActionState>(
     editing,
     setEditing,
     formAction,
+    // formAction(<form action>)の代わりに使うと、エラー時に入力欄が初期値へ戻らない。
+    onSubmit: submitKeepingInput(formAction),
     pending,
     error: state !== dismissedState ? state?.error : undefined,
     cancel,

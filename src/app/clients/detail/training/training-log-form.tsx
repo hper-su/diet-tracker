@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useEffect, useState } from "react";
 import { addTrainingLogAction } from "./actions";
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { ExercisePicker, type ExercisePickerHandle } from "../exercise-picker";
 import type { Exercise } from "@/lib/db/exercises";
 
@@ -84,7 +85,7 @@ export function TrainingLogForm({
     <form
       key={date}
       ref={formRef}
-      action={formAction}
+      onSubmit={submitKeepingInput(formAction)}
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
     >
       <h2 className="font-medium">トレーニングを記録</h2>

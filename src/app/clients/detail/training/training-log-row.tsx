@@ -15,7 +15,7 @@ export function TrainingLogRow({
   clientId: string;
   exercises: Exercise[];
 }) {
-  const { editing, setEditing, formAction, pending, error, cancel } = useEditableRow(
+  const { editing, setEditing, onSubmit, pending, error, cancel } = useEditableRow(
     updateTrainingLogAction,
     undefined,
   );
@@ -78,7 +78,7 @@ export function TrainingLogRow({
     <tr className="border-t border-gray-100 bg-gray-50">
       <td colSpan={6} className="px-4 py-3">
         <form
-          action={formAction}
+          onSubmit={onSubmit}
           className="sticky left-0 grid w-[min(56rem,calc(100vw-4rem))] gap-2 sm:grid-cols-12"
         >
           <input type="hidden" name="id" value={log.id} />

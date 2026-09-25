@@ -9,7 +9,7 @@ import { updateExerciseAction, deleteExerciseAction } from "./actions";
 import { WgerSelect } from "./wger-select";
 
 export function ExerciseRow({ exercise }: { exercise: Exercise }) {
-  const { editing, setEditing, formAction, pending, error, cancel } = useEditableRow(
+  const { editing, setEditing, onSubmit, pending, error, cancel } = useEditableRow(
     updateExerciseAction,
     undefined,
   );
@@ -75,7 +75,7 @@ export function ExerciseRow({ exercise }: { exercise: Exercise }) {
   return (
     <tr className="border-t border-gray-100 bg-gray-50">
       <td colSpan={3} className="px-4 py-3">
-        <form action={formAction} className="grid gap-2 sm:grid-cols-6">
+        <form onSubmit={onSubmit} className="grid gap-2 sm:grid-cols-6">
           <input type="hidden" name="id" value={exercise.id} />
           <label className="block text-xs sm:col-span-2">
             <span className="mb-1 block text-gray-500">種目名</span>

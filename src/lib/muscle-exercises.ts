@@ -246,6 +246,10 @@ export const MUSCLE_EXERCISE_NOTES: string[] = [
 // この対応表側の表記が完全一致しない箇所を補う同義語。
 const MUSCLE_NAME_ALIASES: Record<string, string[]> = {
   骨盤: ["寛骨"],
+  // 寛骨は腸骨・恥骨・坐骨が合わさった骨。対応表は「寛骨」でまとめて書いている。
+  腸骨: ["寛骨"],
+  恥骨: ["寛骨"],
+  坐骨: ["寛骨"],
   下腿三頭筋: ["腓腹筋", "ヒラメ筋"],
 };
 

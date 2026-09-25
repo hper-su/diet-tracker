@@ -109,6 +109,8 @@ export function MuscleHighlight({
   const secondary = secondaryIds.filter((id) => !primary.has(id));
 
   // 拡大表示は開いている間だけ中身を描画する(画像を二重に持たないため)。
+  // 開閉はdialogのcloseイベントに頼らず、閉じる操作の側で必ずstateを戻す
+  // (closeイベントだけに頼ると、閉じた後もdialogが残って再度開けなくなる)。
   const [enlarged, setEnlarged] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -116,11 +118,22 @@ export function MuscleHighlight({
     if (enlarged && dialog && !dialog.open) dialog.showModal();
   }, [enlarged]);
 
+  function openEnlarged() {
+    // 閉じたdialogが残っている場合(effectが再実行されない場合)に備え、直接開く。
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    setEnlarged(true);
+  }
+
+  function closeEnlarged() {
+    setEnlarged(false);
+  }
+
   return (
     <div>
       <button
         type="button"
-        onClick={() => setEnlarged(true)}
+        onClick={openEnlarged}
         aria-label="筋肉図を拡大して表示"
         className="block w-full cursor-zoom-in rounded"
       >
@@ -137,10 +150,15 @@ export function MuscleHighlight({
       {enlarged && (
         <dialog
           ref={dialogRef}
-          onClose={() => setEnlarged(false)}
+          // Escキーなどブラウザ側で閉じられた場合も、表示状態を戻す。
+          onCancel={(e) => {
+            e.preventDefault();
+            closeEnlarged();
+          }}
+          onClose={closeEnlarged}
           // ダイアログの外側(背景)を押したときも閉じる。
           onClick={(e) => {
-            if (e.target === e.currentTarget) e.currentTarget.close();
+            if (e.target === e.currentTarget) closeEnlarged();
           }}
           aria-label="筋肉図(拡大)"
           className="m-auto max-h-[94vh] w-[min(94vw,780px)] overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 shadow-xl backdrop:bg-black/50"
@@ -148,7 +166,7 @@ export function MuscleHighlight({
           <div className="mb-2 flex justify-end">
             <button
               type="button"
-              onClick={() => dialogRef.current?.close()}
+              onClick={closeEnlarged}
               className="rounded border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50"
             >
               閉じる

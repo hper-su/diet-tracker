@@ -1,5 +1,6 @@
 "use client";
 
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { useActionState } from "react";
 import { updatePlanGoal } from "./actions";
 
@@ -24,7 +25,7 @@ export function PlanGoalForm({
   return (
     <form
       key={`${currentWeightChangeKg}-${currentPeriodMonths}-${currentTargetWeightKg}-${currentTargetBodyFatPct}`}
-      action={formAction}
+      onSubmit={submitKeepingInput(formAction)}
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
     >
       <h2 className="font-medium">目標設定</h2>

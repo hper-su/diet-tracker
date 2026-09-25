@@ -1,5 +1,6 @@
 "use client";
 
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { useActionState, useRef, useEffect, useState } from "react";
 import { addUsualMealAction } from "./usual-meal-actions";
 import { FoodPicker, type FoodPickerHandle } from "../food-picker";
@@ -57,7 +58,7 @@ export function UsualMealForm({
   return (
     <form
       ref={formRef}
-      action={formAction}
+      onSubmit={submitKeepingInput(formAction)}
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
     >
       <h2 className="font-medium">普段の3食を記録</h2>

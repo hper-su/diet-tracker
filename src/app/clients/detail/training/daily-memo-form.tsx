@@ -1,5 +1,6 @@
 "use client";
 
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { useActionState } from "react";
 import { setDailyMemoAction } from "./actions";
 
@@ -22,7 +23,7 @@ export function DailyMemoForm({
       // 別の日に持ち越されたり、textareaの初期値が古いままになったりしないようにする
       // (TrainingLogForm/MealLogFormと同じ考え方)。
       key={date}
-      action={formAction}
+      onSubmit={submitKeepingInput(formAction)}
       className="space-y-2 rounded-lg border border-gray-200 bg-white p-4"
     >
       <input type="hidden" name="client_id" value={clientId} />

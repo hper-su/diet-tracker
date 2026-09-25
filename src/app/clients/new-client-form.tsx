@@ -1,5 +1,6 @@
 "use client";
 
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { useActionState, useState } from "react";
 import { addClientAction, type AddClientState } from "./actions";
 import { getBodyAverageForGender } from "@/lib/health/body-averages";
@@ -52,7 +53,7 @@ function NewClientFormFields({
 
   return (
     <form
-      action={formAction}
+      onSubmit={submitKeepingInput(formAction)}
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
     >
       <h2 className="font-medium">お客様を新規登録</h2>

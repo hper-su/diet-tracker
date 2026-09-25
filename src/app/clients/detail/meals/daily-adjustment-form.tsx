@@ -1,5 +1,6 @@
 "use client";
 
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { useActionState, useState } from "react";
 import { setDailyAdjustmentAction, type DailyAdjustmentState } from "./actions";
 
@@ -66,7 +67,7 @@ export function DailyAdjustmentForm({
   return (
     <form
       key={formKey}
-      action={formAction}
+      onSubmit={submitKeepingInput(formAction)}
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
     >
       <input type="hidden" name="client_id" value={clientId} />

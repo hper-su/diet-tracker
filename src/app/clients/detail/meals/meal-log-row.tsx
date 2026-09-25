@@ -29,7 +29,7 @@ export function MealLogRow({
   clientId: string;
   foods: Food[];
 }) {
-  const { editing, setEditing, formAction, pending, error, cancel } = useEditableRow(
+  const { editing, setEditing, onSubmit, pending, error, cancel } = useEditableRow(
     updateMealLogAction,
     undefined,
   );
@@ -122,7 +122,7 @@ export function MealLogRow({
     <tr className="border-t border-gray-100 bg-gray-50">
       <td colSpan={7} className="px-4 py-3">
         <form
-          action={formAction}
+          onSubmit={onSubmit}
           className="sticky left-0 grid w-[min(52rem,calc(100vw-4rem))] gap-2 sm:grid-cols-10"
         >
           <input type="hidden" name="id" value={log.id} />

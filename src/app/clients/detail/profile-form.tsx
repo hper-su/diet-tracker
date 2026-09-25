@@ -1,5 +1,6 @@
 "use client";
 
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { useActionState, useState } from "react";
 import { updateClientProfileAction } from "./profile-actions";
 import { BirthdateField } from "@/components/birthdate-field";
@@ -30,7 +31,7 @@ export function ProfileForm({ client }: { client: Client }) {
 
   return (
     <form
-      action={formAction}
+      onSubmit={submitKeepingInput(formAction)}
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
     >
       <h2 className="font-medium">プロフィール</h2>

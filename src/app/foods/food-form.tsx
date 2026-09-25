@@ -1,5 +1,6 @@
 "use client";
 
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { useActionState, useRef, useEffect } from "react";
 import { addFoodAction } from "./actions";
 
@@ -16,7 +17,7 @@ export function FoodForm({ categories }: { categories: string[] }) {
   return (
     <form
       ref={formRef}
-      action={formAction}
+      onSubmit={submitKeepingInput(formAction)}
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
     >
       <h2 className="font-medium">食品を登録</h2>

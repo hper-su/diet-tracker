@@ -44,8 +44,8 @@ export function useEditableRow<S extends ActionState>(
   return {
     editing,
     setEditing,
-    formAction,
-    // formAction(<form action>)の代わりに使うと、エラー時に入力欄が初期値へ戻らない。
+    // <form onSubmit={onSubmit}> に渡す。<form action> だとReact 19がエラー時にも
+    // 入力欄を初期値へ戻してしまうため、編集中の内容が消えない送信方法にしている。
     onSubmit: submitKeepingInput(formAction),
     pending,
     error: state !== dismissedState ? state?.error : undefined,

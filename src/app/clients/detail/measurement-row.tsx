@@ -1,5 +1,6 @@
 "use client";
 
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { useActionState, useState } from "react";
 import type { Measurement } from "@/lib/db/measurements";
 import { calculateBMI } from "@/lib/health/bmi";
@@ -81,7 +82,7 @@ export function MeasurementRow({
   return (
     <tr className="border-t border-gray-100 bg-gray-50">
       <td colSpan={10} className="px-4 py-3">
-        <form action={formAction} className="grid gap-2 sm:grid-cols-9">
+        <form onSubmit={submitKeepingInput(formAction)} className="grid gap-2 sm:grid-cols-9">
           <input type="hidden" name="id" value={measurement.id} />
           <input type="hidden" name="client_id" value={clientId} />
           <label className="block text-xs">

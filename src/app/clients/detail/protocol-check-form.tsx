@@ -1,5 +1,6 @@
 "use client";
 
+import { submitKeepingInput } from "@/components/submit-keeping-input";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { PROTOCOL_CONDITIONS } from "@/lib/conditions";
 import { MovementIcon, MOVEMENT_ICON_LABELS } from "@/lib/movement-icons";
@@ -42,7 +43,7 @@ export function ProtocolCheckForm({ clientId }: { clientId: string }) {
   return (
     <form
       ref={formRef}
-      action={formAction}
+      onSubmit={submitKeepingInput(formAction)}
       className="space-y-4 rounded-lg border border-gray-200 bg-white p-4"
     >
       <div>

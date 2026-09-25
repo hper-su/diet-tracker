@@ -5,7 +5,7 @@ import { useEditableRow } from "@/components/use-editable-row";
 import { updateFoodAction, deleteFoodAction } from "./actions";
 
 export function FoodRow({ food }: { food: Food }) {
-  const { editing, setEditing, formAction, pending, error, cancel } = useEditableRow(
+  const { editing, setEditing, onSubmit, pending, error, cancel } = useEditableRow(
     updateFoodAction,
     undefined,
   );
@@ -45,7 +45,7 @@ export function FoodRow({ food }: { food: Food }) {
   return (
     <tr className="border-t border-gray-100 bg-gray-50">
       <td colSpan={8} className="px-4 py-3">
-        <form action={formAction} className="grid gap-2 sm:grid-cols-8">
+        <form onSubmit={onSubmit} className="grid gap-2 sm:grid-cols-8">
           <input type="hidden" name="id" value={food.id} />
           <label className="block text-xs sm:col-span-2">
             <span className="mb-1 block text-gray-500">分類</span>

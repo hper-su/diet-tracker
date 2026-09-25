@@ -1,0 +1,669 @@
+{
+  "muscles": [
+    {
+      "id": 1,
+      "name": "Biceps brachii",
+      "nameEn": "Biceps",
+      "isFront": true
+    },
+    {
+      "id": 2,
+      "name": "Anterior deltoid",
+      "nameEn": "Shoulders",
+      "isFront": true
+    },
+    {
+      "id": 3,
+      "name": "Serratus anterior",
+      "nameEn": "",
+      "isFront": true
+    },
+    {
+      "id": 4,
+      "name": "Pectoralis major",
+      "nameEn": "Chest",
+      "isFront": true
+    },
+    {
+      "id": 5,
+      "name": "Triceps brachii",
+      "nameEn": "Triceps",
+      "isFront": false
+    },
+    {
+      "id": 6,
+      "name": "Rectus abdominis",
+      "nameEn": "Abs",
+      "isFront": true
+    },
+    {
+      "id": 7,
+      "name": "Gastrocnemius",
+      "nameEn": "Calves",
+      "isFront": false
+    },
+    {
+      "id": 8,
+      "name": "Gluteus maximus",
+      "nameEn": "Glutes",
+      "isFront": false
+    },
+    {
+      "id": 9,
+      "name": "Trapezius",
+      "nameEn": "",
+      "isFront": false
+    },
+    {
+      "id": 10,
+      "name": "Quadriceps femoris",
+      "nameEn": "Quads",
+      "isFront": true
+    },
+    {
+      "id": 11,
+      "name": "Biceps femoris",
+      "nameEn": "Hamstrings",
+      "isFront": false
+    },
+    {
+      "id": 12,
+      "name": "Latissimus dorsi",
+      "nameEn": "Lats",
+      "isFront": false
+    },
+    {
+      "id": 13,
+      "name": "Brachialis",
+      "nameEn": "",
+      "isFront": true
+    },
+    {
+      "id": 14,
+      "name": "Obliquus externus abdominis",
+      "nameEn": "",
+      "isFront": true
+    },
+    {
+      "id": 15,
+      "name": "Soleus",
+      "nameEn": "",
+      "isFront": false
+    }
+  ],
+  "exercises": [
+    {
+      "id": 73,
+      "name": "Bench Press",
+      "category": "Chest",
+      "equipment": [
+        "Barbell",
+        "Bench"
+      ],
+      "primaryMuscleIds": [
+        4
+      ],
+      "secondaryMuscleIds": [
+        2,
+        5
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/192/Bench-press-1.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/192/Bench-press-2.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 75,
+      "name": "Benchpress Dumbbells",
+      "category": "Chest",
+      "equipment": [
+        "Bench",
+        "Dumbbell"
+      ],
+      "primaryMuscleIds": [
+        4
+      ],
+      "secondaryMuscleIds": [
+        2,
+        5
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/97/Dumbbell-bench-press-1.png.400x400_q85.jpg",
+        "https://wger.de/media/exercise-images/75/7b700f5d-17fc-41a9-bd41-e98e45c15768.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/97/Dumbbell-bench-press-2.png.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 76,
+      "name": "Bench Press Narrow Grip",
+      "category": "Arms",
+      "equipment": [
+        "Barbell",
+        "Bench"
+      ],
+      "primaryMuscleIds": [
+        5
+      ],
+      "secondaryMuscleIds": [
+        2,
+        4
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/88/Narrow-grip-bench-press-1.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/76/9abec4e4-90ba-44f9-9e6e-5e35f7273078.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/88/Narrow-grip-bench-press-2.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 83,
+      "name": "Bent Over Rowing",
+      "category": "Back",
+      "equipment": [
+        "Barbell"
+      ],
+      "primaryMuscleIds": [
+        12
+      ],
+      "secondaryMuscleIds": [
+        1,
+        2
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/109/Barbell-rear-delt-row-1.png.400x400_q85.jpg",
+        "https://wger.de/media/exercise-images/109/Barbell-rear-delt-row-2.png.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 91,
+      "name": "Biceps Curls With Barbell",
+      "category": "Arms",
+      "equipment": [
+        "Barbell"
+      ],
+      "primaryMuscleIds": [
+        1
+      ],
+      "secondaryMuscleIds": [
+        13
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/74/Bicep-curls-1.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/74/Bicep-curls-2.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 165,
+      "name": "Ball crunches",
+      "category": "Abs",
+      "equipment": [],
+      "primaryMuscleIds": [
+        6
+      ],
+      "secondaryMuscleIds": [
+        14
+      ],
+      "images": []
+    },
+    {
+      "id": 167,
+      "name": "Crunches",
+      "category": "Abs",
+      "equipment": [
+        "Gym mat"
+      ],
+      "primaryMuscleIds": [
+        6
+      ],
+      "secondaryMuscleIds": [
+        3
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/91/Crunches-1.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/91/Crunches-2.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 178,
+      "name": "Deadbug",
+      "category": "Abs",
+      "equipment": [],
+      "primaryMuscleIds": [
+        6
+      ],
+      "secondaryMuscleIds": [
+        14
+      ],
+      "images": []
+    },
+    {
+      "id": 184,
+      "name": "Deadlifts",
+      "category": "Back",
+      "equipment": [
+        "Barbell"
+      ],
+      "primaryMuscleIds": [
+        12
+      ],
+      "secondaryMuscleIds": [
+        8
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/184/1709c405-620a-4d07-9658-fade2b66a2df.jpeg.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 203,
+      "name": "Dumbbell Goblet Squat",
+      "category": "Legs",
+      "equipment": [
+        "Dumbbell"
+      ],
+      "primaryMuscleIds": [
+        10
+      ],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/203/1c052351-2af0-4227-aeb0-244008e4b0a8.jpeg.400x400_q85.jpg",
+        "https://wger.de/media/exercise-images/203/2ab30113-4e08-4d39-9d23-d901ce2c0971.jpeg.400x400_q85.jpg",
+        "https://wger.de/media/exercise-images/203/300a44ac-4368-48e2-8b18-beea32ab915d.gif"
+      ]
+    },
+    {
+      "id": 204,
+      "name": "Dumbbell Incline Curl",
+      "category": "Arms",
+      "equipment": [
+        "Dumbbell"
+      ],
+      "primaryMuscleIds": [
+        1
+      ],
+      "secondaryMuscleIds": [
+        13
+      ],
+      "images": []
+    },
+    {
+      "id": 238,
+      "name": "Fly With Dumbbells",
+      "category": "Chest",
+      "equipment": [
+        "Dumbbell"
+      ],
+      "primaryMuscleIds": [
+        4
+      ],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/238/2fc242d3-5bdd-4f97-99bd-678adb8c96fc.png.400x400_q85.jpg",
+        "https://wger.de/media/exercise-images/238/c6464fb3-1924-4ff1-adfa-fd36da9b5d13.png.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 265,
+      "name": "Glute Bridge",
+      "category": "Legs",
+      "equipment": [],
+      "primaryMuscleIds": [
+        8
+      ],
+      "secondaryMuscleIds": [
+        11
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/265/7528acb4-b2cc-4b75-b6ae-d514cbd4f78b.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 294,
+      "name": "Hip Thrust",
+      "category": "Legs",
+      "equipment": [
+        "Barbell",
+        "Bench"
+      ],
+      "primaryMuscleIds": [
+        8
+      ],
+      "secondaryMuscleIds": [],
+      "images": []
+    },
+    {
+      "id": 308,
+      "name": "Incline Dumbbell Fly",
+      "category": "Chest",
+      "equipment": [
+        "Dumbbell",
+        "Incline bench"
+      ],
+      "primaryMuscleIds": [
+        4
+      ],
+      "secondaryMuscleIds": [],
+      "images": []
+    },
+    {
+      "id": 348,
+      "name": "Lateral Raises",
+      "category": "Shoulders",
+      "equipment": [
+        "Dumbbell"
+      ],
+      "primaryMuscleIds": [
+        2
+      ],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png.400x400_q85.jpg",
+        "https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-1.png.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 364,
+      "name": "Leg Curl",
+      "category": "Legs",
+      "equipment": [],
+      "primaryMuscleIds": [
+        8,
+        11
+      ],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/364/b318dde9-f5f2-489f-940a-cd864affb9e3.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 377,
+      "name": "Leg Raises, Lying",
+      "category": "Abs",
+      "equipment": [
+        "Gym mat"
+      ],
+      "primaryMuscleIds": [
+        6
+      ],
+      "secondaryMuscleIds": [
+        3
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/125/Leg-raises-2.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/125/Leg-raises-1.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 458,
+      "name": "Plank",
+      "category": "Abs",
+      "equipment": [
+        "none (bodyweight exercise)"
+      ],
+      "primaryMuscleIds": [
+        6,
+        14
+      ],
+      "secondaryMuscleIds": [
+        1,
+        5,
+        10
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/458/b7bd9c28-9f1d-4647-bd17-ab6a3adf5770.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/458/902e6836-394e-458b-b94e-101d714294e2.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/458/d1ca4a79-f299-4e70-a391-3e9526c3b141.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/458/b180ce8b-a2c2-40da-924f-998d97aebb63.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/458/167db646-9acb-4426-a383-c7e7dc92e3ec.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/458/e13f92a4-69ae-4043-ae1f-70f155a53024.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/458/bce9a15d-d080-4fb0-bc30-f80778b38793.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/458/2c43d623-5898-4669-b5f8-eb3e1c38cd29.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/458/122735cf-f940-4de8-aa30-49a1da148319.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 507,
+      "name": "Romanian Deadlift",
+      "category": "Legs",
+      "equipment": [
+        "Barbell"
+      ],
+      "primaryMuscleIds": [
+        8,
+        11
+      ],
+      "secondaryMuscleIds": [
+        9
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/507/13d526ab-12fc-461e-828a-051dd7c13fb1.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 567,
+      "name": "Shoulder Press, Dumbbells",
+      "category": "Shoulders",
+      "equipment": [
+        "Dumbbell"
+      ],
+      "primaryMuscleIds": [
+        2
+      ],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/123/dumbbell-shoulder-press-large-1.png.400x400_q85.jpg",
+        "https://wger.de/media/exercise-images/123/dumbbell-shoulder-press-large-2.png.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 615,
+      "name": "Squats",
+      "category": "Legs",
+      "equipment": [
+        "Barbell"
+      ],
+      "primaryMuscleIds": [
+        10
+      ],
+      "secondaryMuscleIds": [
+        8
+      ],
+      "images": []
+    },
+    {
+      "id": 627,
+      "name": "Stiff-legged Deadlifts",
+      "category": "Legs",
+      "equipment": [
+        "Barbell"
+      ],
+      "primaryMuscleIds": [
+        11
+      ],
+      "secondaryMuscleIds": [
+        8
+      ],
+      "images": []
+    },
+    {
+      "id": 723,
+      "name": "Wide-grip Pulldown",
+      "category": "Back",
+      "equipment": [
+        "Cable machine"
+      ],
+      "primaryMuscleIds": [
+        12
+      ],
+      "secondaryMuscleIds": [
+        2,
+        3,
+        9,
+        13
+      ],
+      "images": []
+    },
+    {
+      "id": 977,
+      "name": "Box squat",
+      "category": "Legs",
+      "equipment": [
+        "none (bodyweight exercise)"
+      ],
+      "primaryMuscleIds": [
+        8,
+        10,
+        15
+      ],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/977/3124c091-6395-4377-96c5-56048b627ceb.png.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 988,
+      "name": "Bulgarian split squats left",
+      "category": "Legs",
+      "equipment": [
+        "none (bodyweight exercise)"
+      ],
+      "primaryMuscleIds": [
+        8,
+        10
+      ],
+      "secondaryMuscleIds": [
+        11
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/988/6283b258-a4d7-4833-84f7-a38987022d3d.png.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 996,
+      "name": "Mountain climbers",
+      "category": "Chest",
+      "equipment": [
+        "none (bodyweight exercise)"
+      ],
+      "primaryMuscleIds": [],
+      "secondaryMuscleIds": [],
+      "images": []
+    },
+    {
+      "id": 1185,
+      "name": "Triceps Pushdown",
+      "category": "Arms",
+      "equipment": [
+        "Cable machine"
+      ],
+      "primaryMuscleIds": [
+        5
+      ],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/1185/c5ca283d-8958-4fd8-9d59-a3f52a3ac66b.jpg.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 1348,
+      "name": "Lower Back Extensions",
+      "category": "Back",
+      "equipment": [],
+      "primaryMuscleIds": [],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/1348/a3769120-2445-49f2-97d3-afc1238bfc2a.webp.400x400_q85.png"
+      ]
+    },
+    {
+      "id": 1531,
+      "name": "Cable Curls",
+      "category": "Arms",
+      "equipment": [
+        "Cable machine"
+      ],
+      "primaryMuscleIds": [
+        1
+      ],
+      "secondaryMuscleIds": [],
+      "images": []
+    },
+    {
+      "id": 1572,
+      "name": "Bird Dog",
+      "category": "Abs",
+      "equipment": [
+        "none (bodyweight exercise)"
+      ],
+      "primaryMuscleIds": [
+        6
+      ],
+      "secondaryMuscleIds": [
+        2,
+        8
+      ],
+      "images": [
+        "https://wger.de/media/exercise-images/1572/3d14e761-a73d-49da-8804-f3016a7573ff.png.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 1616,
+      "name": "Dumbbell donkey kick",
+      "category": "Legs",
+      "equipment": [
+        "Dumbbell"
+      ],
+      "primaryMuscleIds": [
+        8,
+        11
+      ],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/1616/97e6fd98-2ca6-486f-b9b2-f0499fe38044.jpg.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 1748,
+      "name": "Machine Hip Abduction",
+      "category": "Legs",
+      "equipment": [],
+      "primaryMuscleIds": [
+        8
+      ],
+      "secondaryMuscleIds": [],
+      "images": [
+        "https://wger.de/media/exercise-images/1748/923a3ff7-c269-49bd-9f03-697151a40f06.jpg.400x400_q85.jpg"
+      ]
+    },
+    {
+      "id": 1931,
+      "name": "Dumbbell Curl",
+      "category": "Arms",
+      "equipment": [
+        "Dumbbell"
+      ],
+      "primaryMuscleIds": [
+        1,
+        13
+      ],
+      "secondaryMuscleIds": [
+        2,
+        6
+      ],
+      "images": []
+    },
+    {
+      "id": 2642,
+      "name": "One-Arm Dumbbell Row",
+      "category": "Back",
+      "equipment": [
+        "Dumbbell"
+      ],
+      "primaryMuscleIds": [
+        1,
+        9,
+        12
+      ],
+      "secondaryMuscleIds": [],
+      "images": []
+    }
+  ]
+}

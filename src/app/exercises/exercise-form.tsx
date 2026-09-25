@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useEffect } from "react";
 import { addExerciseAction } from "./actions";
+import { WgerSelect } from "./wger-select";
 
 export function ExerciseForm() {
   const [state, formAction, pending] = useActionState(addExerciseAction, undefined);
@@ -23,7 +24,7 @@ export function ExerciseForm() {
       <p className="text-xs text-gray-500">
         略語や表記ゆれを別名として登録しておくと、筋トレ記録での検索時に見つけやすくなります。
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-gray-500">種目名</span>
           <input
@@ -42,6 +43,12 @@ export function ExerciseForm() {
             placeholder="例: ラット"
             className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block text-xs text-gray-500">
+            wger種目(任意・フォーム画像と筋肉図を表示)
+          </span>
+          <WgerSelect className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
         </label>
       </div>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}

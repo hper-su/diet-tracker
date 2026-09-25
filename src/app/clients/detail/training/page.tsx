@@ -17,6 +17,7 @@ import {
   subscribeToTrainingLogs,
 } from "@/lib/db/training-logs";
 import { addDaysISODate, todayISODate } from "@/lib/date";
+import { WgerExercisePanel } from "@/components/wger-exercise-panel";
 import { ClientTabs } from "../client-tabs";
 import { TrainingLogForm } from "./training-log-form";
 import { TrainingLogRow } from "./training-log-row";
@@ -84,6 +85,8 @@ function ClientTrainingPageInner() {
   // 一覧表示・編集対象の種目行からは除く。
   const dayMemoLog = logs.find(isDayMemoLog) ?? null;
   const exerciseLogs = logs.filter((log) => !isDayMemoLog(log));
+  // 種目マスタでwgerの種目と紐づけてあれば、推移グラフの下にフォーム画像と筋肉図を出す。
+  const selectedWgerId = exercises.find((e) => e.id === selectedExerciseId)?.wgerId ?? null;
 
   return (
     <div className="space-y-6">
@@ -131,6 +134,16 @@ function ClientTrainingPageInner() {
         {selectedExerciseId ? (
           <div className="mt-3">
             <ExerciseHistoryChart data={toExerciseHistoryPoints(history)} />
+            {selectedWgerId != null && (
+              <details className="mt-4 rounded border border-gray-200 p-3">
+                <summary className="cursor-pointer text-sm font-medium">
+                  フォームと使う筋肉(wger)
+                </summary>
+                <div className="mt-3">
+                  <WgerExercisePanel wgerId={selectedWgerId} />
+                </div>
+              </details>
+            )}
           </div>
         ) : (
           <p className="mt-3 text-sm text-gray-500">

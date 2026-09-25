@@ -21,6 +21,8 @@ export type Exercise = {
   id: string;
   name: string;
   aliases: string[];
+  // 対応するwger(https://wger.de)の種目ID。未設定・過去のバックアップには無いため省略可。
+  wgerId?: number | null;
 };
 
 type ExerciseDoc = Omit<Exercise, "id"> & { createdAt?: Timestamp | null };
@@ -79,6 +81,7 @@ export async function getExercise(id: string): Promise<Exercise | null> {
 export type InsertExerciseInput = {
   name: string;
   aliases: string[];
+  wgerId: number | null;
 };
 
 export type InsertExerciseResult =

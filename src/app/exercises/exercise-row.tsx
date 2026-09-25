@@ -1,47 +1,76 @@
 "use client";
 
+import { useState } from "react";
 import type { Exercise } from "@/lib/db/exercises";
 import { useEditableRow } from "@/components/use-editable-row";
+import { WgerExercisePanel } from "@/components/wger-exercise-panel";
+import { getWgerExercise } from "@/lib/wger/data";
 import { updateExerciseAction, deleteExerciseAction } from "./actions";
+import { WgerSelect } from "./wger-select";
 
 export function ExerciseRow({ exercise }: { exercise: Exercise }) {
   const { editing, setEditing, formAction, pending, error, cancel } = useEditableRow(
     updateExerciseAction,
     undefined,
   );
+  const [detailOpen, setDetailOpen] = useState(false);
+  const wger = getWgerExercise(exercise.wgerId);
 
   if (!editing) {
     return (
-      <tr className="border-t border-gray-100">
-        <td className="px-4 py-2 font-medium">{exercise.name}</td>
-        <td className="px-4 py-2 text-gray-500">
-          {exercise.aliases.join("、") || "—"}
-        </td>
-        <td className="sticky right-0 bg-white px-4 py-2 text-right whitespace-nowrap">
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-900"
-          >
-            編集
-          </button>
-          <form action={deleteExerciseAction} className="inline">
-            <input type="hidden" name="id" value={exercise.id} />
+      <>
+        <tr className="border-t border-gray-100">
+          <td className="px-4 py-2 font-medium">{exercise.name}</td>
+          <td className="px-4 py-2 text-gray-500">
+            {exercise.aliases.join("、") || "—"}
+          </td>
+          <td className="px-4 py-2 text-gray-500">
+            {wger ? (
+              <button
+                type="button"
+                onClick={() => setDetailOpen((open) => !open)}
+                aria-expanded={detailOpen}
+                className="rounded px-1 py-0.5 text-left text-xs text-blue-600 hover:bg-blue-50"
+              >
+                {detailOpen ? "▾" : "▸"} {wger.name}
+              </button>
+            ) : (
+              "—"
+            )}
+          </td>
+          <td className="sticky right-0 bg-white px-4 py-2 text-right whitespace-nowrap">
             <button
-              type="submit"
-              className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
+              type="button"
+              onClick={() => setEditing(true)}
+              className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-900"
             >
-              削除
+              編集
             </button>
-          </form>
-        </td>
-      </tr>
+            <form action={deleteExerciseAction} className="inline">
+              <input type="hidden" name="id" value={exercise.id} />
+              <button
+                type="submit"
+                className="rounded px-2 py-1.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
+              >
+                削除
+              </button>
+            </form>
+          </td>
+        </tr>
+        {detailOpen && exercise.wgerId != null && (
+          <tr className="bg-gray-50">
+            <td colSpan={4} className="px-4 py-3">
+              <WgerExercisePanel wgerId={exercise.wgerId} />
+            </td>
+          </tr>
+        )}
+      </>
     );
   }
 
   return (
     <tr className="border-t border-gray-100 bg-gray-50">
-      <td colSpan={3} className="px-4 py-3">
+      <td colSpan={4} className="px-4 py-3">
         <form action={formAction} className="grid gap-2 sm:grid-cols-6">
           <input type="hidden" name="id" value={exercise.id} />
           <label className="block text-xs sm:col-span-2">
@@ -53,11 +82,18 @@ export function ExerciseRow({ exercise }: { exercise: Exercise }) {
               className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />
           </label>
-          <label className="block text-xs sm:col-span-3">
+          <label className="block text-xs sm:col-span-2">
             <span className="mb-1 block text-gray-500">別名(カンマ区切り)</span>
             <input
               name="aliases"
               defaultValue={exercise.aliases.join(", ")}
+              className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+            />
+          </label>
+          <label className="block text-xs sm:col-span-2">
+            <span className="mb-1 block text-gray-500">wger種目</span>
+            <WgerSelect
+              defaultValue={exercise.wgerId}
               className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />
           </label>

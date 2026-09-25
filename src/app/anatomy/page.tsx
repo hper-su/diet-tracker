@@ -18,9 +18,14 @@ import {
   findRelatedExercisesForMuscle,
 } from "@/lib/muscle-exercises";
 import { BASE_PATH } from "@/lib/base-path";
+import { MuscleHighlight } from "@/components/muscle-highlight";
+import { WgerAttribution } from "@/components/wger-exercise-panel";
+import { wgerMuscleIdsForAnatomyPart } from "@/lib/wger/anatomy-map";
 
-// public/anatomy/配下の全身図イラスト。色検出によるハイライト連動は
+// public/anatomy/配下の全身図イラスト。画像の色検出によるハイライト連動は
 // 精度が不十分だったため廃止し、参考画像として静的に表示するのみとする。
+// 選択した筋肉の位置は、wgerの筋肉別SVG(public/anatomy/wger/)を重ねた
+// MuscleHighlightで示す(wgerに対応する筋肉があるものだけ)。
 // width/height は読み込み中のレイアウトシフトを防ぐために使用する。
 const MUSCLE_DIAGRAM_IMAGE = { width: 704, height: 480 } as const;
 
@@ -98,6 +103,8 @@ export default function AnatomyPage() {
   }, [listSource]);
 
   const selectedPart = ANATOMY_PARTS.find((p) => p.id === selectedId) ?? null;
+  const highlightMuscleIds =
+    selectedPart?.type === "muscle" ? wgerMuscleIdsForAnatomyPart(selectedPart.id) : [];
   const relatedMuscleExercises = useMemo(
     () =>
       selectedPart?.type === "muscle"
@@ -203,6 +210,26 @@ export default function AnatomyPage() {
                 {selectedPart.note}
               </p>
             )}
+            {selectedPart.type === "muscle" &&
+              (highlightMuscleIds.length > 0 ? (
+                <div className="mt-2 border-t border-blue-100 pt-2">
+                  <p className="text-xs font-medium text-gray-500">全身図での位置</p>
+                  <div className="mt-1">
+                    <MuscleHighlight
+                      primaryIds={highlightMuscleIds}
+                      maxWidth={140}
+                      primaryLabel="選択中の筋肉"
+                    />
+                  </div>
+                  <div className="mt-1 text-center">
+                    <WgerAttribution />
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-2 border-t border-blue-100 pt-2 text-xs text-gray-400">
+                  この筋肉は全身図でのハイライトに未対応です(上の「筋肉部位 早見図」を参照してください)。
+                </p>
+              ))}
             {relatedMuscleExercises.length > 0 && (
               <div className="mt-2 border-t border-blue-100 pt-2">
                 <p className="text-xs font-medium text-gray-500">関連する種目</p>

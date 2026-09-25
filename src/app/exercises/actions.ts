@@ -7,6 +7,7 @@ function readExerciseFormData(formData: FormData) {
   return validateExerciseInput({
     name: String(formData.get("name") ?? ""),
     aliasesRaw: String(formData.get("aliases") ?? ""),
+    wgerIdRaw: String(formData.get("wger_id") ?? ""),
   });
 }
 

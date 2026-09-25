@@ -56,8 +56,4 @@ export function getWgerExercise(id: number | null | undefined): WgerExercise | n
   return exerciseById.get(id) ?? null;
 }
 
-export function wgerExercisePageUrl(id: number): string {
-  return `https://wger.de/en/exercise/${id}/view/`;
-}
-
 export const WGER_LICENSE_URL = "https://creativecommons.org/licenses/by-sa/3.0/deed.ja";

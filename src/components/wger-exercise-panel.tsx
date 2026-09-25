@@ -1,7 +1,6 @@
 import {
   WGER_LICENSE_URL,
   getWgerExercise,
-  wgerExercisePageUrl,
   wgerMuscleLabel,
 } from "@/lib/wger/data";
 import { MuscleHighlight } from "./muscle-highlight";
@@ -57,14 +56,6 @@ export function WgerExercisePanel({ wgerId }: { wgerId: number }) {
         {exercise.equipment.length > 0 && (
           <span className="text-xs text-gray-500">({exercise.equipment.join("、")})</span>
         )}
-        <a
-          href={wgerExercisePageUrl(exercise.id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-blue-600 underline"
-        >
-          wgerで開く(英語)
-        </a>
       </div>
 
       <div className="flex flex-wrap items-start gap-4">

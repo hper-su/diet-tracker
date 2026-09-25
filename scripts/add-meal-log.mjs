@@ -20,7 +20,7 @@
 //     scripts/add-meal-log.mjs \
 //     --client "穴見孝和" --date 2026-09-22 --meal lunch \
 //     --food "鶏胸肉のグリル 200g" --kcal 330 --protein 62 --fat 7 --carb 0 \
-//     [--qty 1] [--memo "AI推定値"] [--dry-run]
+//     [--qty 1] [--memo "AI推定値"] [--dry-run] [--allow-duplicates]
 //
 // 使い方(複数件まとめて登録。1日分の食事をまとめて渡す場合など):
 //   node --env-file=.env.local --env-file=.env.automation.local \
@@ -29,6 +29,11 @@
 //       {"client":"穴見孝和","date":"2026-09-22","meal":"lunch","food":"鶏胸肉のグリル 200g","kcal":330,"protein":62,"fat":7,"carb":0,"memo":"AI推定値"}
 //     ]'
 //   (--file path/to/meals.json でJSONファイルから読み込むことも可能)
+//
+// 重複チェック: 同じお客様・同じ日付に、区分・品目名・数量・kcal/PFCがすべて
+// 一致する記録が既にある場合、その件は登録せずスキップする(同じ依頼を2回
+// 実行してしまった場合の二重登録を防ぐため)。同じものを本当に2回食べた等で
+// 重複を承知で登録したい場合は --allow-duplicates を付ける。
 //
 // 登録先のお客様は、アプリの「お客様一覧」に表示されている名前の部分一致で
 // 特定する(表記ゆれで複数件・0件ヒットした場合はエラーで候補を表示するので、
@@ -44,13 +49,20 @@ import {
   getFirestore,
   collection,
   getDocs,
+  query,
+  where,
   addDoc,
   writeBatch,
   doc,
   serverTimestamp,
   terminate,
 } from "firebase/firestore";
-import { parseArgs, normalizeEntry } from "./lib/meal-log-entry.mjs";
+import {
+  parseArgs,
+  normalizeEntry,
+  mealLogDuplicateKey,
+  splitDuplicates,
+} from "./lib/meal-log-entry.mjs";
 
 // Firebase SDKが開いたままのハンドル(keepalive接続等)がある状態で
 // process.exit()を呼ぶと、Node(Windows)がハンドルの強制クローズ中に
@@ -181,16 +193,57 @@ async function main() {
       );
     }
 
+    let toInsert = resolved;
+    if (args["allow-duplicates"]) {
+      console.log("(--allow-duplicates のため重複チェックは行いません)");
+    } else {
+      // 登録予定に含まれるお客様×日付ごとに既存の記録を読み、突き合わせる
+      // (clientId・recordedAtの等価条件のみなので複合インデックスは不要)。
+      const existing = [];
+      const seen = new Set();
+      for (const { entry, clientId } of resolved) {
+        const pairKey = `${clientId}\u0000${entry.recordedAt}`;
+        if (seen.has(pairKey)) continue;
+        seen.add(pairKey);
+        const snap = await getDocs(
+          query(
+            collection(db, "mealLogs"),
+            where("clientId", "==", clientId),
+            where("recordedAt", "==", entry.recordedAt),
+          ),
+        );
+        for (const d of snap.docs) existing.push(d.data());
+      }
+      const { fresh, duplicates } = splitDuplicates(resolved, existing, ({ entry, clientId }) =>
+        mealLogDuplicateKey({ clientId, ...entry }),
+      );
+      if (duplicates.length > 0) {
+        console.log(`登録済みのためスキップ(${duplicates.length}件):`);
+        for (const { entry, clientName } of duplicates) {
+          console.log(
+            `  [${entry.recordedAt} ${entry.mealType}] ${clientName}: ${entry.foodName} ×${entry.quantity}` +
+              ` (${entry.kcal}kcal, P${entry.proteinG}/F${entry.fatG}/C${entry.carbG})`,
+          );
+        }
+      }
+      toInsert = fresh;
+    }
+
     if (args["dry-run"]) {
-      console.log("(--dry-run のため実際の登録は行いません)");
+      console.log(`(--dry-run のため実際の登録は行いません。登録予定: ${toInsert.length}件)`);
+      return;
+    }
+
+    if (toInsert.length === 0) {
+      console.log("新規に登録する記録はありません(すべて登録済みでした)。");
       return;
     }
 
     // 500件/バッチのFirestore上限を踏まえ、既存のchunkedBatchInsertと同じ
     // 450件区切りでバッチ登録する(通常の利用件数では1バッチで収まる想定)。
     const CHUNK_SIZE = 450;
-    for (let i = 0; i < resolved.length; i += CHUNK_SIZE) {
-      const chunk = resolved.slice(i, i + CHUNK_SIZE);
+    for (let i = 0; i < toInsert.length; i += CHUNK_SIZE) {
+      const chunk = toInsert.slice(i, i + CHUNK_SIZE);
       if (chunk.length === 1) {
         const { entry, clientId } = chunk[0];
         await addDoc(collection(db, "mealLogs"), {
@@ -230,7 +283,7 @@ async function main() {
       }
     }
 
-    console.log("登録しました。");
+    console.log(`登録しました(${toInsert.length}件)。`);
   } finally {
     await terminate(db);
   }

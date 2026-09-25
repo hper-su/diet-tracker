@@ -88,3 +88,46 @@ export function normalizeEntry(raw, index) {
     memo: typeof raw.memo === "string" && raw.memo.length > 0 ? raw.memo : null,
   };
 }
+
+// 重複判定に使うキー。同じお客様・同じ日付の記録の中で、区分・品目名・数量・
+// kcal/PFCがすべて一致するものを「同じ記録」とみなす(区分が違えば別の記録。
+// 例: 昼食と夕食の「味噌汁」は重複ではない)。
+export function mealLogDuplicateKey(log) {
+  return [
+    log.clientId,
+    log.recordedAt,
+    log.mealType,
+    log.foodName,
+    log.quantity,
+    log.kcal,
+    log.proteinG,
+    log.fatG,
+    log.carbG,
+  ].join("\u0000");
+}
+
+// 登録予定(toInsert: {clientIdと正規化済みentryのフィールドを持つもの})を、
+// 既存記録(existing)と突き合わせて、新規分(fresh)と登録済み分(duplicates)に
+// 分ける。個数も数えて突き合わせるため、既存に1件・登録予定に同じものが2件ある
+// 場合は、1件がduplicates・1件がfreshになる(同じものを2回食べた場合など、
+// 登録予定内の同一品目同士は重複扱いしない)。
+export function splitDuplicates(toInsert, existing, keyOf = (item) => mealLogDuplicateKey(item)) {
+  const remaining = new Map();
+  for (const log of existing) {
+    const key = mealLogDuplicateKey(log);
+    remaining.set(key, (remaining.get(key) ?? 0) + 1);
+  }
+  const fresh = [];
+  const duplicates = [];
+  for (const item of toInsert) {
+    const key = keyOf(item);
+    const count = remaining.get(key) ?? 0;
+    if (count > 0) {
+      remaining.set(key, count - 1);
+      duplicates.push(item);
+    } else {
+      fresh.push(item);
+    }
+  }
+  return { fresh, duplicates };
+}

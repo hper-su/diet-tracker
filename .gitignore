@@ -54,3 +54,6 @@ next-env.d.ts
 
 # 個人の食事・体組成データを含むエクスポート/インポート用ファイル
 /diet-tracker-export.json
+
+# Claude Code の外部ツール(MCP)設定。この PC だけで使うため追跡しない
+.mcp.json

@@ -32,6 +32,7 @@ export async function addTrainingLogAction(
 
   const entries = exerciseIds
     .map((exerciseIdRaw, i) => ({
+      rowNumber: i + 1, // フォーム上の行番号(未選択の行も数える)。入力エラーの案内に使う
       exerciseIdRaw,
       weight: weights[i] ?? "",
       reps: reps[i] ?? "",
@@ -45,10 +46,11 @@ export async function addTrainingLogAction(
   }
 
   const validated: TrainingLogData[] = [];
-  for (const entry of entries) {
+  for (const { rowNumber, ...entry } of entries) {
     const result = validateTrainingLogInput({ recordedAt, ...entry });
     if (!result.ok) {
-      return { error: result.error };
+      // 複数行を同時に登録するため、どの行のエラーか分かるようにする。
+      return { error: exerciseIds.length > 1 ? `${rowNumber}行目: ${result.error}` : result.error };
     }
     validated.push(result.data);
   }

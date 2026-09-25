@@ -3,91 +3,76 @@
     {
       "id": 1,
       "name": "Biceps brachii",
-      "nameEn": "Biceps",
       "isFront": true
     },
     {
       "id": 2,
       "name": "Anterior deltoid",
-      "nameEn": "Shoulders",
       "isFront": true
     },
     {
       "id": 3,
       "name": "Serratus anterior",
-      "nameEn": "",
       "isFront": true
     },
     {
       "id": 4,
       "name": "Pectoralis major",
-      "nameEn": "Chest",
       "isFront": true
     },
     {
       "id": 5,
       "name": "Triceps brachii",
-      "nameEn": "Triceps",
       "isFront": false
     },
     {
       "id": 6,
       "name": "Rectus abdominis",
-      "nameEn": "Abs",
       "isFront": true
     },
     {
       "id": 7,
       "name": "Gastrocnemius",
-      "nameEn": "Calves",
       "isFront": false
     },
     {
       "id": 8,
       "name": "Gluteus maximus",
-      "nameEn": "Glutes",
       "isFront": false
     },
     {
       "id": 9,
       "name": "Trapezius",
-      "nameEn": "",
       "isFront": false
     },
     {
       "id": 10,
       "name": "Quadriceps femoris",
-      "nameEn": "Quads",
       "isFront": true
     },
     {
       "id": 11,
       "name": "Biceps femoris",
-      "nameEn": "Hamstrings",
       "isFront": false
     },
     {
       "id": 12,
       "name": "Latissimus dorsi",
-      "nameEn": "Lats",
       "isFront": false
     },
     {
       "id": 13,
       "name": "Brachialis",
-      "nameEn": "",
       "isFront": true
     },
     {
       "id": 14,
       "name": "Obliquus externus abdominis",
-      "nameEn": "",
       "isFront": true
     },
     {
       "id": 15,
       "name": "Soleus",
-      "nameEn": "",
       "isFront": false
     }
   ],
@@ -95,7 +80,6 @@
     {
       "id": 73,
       "name": "Bench Press",
-      "category": "Chest",
       "equipment": [
         "Barbell",
         "Bench"
@@ -115,7 +99,6 @@
     {
       "id": 75,
       "name": "Benchpress Dumbbells",
-      "category": "Chest",
       "equipment": [
         "Bench",
         "Dumbbell"
@@ -129,14 +112,12 @@
       ],
       "images": [
         "https://wger.de/media/exercise-images/97/Dumbbell-bench-press-1.png.400x400_q85.jpg",
-        "https://wger.de/media/exercise-images/75/7b700f5d-17fc-41a9-bd41-e98e45c15768.png.400x400_q85.png",
         "https://wger.de/media/exercise-images/97/Dumbbell-bench-press-2.png.400x400_q85.jpg"
       ]
     },
     {
       "id": 76,
       "name": "Bench Press Narrow Grip",
-      "category": "Arms",
       "equipment": [
         "Barbell",
         "Bench"
@@ -150,14 +131,12 @@
       ],
       "images": [
         "https://wger.de/media/exercise-images/88/Narrow-grip-bench-press-1.png.400x400_q85.png",
-        "https://wger.de/media/exercise-images/76/9abec4e4-90ba-44f9-9e6e-5e35f7273078.png.400x400_q85.png",
         "https://wger.de/media/exercise-images/88/Narrow-grip-bench-press-2.png.400x400_q85.png"
       ]
     },
     {
       "id": 83,
       "name": "Bent Over Rowing",
-      "category": "Back",
       "equipment": [
         "Barbell"
       ],
@@ -176,7 +155,6 @@
     {
       "id": 91,
       "name": "Biceps Curls With Barbell",
-      "category": "Arms",
       "equipment": [
         "Barbell"
       ],
@@ -194,7 +172,6 @@
     {
       "id": 165,
       "name": "Ball crunches",
-      "category": "Abs",
       "equipment": [],
       "primaryMuscleIds": [
         6
@@ -207,7 +184,6 @@
     {
       "id": 167,
       "name": "Crunches",
-      "category": "Abs",
       "equipment": [
         "Gym mat"
       ],
@@ -225,7 +201,6 @@
     {
       "id": 178,
       "name": "Deadbug",
-      "category": "Abs",
       "equipment": [],
       "primaryMuscleIds": [
         6
@@ -238,7 +213,6 @@
     {
       "id": 184,
       "name": "Deadlifts",
-      "category": "Back",
       "equipment": [
         "Barbell"
       ],
@@ -255,7 +229,6 @@
     {
       "id": 203,
       "name": "Dumbbell Goblet Squat",
-      "category": "Legs",
       "equipment": [
         "Dumbbell"
       ],
@@ -272,7 +245,6 @@
     {
       "id": 204,
       "name": "Dumbbell Incline Curl",
-      "category": "Arms",
       "equipment": [
         "Dumbbell"
       ],
@@ -287,7 +259,6 @@
     {
       "id": 238,
       "name": "Fly With Dumbbells",
-      "category": "Chest",
       "equipment": [
         "Dumbbell"
       ],
@@ -303,7 +274,6 @@
     {
       "id": 265,
       "name": "Glute Bridge",
-      "category": "Legs",
       "equipment": [],
       "primaryMuscleIds": [
         8
@@ -318,7 +288,6 @@
     {
       "id": 294,
       "name": "Hip Thrust",
-      "category": "Legs",
       "equipment": [
         "Barbell",
         "Bench"
@@ -332,7 +301,6 @@
     {
       "id": 308,
       "name": "Incline Dumbbell Fly",
-      "category": "Chest",
       "equipment": [
         "Dumbbell",
         "Incline bench"
@@ -346,7 +314,6 @@
     {
       "id": 348,
       "name": "Lateral Raises",
-      "category": "Shoulders",
       "equipment": [
         "Dumbbell"
       ],
@@ -355,14 +322,13 @@
       ],
       "secondaryMuscleIds": [],
       "images": [
-        "https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png.400x400_q85.jpg",
-        "https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-1.png.400x400_q85.jpg"
+        "https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-1.png.400x400_q85.jpg",
+        "https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png.400x400_q85.jpg"
       ]
     },
     {
       "id": 364,
       "name": "Leg Curl",
-      "category": "Legs",
       "equipment": [],
       "primaryMuscleIds": [
         8,
@@ -376,7 +342,6 @@
     {
       "id": 377,
       "name": "Leg Raises, Lying",
-      "category": "Abs",
       "equipment": [
         "Gym mat"
       ],
@@ -387,14 +352,13 @@
         3
       ],
       "images": [
-        "https://wger.de/media/exercise-images/125/Leg-raises-2.png.400x400_q85.png",
-        "https://wger.de/media/exercise-images/125/Leg-raises-1.png.400x400_q85.png"
+        "https://wger.de/media/exercise-images/125/Leg-raises-1.png.400x400_q85.png",
+        "https://wger.de/media/exercise-images/125/Leg-raises-2.png.400x400_q85.png"
       ]
     },
     {
       "id": 458,
       "name": "Plank",
-      "category": "Abs",
       "equipment": [
         "none (bodyweight exercise)"
       ],
@@ -422,7 +386,6 @@
     {
       "id": 507,
       "name": "Romanian Deadlift",
-      "category": "Legs",
       "equipment": [
         "Barbell"
       ],
@@ -440,7 +403,6 @@
     {
       "id": 567,
       "name": "Shoulder Press, Dumbbells",
-      "category": "Shoulders",
       "equipment": [
         "Dumbbell"
       ],
@@ -456,7 +418,6 @@
     {
       "id": 615,
       "name": "Squats",
-      "category": "Legs",
       "equipment": [
         "Barbell"
       ],
@@ -471,7 +432,6 @@
     {
       "id": 627,
       "name": "Stiff-legged Deadlifts",
-      "category": "Legs",
       "equipment": [
         "Barbell"
       ],
@@ -486,7 +446,6 @@
     {
       "id": 723,
       "name": "Wide-grip Pulldown",
-      "category": "Back",
       "equipment": [
         "Cable machine"
       ],
@@ -504,7 +463,6 @@
     {
       "id": 977,
       "name": "Box squat",
-      "category": "Legs",
       "equipment": [
         "none (bodyweight exercise)"
       ],
@@ -521,7 +479,6 @@
     {
       "id": 988,
       "name": "Bulgarian split squats left",
-      "category": "Legs",
       "equipment": [
         "none (bodyweight exercise)"
       ],
@@ -539,7 +496,6 @@
     {
       "id": 996,
       "name": "Mountain climbers",
-      "category": "Chest",
       "equipment": [
         "none (bodyweight exercise)"
       ],
@@ -550,7 +506,6 @@
     {
       "id": 1185,
       "name": "Triceps Pushdown",
-      "category": "Arms",
       "equipment": [
         "Cable machine"
       ],
@@ -565,7 +520,6 @@
     {
       "id": 1348,
       "name": "Lower Back Extensions",
-      "category": "Back",
       "equipment": [],
       "primaryMuscleIds": [],
       "secondaryMuscleIds": [],
@@ -576,7 +530,6 @@
     {
       "id": 1531,
       "name": "Cable Curls",
-      "category": "Arms",
       "equipment": [
         "Cable machine"
       ],
@@ -589,7 +542,6 @@
     {
       "id": 1572,
       "name": "Bird Dog",
-      "category": "Abs",
       "equipment": [
         "none (bodyweight exercise)"
       ],
@@ -607,7 +559,6 @@
     {
       "id": 1616,
       "name": "Dumbbell donkey kick",
-      "category": "Legs",
       "equipment": [
         "Dumbbell"
       ],
@@ -623,7 +574,6 @@
     {
       "id": 1748,
       "name": "Machine Hip Abduction",
-      "category": "Legs",
       "equipment": [],
       "primaryMuscleIds": [
         8
@@ -636,7 +586,6 @@
     {
       "id": 1931,
       "name": "Dumbbell Curl",
-      "category": "Arms",
       "equipment": [
         "Dumbbell"
       ],
@@ -653,7 +602,6 @@
     {
       "id": 2642,
       "name": "One-Arm Dumbbell Row",
-      "category": "Back",
       "equipment": [
         "Dumbbell"
       ],

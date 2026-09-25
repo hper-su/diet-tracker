@@ -1,4 +1,3 @@
-import { getWgerExercise } from "@/lib/wger/data";
 import type { ValidationResult } from "./result";
 
 export type ExerciseInput = {
@@ -14,8 +13,9 @@ export type ExerciseData = {
 };
 
 // 別名はカンマ(全角・半角)区切りで複数入力できるようにする。
-// wgerIdは未選択(空文字)ならnull。選択肢は取り込み済みのwger種目
-// (src/lib/wger/data.ts)に限るため、それ以外のIDは受け付けない。
+// wgerIdは未選択(空文字)ならnull。1以上の整数だけを受け付ける。取り込み済みの
+// wger種目(src/lib/wger/data.ts)に無いIDも、保存済みの値を消さないために通す
+// (画面のプルダウンには、その場合も現在の値が選択肢として残る)。
 export function validateExerciseInput(input: ExerciseInput): ValidationResult<ExerciseData> {
   const name = input.name.trim();
   if (!name) {
@@ -35,7 +35,7 @@ export function validateExerciseInput(input: ExerciseInput): ValidationResult<Ex
   let wgerId: number | null = null;
   if (wgerIdRaw) {
     const parsed = Number(wgerIdRaw);
-    if (!Number.isInteger(parsed) || !getWgerExercise(parsed)) {
+    if (!Number.isInteger(parsed) || parsed < 1) {
       return { ok: false, error: "wgerの種目を一覧から選択してください。" };
     }
     wgerId = parsed;

@@ -19,7 +19,7 @@ describe("validateExerciseInput", () => {
     });
   });
 
-  it("wger種目は未選択ならnull、取り込み済みのIDなら数値で受け取る", () => {
+  it("wger種目は未選択ならnull、IDなら数値で受け取る", () => {
     expect(validateExerciseInput(base)).toMatchObject({ ok: true, data: { wgerId: null } });
     expect(validateExerciseInput({ ...base, wgerIdRaw: "73" })).toMatchObject({
       ok: true,
@@ -27,8 +27,15 @@ describe("validateExerciseInput", () => {
     });
   });
 
-  it("取り込まれていない・不正なwger IDは拒否する", () => {
-    for (const wgerIdRaw of ["999999", "abc", "7.5", "-1"]) {
+  it("取り込み済みの一覧に無いIDも、保存済みの値を消さないよう受け付ける", () => {
+    expect(validateExerciseInput({ ...base, wgerIdRaw: "999999" })).toMatchObject({
+      ok: true,
+      data: { wgerId: 999999 },
+    });
+  });
+
+  it("整数でない・1未満のwger IDは拒否する", () => {
+    for (const wgerIdRaw of ["abc", "7.5", "-1", "0"]) {
       expect(validateExerciseInput({ ...base, wgerIdRaw }), wgerIdRaw).toEqual({
         ok: false,
         error: "wgerの種目を一覧から選択してください。",

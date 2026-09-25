@@ -20,6 +20,16 @@ export const ANATOMY_TO_WGER_MUSCLE_IDS: Record<string, number[]> = {
   calf: [7, 15], // 腓腹筋とヒラメ筋
 };
 
+// wgerの筋肉区分がアプリの部位より狭く、部位の一部しか光らないものの注記。
+// 表示側で「選択中の筋肉」の全体が光っていると誤解されないよう添える。
+const PARTIAL_HIGHLIGHT_NOTES: Record<string, string> = {
+  deltoid: "wgerの図では、三角筋のうち前部だけを表示します(中部・後部は表示できません)。",
+};
+
+export function wgerHighlightNote(anatomyId: string): string | null {
+  return PARTIAL_HIGHLIGHT_NOTES[anatomyId] ?? null;
+}
+
 export function wgerMuscleIdsForAnatomyPart(anatomyId: string): number[] {
   return ANATOMY_TO_WGER_MUSCLE_IDS[anatomyId] ?? [];
 }

@@ -8,14 +8,12 @@ import generated from "./exercises.generated.json";
 export type WgerMuscle = {
   id: number;
   name: string; // ラテン語の解剖学名
-  nameEn: string; // 一般名(無いものは空文字)
   isFront: boolean; // 全身図の前面(true)/背面(false)のどちらに載る筋肉か
 };
 
 export type WgerExercise = {
   id: number;
   name: string; // 英語名
-  category: string;
   equipment: string[];
   primaryMuscleIds: number[];
   secondaryMuscleIds: number[];

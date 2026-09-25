@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { ANATOMY_PARTS } from "@/lib/anatomy";
-import { ANATOMY_TO_WGER_MUSCLE_IDS, wgerMuscleIdsForAnatomyPart } from "./anatomy-map";
+import {
+  ANATOMY_TO_WGER_MUSCLE_IDS,
+  wgerHighlightNote,
+  wgerMuscleIdsForAnatomyPart,
+} from "./anatomy-map";
 import { WGER_MUSCLES, WGER_MUSCLE_JA, getWgerExercise, wgerMuscleLabel } from "./data";
 
 describe("wgerの筋肉データ", () => {
@@ -45,6 +49,11 @@ describe("アナトミー部位とwger筋肉の対応", () => {
     for (const ids of Object.values(ANATOMY_TO_WGER_MUSCLE_IDS)) {
       for (const id of ids) expect(wgerIds.has(id), String(id)).toBe(true);
     }
+  });
+
+  it("部位の一部しか光らない三角筋にだけ注記がある", () => {
+    expect(wgerHighlightNote("deltoid")).toContain("前部");
+    expect(wgerHighlightNote("pectoralis-major")).toBeNull();
   });
 
   it("対応が無い部位は空配列を返す", () => {

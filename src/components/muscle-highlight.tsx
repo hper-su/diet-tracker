@@ -112,6 +112,8 @@ export function MuscleHighlight({
   // 拡大表示は開いている間だけ中身を描画する(画像を二重に持たないため)。
   // 開閉はdialogのcloseイベントに頼らず、閉じる操作の側で必ずstateを戻す
   // (closeイベントだけに頼ると、閉じた後もdialogが残って再度開けなくなる)。
+  // 通常は閉じるとdialogごと消えるが、ブラウザ側で閉じられてイベントが届かず
+  // dialogだけ残った場合(effectは再実行されない)に備え、開くときに直接開き直す。
   const [enlarged, setEnlarged] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -120,7 +122,6 @@ export function MuscleHighlight({
   }, [enlarged]);
 
   function openEnlarged() {
-    // 閉じたdialogが残っている場合(effectが再実行されない場合)に備え、直接開く。
     const dialog = dialogRef.current;
     if (dialog && !dialog.open) dialog.showModal();
     setEnlarged(true);
@@ -157,29 +158,33 @@ export function MuscleHighlight({
             closeEnlarged();
           }}
           onClose={closeEnlarged}
-          // ダイアログの外側(背景)を押したときも閉じる。
+          // ダイアログの外側(背景)を押したときも閉じる。余白はdialog自身ではなく
+          // 内側のdivに持たせ、白い枠の中を押しても閉じないようにしている
+          // (dialog自身が押されるのは背景を押したときだけになる)。
           onClick={(e) => {
             if (e.target === e.currentTarget) closeEnlarged();
           }}
           aria-label="筋肉図(拡大)"
-          className="m-auto max-h-[94vh] w-[min(94vw,780px)] overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 shadow-xl backdrop:bg-black/50"
+          className="m-auto max-h-[94vh] w-[min(94vw,780px)] overflow-y-auto rounded-lg border border-gray-200 bg-white p-0 shadow-xl backdrop:bg-black/50"
         >
-          <div className="mb-2 flex justify-end">
-            <button
-              type="button"
-              onClick={closeEnlarged}
-              className="rounded border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50"
-            >
-              閉じる
-            </button>
+          <div className="p-4">
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                onClick={closeEnlarged}
+                className="rounded border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50"
+              >
+                閉じる
+              </button>
+            </div>
+            <BodyFigures
+              primaryIds={primaryIds}
+              secondary={secondary}
+              width={ENLARGED_WIDTH}
+              enlarged
+            />
+            <Legend primaryLabel={primaryLabel} hasSecondary={secondary.length > 0} />
           </div>
-          <BodyFigures
-            primaryIds={primaryIds}
-            secondary={secondary}
-            width={ENLARGED_WIDTH}
-            enlarged
-          />
-          <Legend primaryLabel={primaryLabel} hasSecondary={secondary.length > 0} />
         </dialog>
       )}
     </div>

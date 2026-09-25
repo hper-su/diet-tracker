@@ -13,6 +13,8 @@
 //   node scripts/build-wger-data.mjs
 //
 // 対応する種目を増やすときは scripts/lib/wger-exercise-map.mjs を編集して再実行する。
+// 取得はすべて先に済ませてからファイルを書き出す(途中で失敗しても、一部だけ
+// 更新された中途半端な状態にならない)。
 // wgerのデータ・画像は CC BY-SA(https://creativecommons.org/licenses/by-sa/3.0/)。
 // 表示側で出典(wger.de)を明記すること。
 
@@ -25,10 +27,13 @@ import {
   WGER_EXERCISE_MAP,
   uniqueWgerIds,
 } from "./lib/wger-exercise-map.mjs";
+import { pickFormImages } from "./lib/wger-images.mjs";
 
 const API = "https://wger.de/api/v2";
 const STATIC = "https://wger.de/static/images/muscles";
 const ENGLISH_LANGUAGE_ID = 2;
+// wgerへの同時リクエスト数(公開サーバーへの負荷を抑える)。
+const CONCURRENCY = 6;
 
 // 人体図(元は200x369)を拡大表示でも粗くならない幅のWebPにする。
 // 表示側は筋肉オーバーレイ(viewBox 200x*)と同じ縦横比の箱に重ねるため、
@@ -36,14 +41,6 @@ const ENGLISH_LANGUAGE_ID = 2;
 const BODY_WEBP_WIDTH = 720;
 const BODY_WEBP_HEIGHT = Math.round((BODY_WEBP_WIDTH * 369) / 200);
 const BODY_SVG_WIDTH = 200;
-
-async function writeBodyWebp(svgUrl, file) {
-  const svg = await fetchSvg(svgUrl);
-  await sharp(Buffer.from(svg), { density: (72 * BODY_WEBP_WIDTH) / BODY_SVG_WIDTH })
-    .resize(BODY_WEBP_WIDTH, BODY_WEBP_HEIGHT, { fit: "fill" })
-    .webp({ quality: 80, alphaQuality: 80 })
-    .toFile(file);
-}
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const jsonPath = path.join(rootDir, "src/lib/wger/exercises.generated.json");
@@ -59,6 +56,20 @@ async function fetchText(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
   return res.text();
+}
+
+// 同時実行数を制限しつつ、items全件にfnを適用する(結果はitemsと同じ順)。
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
 // wgerのSVGはviewBoxを持たず固定ピクセル寸法のため、そのままではimgの表示サイズに
@@ -78,55 +89,63 @@ async function fetchSvg(url) {
   return withViewBox(await fetchText(url));
 }
 
-const muscleList = (await fetchJson(`${API}/muscle/?format=json&limit=100`)).results;
-const muscles = muscleList
-  .map((m) => ({
-    id: m.id,
-    name: m.name,
-    nameEn: m.name_en || "",
-    isFront: m.is_front,
-  }))
-  .sort((a, b) => a.id - b.id);
-
-await mkdir(svgDir, { recursive: true });
-await writeBodyWebp(
-  `${STATIC}/muscular_system_front.svg`,
-  path.join(svgDir, "body-front.webp"),
-);
-await writeBodyWebp(
-  `${STATIC}/muscular_system_back.svg`,
-  path.join(svgDir, "body-back.webp"),
-);
-for (const m of muscleList) {
-  await writeFile(path.join(svgDir, `main-${m.id}.svg`), await fetchSvg(m.image_url_main));
-  await writeFile(
-    path.join(svgDir, `secondary-${m.id}.svg`),
-    await fetchSvg(m.image_url_secondary),
-  );
+async function renderBodyWebp(svgUrl) {
+  const svg = await fetchSvg(svgUrl);
+  return sharp(Buffer.from(svg), { density: (72 * BODY_WEBP_WIDTH) / BODY_SVG_WIDTH })
+    .resize(BODY_WEBP_WIDTH, BODY_WEBP_HEIGHT, { fit: "fill" })
+    .webp({ quality: 80, alphaQuality: 80 })
+    .toBuffer();
 }
 
-const exercises = [];
-for (const id of uniqueWgerIds()) {
+async function fetchExercise(id) {
   const info = await fetchJson(`${API}/exerciseinfo/${id}/?format=json`);
   const english =
     info.translations.find((t) => t.language === ENGLISH_LANGUAGE_ID) ?? info.translations[0];
-  exercises.push({
+  return {
     id: info.id,
     name: english?.name ?? `wger #${info.id}`,
-    category: info.category?.name ?? "",
     equipment: (info.equipment ?? []).map((e) => e.name),
     primaryMuscleIds: (info.muscles ?? []).map((m) => m.id).sort((a, b) => a - b),
     secondaryMuscleIds: (info.muscles_secondary ?? []).map((m) => m.id).sort((a, b) => a - b),
-    images: (info.images ?? [])
-      .map((img) => img.thumbnails?.medium ?? img.image)
-      .filter(Boolean),
-  });
+    images: pickFormImages(
+      (info.images ?? []).map((img) => img.thumbnails?.medium ?? img.image).filter(Boolean),
+    ),
+  };
 }
 
-await mkdir(path.dirname(jsonPath), { recursive: true });
-await writeFile(jsonPath, `${JSON.stringify({ muscles, exercises }, null, 2)}\n`);
+// ---- 取得(ここではまだファイルを書き換えない) ----
+const muscleList = (await fetchJson(`${API}/muscle/?format=json&limit=100`)).results;
+const muscles = muscleList
+  .map((m) => ({ id: m.id, name: m.name, isFront: m.is_front }))
+  .sort((a, b) => a.id - b.id);
 
-console.log(`筋肉 ${muscles.length}件 / 種目 ${exercises.length}件 / 人体図(WebP)2枚 / 筋肉SVG ${muscleList.length * 2}枚を出力しました。`);
+const [bodyFront, bodyBack] = await Promise.all([
+  renderBodyWebp(`${STATIC}/muscular_system_front.svg`),
+  renderBodyWebp(`${STATIC}/muscular_system_back.svg`),
+]);
+
+const overlays = (
+  await mapLimit(muscleList, CONCURRENCY, async (m) => [
+    [`main-${m.id}.svg`, await fetchSvg(m.image_url_main)],
+    [`secondary-${m.id}.svg`, await fetchSvg(m.image_url_secondary)],
+  ])
+).flat();
+
+const exercises = await mapLimit(uniqueWgerIds(), CONCURRENCY, fetchExercise);
+
+// ---- 書き出し ----
+await mkdir(svgDir, { recursive: true });
+await mkdir(path.dirname(jsonPath), { recursive: true });
+await Promise.all([
+  writeFile(path.join(svgDir, "body-front.webp"), bodyFront),
+  writeFile(path.join(svgDir, "body-back.webp"), bodyBack),
+  ...overlays.map(([name, svg]) => writeFile(path.join(svgDir, name), svg)),
+  writeFile(jsonPath, `${JSON.stringify({ muscles, exercises }, null, 2)}\n`),
+]);
+
+console.log(
+  `筋肉 ${muscles.length}件 / 種目 ${exercises.length}件 / 人体図(WebP)2枚 / 筋肉SVG ${overlays.length}枚を出力しました。`,
+);
 console.log(`マスタ種目のうちwgerに対応づけたもの: ${WGER_EXERCISE_MAP.size}件`);
 console.log(`未対応: ${UNMAPPED_EXERCISE_NAMES.length}件`);
 for (const ex of exercises) {

@@ -20,7 +20,7 @@ import {
 import { BASE_PATH } from "@/lib/base-path";
 import { MuscleHighlight } from "@/components/muscle-highlight";
 import { WgerAttribution } from "@/components/wger-exercise-panel";
-import { wgerMuscleIdsForAnatomyPart } from "@/lib/wger/anatomy-map";
+import { wgerHighlightNote, wgerMuscleIdsForAnatomyPart } from "@/lib/wger/anatomy-map";
 
 // public/anatomy/配下の全身図イラスト。画像の色検出によるハイライト連動は
 // 精度が不十分だったため廃止し、参考画像として静的に表示するのみとする。
@@ -105,6 +105,8 @@ export default function AnatomyPage() {
   const selectedPart = ANATOMY_PARTS.find((p) => p.id === selectedId) ?? null;
   const highlightMuscleIds =
     selectedPart?.type === "muscle" ? wgerMuscleIdsForAnatomyPart(selectedPart.id) : [];
+  const highlightNote =
+    selectedPart?.type === "muscle" ? wgerHighlightNote(selectedPart.id) : null;
   const relatedMuscleExercises = useMemo(
     () =>
       selectedPart?.type === "muscle"
@@ -221,6 +223,9 @@ export default function AnatomyPage() {
                       primaryLabel="選択中の筋肉"
                     />
                   </div>
+                  {highlightNote && (
+                    <p className="mt-1 text-center text-xs text-amber-700">{highlightNote}</p>
+                  )}
                   <div className="mt-1 text-center">
                     <WgerAttribution />
                   </div>
